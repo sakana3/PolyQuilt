@@ -33,7 +33,10 @@ class SubToolMove(SubTool) :
                 ignore = [self.currentTarget.element]
                 ignore.extend( self.currentTarget.element.link_faces )
                 ignore.extend( self.currentTarget.element.link_edges )
+                for face in self.currentTarget.element.link_faces :
+                    ignore.extend( face.verts )
                 self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore , edgering= True )
+
                 if self.subTarget.isVert and self.currentTarget.element != self.subTarget.element :
                     self.currentTarget.element.co = self.subTarget.element.co
                     self.currentTarget = ElementItem.FormVert( self.currentTarget.element )                    
@@ -48,7 +51,9 @@ class SubToolMove(SubTool) :
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 if self.currentTarget.isVert and self.subTarget.isVert :
-                    bmesh.utils.vert_splice( self.currentTarget.element , self.subTarget.element )
+                    v0 = self.currentTarget.element
+                    v1 = self.subTarget.element
+                    bmesh.utils.vert_splice( v0 , v1 )
                     self.bmo.UpdateMesh()                    
                 return 'FINISHED'
 

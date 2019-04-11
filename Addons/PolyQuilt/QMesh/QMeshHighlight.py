@@ -8,7 +8,6 @@ import collections
 from mathutils import *
 import numpy as np
 from .. import handleutility
-from .. import draw_util
 from ..dpi import *
 from .ElementItem import ElementItem
 

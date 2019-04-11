@@ -5,6 +5,7 @@ from bpy.props import (
     FloatVectorProperty,
     BoolProperty,
     EnumProperty,
+    StringProperty,
 )
 from .utils.addon_updator import (
     AddonUpdatorManager,
@@ -17,7 +18,8 @@ __all__ = [
     "PolyQuiltPreferences" ,
     "PQ_OT_SetupLeftMouseDownToClick",
     "PQ_OT_CheckAddonUpdate" ,
-    "PQ_OT_UpdateAddon"
+    "PQ_OT_UpdateAddon" ,
+    "register_updater"
 ]
 
 class PQ_OT_CheckAddonUpdate(bpy.types.Operator):
@@ -55,7 +57,7 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
 def register_updater(bl_info):
     config = AddonUpdatorConfig()
     config.owner = "sakana3"
-    config.repository = "pythonStudy"
+    config.repository = "PolyQuilt"
     config.current_addon_path = os.path.dirname(os.path.realpath(__file__))
     config.branches = ["master", "develop"]
     config.addon_directory = \
@@ -170,8 +172,14 @@ class PolyQuiltPreferences(AddonPreferences):
         default=False
     )
 
+    is_debug : BoolProperty(
+        name="is Debug",
+        description="is Debug",
+        default=False
+    )
+
     # for add-on updater
-    updater_branch_to_update = EnumProperty(
+    updater_branch_to_update : EnumProperty(
         name="branch",
         description="Target branch to update add-on",
         items=get_update_candidate_branches
@@ -211,21 +219,17 @@ class PolyQuiltPreferences(AddonPreferences):
             icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded
             else 'DISCLOSURE_TRI_RIGHT')
         if self.extra_setting_expanded : 
+            layout.row().prop(self, "is_debug" , text = "Debug")
+
             self.draw_updater_ui()            
             col = layout.column()
             col.scale_y = 2            
             col.operator(PQ_OT_SetupLeftMouseDownToClick.bl_idname,
-                        text="Setup Left Mouse Keymap to Click",
+                        text="Setup metaseq like Keymap(experimental)",
                         icon='MONKEY')
-            col = layout.column()
-            col.scale_y = 1                           
-            for keymap in context.window_manager.keyconfigs.user.keymaps:                        
-                for key in keymap.keymap_items:  
-#                   if key.map_type == 'MOUSE' and key.type == 'RIGHTMOUSE' :
-                    col.label( text = keymap.region_type + ">" + keymap.space_type + " > " + keymap.name + " > " + key.idname + ">" + key.value )
 
-    def draw_updater_ui(prefs_obj):
-        layout = prefs_obj.layout
+    def draw_updater_ui(self):
+        layout = self.layout
         updater = AddonUpdatorManager.get_instance()
 
         layout.separator()
@@ -234,38 +238,38 @@ class PolyQuiltPreferences(AddonPreferences):
             col = layout.column()
             col.scale_y = 2
             row = col.row()
-            row.operator(MUV_OT_CheckAddonUpdate.bl_idname,
+            row.operator(PQ_OT_CheckAddonUpdate.bl_idname,
                         text="Check 'PolyQuilt' add-on update",
                         icon='FILE_REFRESH')
         else:
             row = layout.row(align=True)
             row.scale_y = 2
             col = row.column()
-            col.operator(MUV_OT_CheckAddonUpdate.bl_idname,
+            col.operator(PQ_OT_CheckAddonUpdate.bl_idname,
                         text="Check 'PolyQuilt' add-on update",
                         icon='FILE_REFRESH')
             col = row.column()
             if updater.latest_version() != "":
                 col.enabled = True
                 ops = col.operator(
-                    MUV_OT_UpdateAddon.bl_idname,
+                    PQ_OT_UpdateAddon.bl_idname,
                     text="Update to the latest release version (version: {})"
                     .format(updater.latest_version()),
                     icon='TRIA_DOWN_BAR')
                 ops.branch_name = updater.latest_version()
             else:
                 col.enabled = False
-                col.operator(MUV_OT_UpdateAddon.bl_idname,
+                col.operator(PQ_OT_UpdateAddon.bl_idname,
                             text="No updates are available.")
 
             layout.separator()
             layout.label(text="Manual Update:")
             row = layout.row(align=True)
-            row.prop(prefs_obj, "updater_branch_to_update", text="Target")
+            row.prop(self, "updater_branch_to_update", text="Target")
             ops = row.operator(
-                MUV_OT_UpdateAddon.bl_idname, text="Update",
+                PQ_OT_UpdateAddon.bl_idname, text="Update",
                 icon='TRIA_DOWN_BAR')
-            ops.branch_name = prefs_obj.updater_branch_to_update
+            ops.branch_name = self.updater_branch_to_update
 
             layout.separator()
             if updater.has_error():
@@ -284,5 +288,22 @@ class PQ_OT_SetupLeftMouseDownToClick(bpy.types.Operator) :
     bl_description = "Setup Left Mouse Click"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, _):
+    def execute(self, context):
+        for keymap in context.window_manager.keyconfigs.user.keymaps:                        
+            if keymap.space_type == 'EMPTY':
+                for key in keymap.keymap_items:
+                    if True not in [ key.any , key.alt , key.ctrl ,key.shift ]:
+                        if key.map_type == 'MOUSE' and key.type == 'RIGHTMOUSE' :
+                            key.value = 'CLICK'
+        for keymap in context.window_manager.keyconfigs.user.keymaps:                        
+            if keymap.space_type == 'VIEW_3D':
+                for key in keymap.keymap_items:
+                    if True not in [ key.any , key.alt , key.ctrl ,key.shift ]:
+                        if key.idname == 'view3d.rotate' and key.map_type == 'MOUSE' :
+                            key.type == 'RIGHTMOUSE'
+                            key.value = 'CLICK_DRAG'
+                        elif key.idname == 'view3d.move' and key.map_type == 'MOUSE' :
+                            key.type == 'MIDDLEMOUSE'
+                            key.value = 'CLICK_DRAG'
+
         return {'FINISHED'}

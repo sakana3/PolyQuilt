@@ -28,7 +28,6 @@ from .pq_operator import MESH_OT_poly_quilt
 from .pq_tool import ToolPolyQuilt
 from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
 from .pq_preferences import *
-from . import updater
 
 classes = (
     PQ_Gizmo_Preselect ,
@@ -41,7 +40,7 @@ classes = (
 )
 
 def register():
-    updater.register_updater(bl_info)
+    register_updater(bl_info)
 
     for cls in classes:
         bpy.utils.register_class(cls)

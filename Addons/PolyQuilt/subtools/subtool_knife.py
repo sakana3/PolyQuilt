@@ -54,11 +54,11 @@ class SubToolKnife(SubTool) :
         rv3d = context.space_data.region_3d    
         region = context.region
 
-        pc = bpy_extras.view3d_utils.region_2d_to_origin_3d(region, rv3d, startPos)
-        no = bpy_extras.view3d_utils.region_2d_to_vector_3d(region, rv3d, startPos)
-        p0 = bpy_extras.view3d_utils.region_2d_to_location_3d(region, rv3d, startPos, no)
-        p1 = bpy_extras.view3d_utils.region_2d_to_location_3d(region, rv3d, endPos, no)
-        p2 = bpy_extras.view3d_utils.region_2d_to_location_3d(region, rv3d, endPos, no * 2)
+        pc = handleutility.region_2d_to_origin_3d(region, rv3d, startPos)
+        no = handleutility.region_2d_to_vector_3d(region, rv3d, startPos)
+        p0 = handleutility.region_2d_to_location_3d(region, rv3d, startPos, no)
+        p1 = handleutility.region_2d_to_location_3d(region, rv3d, endPos, no)
+        p2 = handleutility.region_2d_to_location_3d(region, rv3d, endPos, no * 2)
         t0 = (p1-p2)
         t1 = (p0-p1)
         t =  t0.cross( t1 )
