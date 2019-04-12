@@ -51,13 +51,20 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
 
-def draw_pivot2D( pos , radius , color = (1,1,1,1) ):
+def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
     r = radius * dpm()
-    verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) )
-    shader2D.bind()
-    shader2D.uniform_float("color", color )
-    batch = batch_for_shader(shader2D, 'TRI_FAN', {"pos": verts} )
-    batch.draw(shader2D)
+    if isWire is False :
+        verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) )
+        shader2D.bind()
+        shader2D.uniform_float("color", color )
+        batch = batch_for_shader(shader2D, 'TRI_FAN', {"pos": verts} )
+        batch.draw(shader2D)
+    else :
+        verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) , (-1*r + pos[0],-1*r + pos[1]) )
+        shader2D.bind()
+        shader2D.uniform_float("color", color )
+        batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts} )
+        batch.draw(shader2D)
 
 def draw_pivot3D( pos , radius , color = (1,1,1,1) ):
     verts = ( pos , )

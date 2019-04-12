@@ -39,25 +39,30 @@ class QMeshHighlight :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            matrix_world = self.pqo.obj.matrix_world
+            mw = self.pqo.obj.matrix_world
             perspective_matrix = rv3d.perspective_matrix
+            mwp = mw @ perspective_matrix
 
             verts = self.pqo.bm.verts
-#            mw = numpy.array( matrix_world )
+#            mw = np.array( mw )
 #            mp = numpy.array( perspective_matrix )
 #            vo = numpy.array( [ (p.co.x,p.co.y,p.co.z,1.0) for p in verts] )
 #            vw = mw @ (vo.T)
 #            vp = mp @ (vw.T)
 
             def ProjVert( vt ) :
-                wv = matrix_world @ vt.co
-                pv = perspective_matrix @ wv.to_4d()
-                if pv.w < 0 :
+                v = vt.co
+                wv = mw @ v
+                pv = mwp @ v.to_4d()
+                if pv.w < 0.0 :
                     return None
-                t = Vector( (halfW+halfW*(pv.x/pv.w) , halfH+halfH*(pv.y/pv.w) ))
-                return ( vt , t , wv )
 
-            viewPos = tuple( ProjVert(p) for p in verts )
+                t = Vector( (halfW+halfW * pv.x / pv.w , halfH+halfH * pv.y / pv.w ))
+                return [ vt , t , wv ]
+
+#           x1 = [ (v,mwp @ v.co.to_4d(),mw @ v.co) for v in verts ]
+#           viewPos = [ (vs[0], Vector((halfW+halfW*vs[1].x/vs[1].w,halfH+halfH*vs[1].y/vs[1].w)),vs[2]) if vs[1].w > 0.0 else None for vs in x1 ]
+            viewPos = [ ProjVert(p) for p in verts ]
 
             def ProjEdge( e) :
                 verts = e.verts
@@ -68,15 +73,15 @@ class QMeshHighlight :
                 return ( e , p0[1] , p1[1] , p0[2] , p1[2] )
 
             edges = self.pqo.bm.edges
-            viewPosEdge = tuple( ProjEdge(e) for e in edges )
-            self.__viewPosEdges = tuple( e for e in viewPosEdge if e is not None and e[0].hide is False )
-            self.__viewPosVerts = tuple( p for p in viewPos if p is not None and p[0].hide is False )
+            viewPosEdge = [ ProjEdge(e) for e in edges ]
+            self.__viewPosEdges = [ e for e in viewPosEdge if e is not None and e[0].hide is False ]
+            self.__viewPosVerts = [ p for p in viewPos if p is not None and p[0].hide is False ]
 
             self.current_matrix = matrix        
 
                 
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False ) -> ElementItem :
-        r = radius * dpm()
+        r = radius
         p = Vector( coord )
         viewPos = self.viewPosVerts
         s = [ i for i in viewPos if i[1] != None and (i[1] - p).length <= r and i[0] not in ignore ]
@@ -113,7 +118,7 @@ class QMeshHighlight :
             return ElementItem( edge[0] , c , h0 , d )
 
         intersect = geometry.intersect_line_sphere_2d
-        r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius) and i[0] not in ignore ]
+        r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]
         s = sorted( r , key=lambda i:(i.coord - p).length )
 
         return s

@@ -33,6 +33,7 @@ class QMesh(QMeshOperators) :
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False ) -> ElementItem :
         rv3d = bpy.context.space_data.region_3d
         matrix = self.obj.matrix_world @ rv3d.perspective_matrix
+        radius = radius * dpm()
 
         hitElement = ElementItem.Empty()
 

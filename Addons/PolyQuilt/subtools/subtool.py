@@ -93,17 +93,22 @@ class SubTool :
             SubTool.__timer_handle = None
         
     def color_highlight( self , alpha = 1.0 ) :
-        return (1,1,0.2,alpha)
+        col = self.preferences.highlight_color
+        return (col[0],col[1],col[2],col[3] * alpha)
 
     def color_create( self , alpha = 1.0 ) :
-        return (0.4,0.7,0.9,alpha)
+        col = self.preferences.makepoly_color        
+        return (col[0],col[1],col[2],col[3] * alpha)
 
     def color_split( self , alpha = 1.0 ) :
-        return (0.1,1.0,0.25,alpha)
+        col = self.preferences.split_color            
+        return (col[0],col[1],col[2],col[3] * alpha)
 
     def color_edgeloop( self , alpha = 1.0 ) :
-        return (0.1,1.0,0.25,alpha)
+        col = self.preferences.split_color            
+        return (col[0],col[1],col[2],col[3] * alpha)
 
     def color_delete( self ,alpha = 1.0 ) :
-        return (1,0.1,0.1,alpha)
+        col = self.preferences.delete_color            
+        return (col[0],col[1],col[2],col[3] * alpha)
 

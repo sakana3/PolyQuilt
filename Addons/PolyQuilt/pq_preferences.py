@@ -133,7 +133,7 @@ class PolyQuiltPreferences(AddonPreferences):
     distance_to_highlight : FloatProperty(
         name="distance_to_highlight",
         description="distance_to_highlight",
-        default=3.0,
+        default=4.0,
         min=1.0,
         max=10.0) 
 
@@ -161,7 +161,7 @@ class PolyQuiltPreferences(AddonPreferences):
     longpress_time : FloatProperty(
         name="LongPressTime",
         description="Long press Time",
-        default=0.75,
+        default=0.5,
         min=0.3,
         max=2.0)             
 

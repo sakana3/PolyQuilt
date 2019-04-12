@@ -40,8 +40,9 @@ class SubToolMakePoly(SubTool) :
         self.isEnd = False
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
         self.mode = op.geometry_type
-        self.LineMode = self.mode == 'EDGE'
         self.EdgeLoops = None
+        if self.mode == 'VERT' :
+            self.isEnd = True
 
     @staticmethod
     def LMBEventCallback(self , event ):
@@ -76,7 +77,7 @@ class SubToolMakePoly(SubTool) :
                     self.EdgeLoops = self.SelectEdgeLoops( edge )
         elif event.type == MBEventType.LongClick :
             if len(self.mekePolyList) <= 1 :
-                self.LineMode = True
+                self.mode = 'EDGE'
         elif event.type == MBEventType.Move :
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
@@ -99,7 +100,7 @@ class SubToolMakePoly(SubTool) :
         lp = self.mouse_pos if self.currentTarget.isEmpty else self.currentTarget.coord
         vs.append( lp )
 
-        if self.LineMode == False :
+        if self.mode != 'EDGE' :
             if l == 1:
                 color = self.color_create()
                 text = None
@@ -123,10 +124,13 @@ class SubToolMakePoly(SubTool) :
                 draw_util.draw_lines2D( vs , self.color_create() , self.preferences.highlight_line_width  )
         else :
             draw_util.draw_lines2D( vs , self.color_create() , self.preferences.highlight_line_width  )
-            pass
 
         if self.currentTarget.isNotEmpty :
             self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
+            if self.currentTarget.element == self.mekePolyList[-1] :
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_create() , True )
+            elif self.currentTarget.element in self.mekePolyList:
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_create() , True )
         else :
             draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size , self.color_create() )
 
@@ -147,7 +151,7 @@ class SubToolMakePoly(SubTool) :
                 edge = self.bmo.edges.get( ( self.mekePolyList[0] , self.mekePolyList[-1] ) )
                 if edge != None :
                     ret = False
-            if pts == 2 or self.LineMode :
+            if pts == 2 :
                 same_edges , same_faces = self.CheckSameFaceAndEdge(self.mekePolyList[-2] , self.mekePolyList[-1])
 
                 if same_edges :
@@ -160,7 +164,8 @@ class SubToolMakePoly(SubTool) :
                     for face in same_faces :
                         self.bmo.face_split( face , self.mekePolyList[-2] , self.mekePolyList[-1] )
                         self.bmo.UpdateMesh()
-                    ret = False
+                    self.mekePolyList = [ self.mekePolyList[-1] ]                        
+                    ret = True
                 else :
                     edge = self.bmo.edges.get( (self.mekePolyList[-2],self.mekePolyList[-1]) )
                     edge = edge if edge != None else self.bmo.AddEdge( self.mekePolyList[-2] , self.mekePolyList[-1] )
@@ -184,11 +189,14 @@ class SubToolMakePoly(SubTool) :
 #                self.targetElement = bmesh.utils.edge_split(edge, edge.verts[0] , 0.5)[0]
 #                bmesh.update_edit_mesh(self.mesh)
 
-        if self.mode == 'TRI' and pts == 3 and self.LineMode == False :
+        if self.mode == 'TRI' and pts == 3 :
             ret = False
 
-        if self.mode == 'QUAD' and pts == 4 and self.LineMode == False :
+        if self.mode == 'QUAD' and pts == 4 :
             ret = False
+
+        if self.mode == 'EDGE' :
+            self.mekePolyList = [ self.mekePolyList[-1] ]
 
         return ret
 

@@ -136,7 +136,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         # draw some text
         blf.position(font_id, 15, 40, 0)
         blf.size(font_id, 20, 72)
-        blf.draw(font_id, ">" + self.debugStr )
+        blf.draw(font_id, ">>" + self.debugStr )
 
         if self.currentSubTool is not None :
             blf.position(font_id, 15, 20, 0)
