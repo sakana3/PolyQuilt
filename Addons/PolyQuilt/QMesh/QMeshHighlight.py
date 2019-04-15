@@ -108,8 +108,8 @@ class QMeshHighlight :
 
 
     def CollectEdge( self ,coord , radius : float , ignore = [] ) -> ElementItem :
-        ray_origin , ray_direction = handleutility.calc_ray( bpy.context , coord )
         p = Vector( coord )
+        ray_origin , ray_direction = handleutility.calc_ray( bpy.context , coord )
         viewPosEdge = self.viewPosEdges
 
         def Conv( edge ) -> ElementItem :
@@ -123,3 +123,35 @@ class QMeshHighlight :
 
         return s
 
+
+    def find_view_range( self , coord , radius ) :
+#       xray = bpy.context.space_data.shading.show_xray 
+#       select_mode = bpy.context.tool_settings.mesh_select_mode
+
+        #bpy.context.tool_settings.mesh_select_mode = [True,True,True] 
+
+        #bpy.ops.ed.undo_push(message="For find nearest") 
+        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius ) 
+
+        rv = [ v for v in  bm.verts if v.select ]
+        re = [ e for e in  bm.edges if e.select ] 
+        rf = [ f for f in  bm.faces if f.select ] 
+
+        #bpy.ops.ed.undo_redo() 
+
+#       bpy.ops.action.select_all( 'DESELECT' ) 
+        #bpy.context.tool_settings.mesh_select_mode = select_mode 
+#       bpy.context.space_data.shading.show_xray = xray 
+
+        return rv , re , rf 
+
+def find_view_range( coord , radius ) :
+    bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius ) 
+
+    rv = [ v for v in  bm.verts if v.select ]
+    re = [ e for e in  bm.edges if e.select ] 
+    rf = [ f for f in  bm.faces if f.select ] 
+
+    bpy.ops.action.select_all( 'DESELECT' ) 
+
+    return rv , re , rf 

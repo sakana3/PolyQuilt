@@ -10,6 +10,7 @@ from .. import draw_util
 from ..QMesh import *
 from ..mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import SubTool
+from ..dpi import *
 
 class SubToolMakePoly(SubTool) :
     name = "MakePolyTool"
@@ -22,7 +23,7 @@ class SubToolMakePoly(SubTool) :
             self.pivot = self.bmo.obj.location
         elif self.operator.plane_pivot == '3D' :
             self.pivot = bpy.context.scene.cursor.location
-        elif self.operator.plane_pivot == 'ZERO' :
+        elif self.operator.plane_pivot == 'Origin' :
             self.pivot = (0,0,0)
 
         if startElement.isEmpty :
@@ -31,7 +32,7 @@ class SubToolMakePoly(SubTool) :
             self.bmo.UpdateMesh()
         elif startElement.isEdge :
             edge , vert = self.bmo.edge_split_from_position( startElement.element , startElement.hitPosition )
-            self.currentTarget = ElementItem( vert , self.mouse_pos , vert.co , 0 )
+            self.currentTarget = ElementItem( vert , mouse_pos , vert.co , 0 )
             self.bmo.UpdateMesh()
         else :            
             self.currentTarget = startElement
@@ -54,19 +55,20 @@ class SubToolMakePoly(SubTool) :
             else :
                 if self.EdgeLoops != None :
                     self.DoEdgeLoopsRemove( self.EdgeLoops )
+                    self.isEnd = True       
                 elif self.currentTarget.isEdge :
                     edge , vert = self.bmo.edge_split_from_position( self.currentTarget.element , self.currentTarget.hitPosition )
                     self.currentTarget = ElementItem( vert , self.mouse_pos , vert.co , 0 )
                     self.isEnd = self.AddVert(self.currentTarget.element ) == False
-                else :
-                    if self.currentTarget.isEmpty :
-                        pivot = self.pivot
-                        if self.mekePolyList :
-                            pivot = self.bmo.obj.matrix_world @ self.mekePolyList[-1].co
-                        addVert = self.bmo.AddVertexFromRegionCoord( self.mouse_pos , pivot )
-                        self.currentTarget = ElementItem( addVert , self.mouse_pos , addVert.co , 0.0 )
-                        self.bmo.UpdateMesh()
-                    if self.currentTarget.isVert :                            
+                elif self.currentTarget.isEmpty :
+                    pivot = self.pivot
+                    if self.mekePolyList :
+                        pivot = self.bmo.obj.matrix_world @ self.mekePolyList[-1].co
+                    addVert = self.bmo.AddVertexFromRegionCoord( self.mouse_pos , pivot )
+                    self.currentTarget = ElementItem( addVert , self.mouse_pos , addVert.co , 0.0 )
+                    self.bmo.UpdateMesh()
+                if self.currentTarget.isVert :
+                    if self.currentTarget.element not in self.mekePolyList :
                         self.isEnd = self.AddVert(self.currentTarget.element ) == False
         elif event.type == MBEventType.Click :            
             pass
@@ -79,7 +81,15 @@ class SubToolMakePoly(SubTool) :
             if len(self.mekePolyList) <= 1 :
                 self.mode = 'EDGE'
         elif event.type == MBEventType.Move :
-            self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
+            tmp = self.currentTarget
+            ignore = []
+            if isinstance( self.targetElement , bmesh.types.BMFace ) :
+                ignore = self.targetElement.edges
+            elif isinstance( self.targetElement , bmesh.types.BMEdge ):
+                ignore = [ self.targetElement ]
+            self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore=ignore )
+            if tmp != self.currentTarget :
+                self.EdgeLoops = None
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
                 self.currentTarget = ElementItem.Empty()
 
@@ -100,44 +110,44 @@ class SubToolMakePoly(SubTool) :
         lp = self.mouse_pos if self.currentTarget.isEmpty else self.currentTarget.coord
         vs.append( lp )
 
-        if self.mode != 'EDGE' :
-            if l == 1:
-                color = self.color_create()
-                text = None
-                same_edges , same_faces = self.CheckSameFaceAndEdge( self.mekePolyList[0] , self.currentTarget.element )
-                if same_edges :
-                    if len(same_faces) > 1 :
-                        if self.LMBEvent.presureComplite :
-                            color = self.color_edgeloop()
-                        else :
-                            color = self.color_delete()
-                        text = "Edge Loop"
-                elif same_faces :
-                    color = self.color_split()
-                else :
-                    text = "Line"                    
-                draw_util.draw_lines2D( vs , color , self.preferences.highlight_line_width  )
-                if text != None :
-                    self.LMBEvent.Draw( self.currentTarget.coord , text )
-            elif l > 1:
-                vs.append( vs[0] )
-                draw_util.draw_lines2D( vs , self.color_create() , self.preferences.highlight_line_width  )
-        else :
+        color = self.color_create()
+        if l == 1:
+            text = None
+            same_edges , same_faces = self.CheckSameFaceAndEdge( self.mekePolyList[0] , self.currentTarget.element )
+            if same_edges :
+                if len(same_faces) > 1 :
+                    if self.LMBEvent.presureComplite :
+                        color = self.color_delete()
+                    else :
+                        color = self.color_delete()
+                    text = "Edge Loop"
+            elif same_faces :
+                color = self.color_split()
+            else :
+                text = "Line"                    
+            draw_util.draw_lines2D( vs , color , self.preferences.highlight_line_width  )
+            if text != None :
+                self.LMBEvent.Draw( self.currentTarget.coord , text )
+        elif l > 1:
+            vs.append( vs[0] )
             draw_util.draw_lines2D( vs , self.color_create() , self.preferences.highlight_line_width  )
 
         if self.currentTarget.isNotEmpty :
             self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
-            if self.currentTarget.element == self.mekePolyList[-1] :
-                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_create() , True )
-            elif self.currentTarget.element in self.mekePolyList:
-                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_create() , True )
-        else :
-            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size , self.color_create() )
 
-        draw_util.drawElementsHilight( self.bmo.obj , self.mekePolyList , self.preferences.highlight_vertex_size , self.color_create() )
+            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size* dpm() , color )
+
+            if self.currentTarget.element == self.mekePolyList[-1] :
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 * dpm() , self.color_create() , True )
+            elif self.currentTarget.element in self.mekePolyList:
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 * dpm(), self.color_delete() , True )
+        else :
+            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size* dpm() , self.color_create() )
+
+        draw_util.drawElementsHilight( self.bmo.obj , self.mekePolyList , self.preferences.highlight_vertex_size* dpm() , self.color_create() )
 
         if self.EdgeLoops != None :
-            draw_util.drawElementsHilight( self.bmo.obj , self.EdgeLoops , self.preferences.highlight_vertex_size , self.color_edgeloop() )
+            draw_util.drawElementsHilight( self.bmo.obj , self.EdgeLoops , self.preferences.highlight_vertex_size* dpm() , self.color_delete() )
 
     def AddVert( self , vert ) :
         ret = True
@@ -156,16 +166,15 @@ class SubToolMakePoly(SubTool) :
 
                 if same_edges :
                     if len(same_faces) > 1 :
-                        bmesh.utils.vert_separate( vert , same_edges )
-#                       self.bmo.dissolve_edges( edges = same_edges , use_verts = False , use_face_split = False )
+#                       bmesh.utils.vert_separate( vert , same_edges )
+                        self.bmo.dissolve_edges( edges = same_edges , use_verts = False , use_face_split = False )
                         self.bmo.UpdateMesh()
-                        ret = False
+                        self.mekePolyList = [ self.mekePolyList[-1] ] 
                 elif same_faces:
                     for face in same_faces :
                         self.bmo.face_split( face , self.mekePolyList[-2] , self.mekePolyList[-1] )
                         self.bmo.UpdateMesh()
                     self.mekePolyList = [ self.mekePolyList[-1] ]                        
-                    ret = True
                 else :
                     edge = self.bmo.edges.get( (self.mekePolyList[-2],self.mekePolyList[-1]) )
                     edge = edge if edge != None else self.bmo.AddEdge( self.mekePolyList[-2] , self.mekePolyList[-1] )
@@ -234,5 +243,7 @@ class SubToolMakePoly(SubTool) :
         return results
 
     def DoEdgeLoopsRemove( self , edges ) :
-        self.bmo.dissolve_edges( edges = edges , use_verts = False , use_face_split = False )        
+        self.bmo.dissolve_edges( edges = edges , use_verts = True , use_face_split = True )        
+        self.bmo.UpdateMesh()             
+        self.currentTarget = ElementItem.Empty()
         

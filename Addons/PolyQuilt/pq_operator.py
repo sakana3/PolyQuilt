@@ -59,7 +59,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         description="Plane Pivot",
         items=(('OBJ' , "Object Center", ""),
                ('3D' , "3D Cursor", "" ),
-               ('ZERO'  , "Zero", "")),
+               ('Origin'  , "Origin", "")),
         default='OBJ',
     )
 
@@ -132,16 +132,19 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             return {'CANCELLED'}
 
     def DrawView3D( self , context ):
-        font_id = 0  # XXX, need to find out how best to get this.
-        # draw some text
-        blf.position(font_id, 15, 40, 0)
-        blf.size(font_id, 20, 72)
-        blf.draw(font_id, ">>" + self.debugStr )
+
+        if self.preferences.is_debug :
+            font_id = 0  # XXX, need to find out how best to get this.
+            # draw some text
+            blf.position(font_id, 15, 40, 0)
+            blf.size(font_id, 20, 72)
+            blf.draw(font_id, ">>" + self.debugStr )
+            if self.currentSubTool is not None :
+                blf.position(font_id, 15, 20, 0)
+                blf.size(font_id, 20, 72)
+                blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
 
         if self.currentSubTool is not None :
-            blf.position(font_id, 15, 20, 0)
-            blf.size(font_id, 20, 72)
-            blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
             self.currentSubTool.Draw(context)
 
     def cancel( self , context):

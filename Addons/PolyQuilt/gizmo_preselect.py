@@ -20,6 +20,10 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.currentElement = ElementItem.Empty()
         PQ_Gizmo_Preselect.instance = self
 
+    def init( self , context ) :
+        self.bo = QMesh( context.active_object )
+        self.bo.UpdateView( context )
+
     def exit( self , context, cancel) :
         if self.bo :
             del self.bo
@@ -82,7 +86,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
         return True
 
     def setup(self, context):
-        self.widget = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)        
+        self.widget = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
+        self.widget.init(context)   
 #       self.gizmos.new("GIZMO_GT_mesh_preselect_elem_3d")  
 
         for op in context.window_manager.operators :

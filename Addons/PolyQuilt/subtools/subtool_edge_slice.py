@@ -8,6 +8,7 @@ import collections
 from .. import handleutility
 from .. import draw_util
 from ..QMesh import *
+from ..dpi import *
 from .subtool import SubTool
 
 class SubToolEdgeSlice(SubTool) :
@@ -58,9 +59,16 @@ class SubToolEdgeSlice(SubTool) :
             draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , pos , (0,2) )                    
 
     def CalcSplitRate( self , context ,coord , baseEdge ) :
-        ray_origin , ray_direction = handleutility.calc_object_space_ray( context , self.bmo.obj , coord )
+        matrix = self.bmo.obj.matrix_world        
         v0 = baseEdge.verts[0].co
         v1 = baseEdge.verts[1].co
+        p0 = handleutility.location_3d_to_region_2d( matrix @ v0)
+        p1 = handleutility.location_3d_to_region_2d( matrix @ v1)
+        intersects = mathutils.geometry.intersect_line_sphere_2d( p0 , p1 , coord , self.preferences.distance_to_highlight * dpm() )
+        if any(intersects) == False:
+            return 0.0
+
+        ray_origin , ray_direction = handleutility.calc_object_space_ray( context , self.bmo.obj , coord )
         h0 , h1 , d = handleutility.RayDistAndPos( v0 , (v1-v0).normalized() , ray_origin , ray_direction )
         dt =  (v0-v1).length
         d0 = (v0-h0).length

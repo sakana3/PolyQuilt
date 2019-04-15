@@ -37,44 +37,38 @@ class QMesh(QMeshOperators) :
 
         hitElement = ElementItem.Empty()
 
-        # hitする面を探す
         ignoreFaces =  [ i for i in ignore if isinstance( i , bmesh.types.BMFace ) ]        
-        hitFace = self.highlight.PickFace( coord , ignoreFaces )
 
         # Hitする頂点を探す
         hitVert = ElementItem.Empty()
         ignoreVerts =  [ i for i in ignore if isinstance( i , bmesh.types.BMVert ) ]
         candidateVerts = self.highlight.CollectVerts( coord , radius , ignoreVerts , edgering )
 
-        if len(candidateVerts) == 1 and hitFace.isNotEmpty and candidateVerts[0].element in hitFace.element.verts :
-            # ヒットした頂点が１つのみでヒット面の頂点に含まれている場合無条件で選ぶ
-            # このケースは割と多いはず
-            hitVert = candidateVerts[0]
-        else :
-            for vert in candidateVerts :
-                # 各点からRayを飛ばす
-                hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces  )
-                if hitTemp.isEmpty :
-                    # 何の面にもヒットしないなら採択
-                    hitVert = vert
-                    break
-                else :
-                    if vert.element in hitTemp.element.verts :
-                        # ヒットした面に含まれているなら採択
-                        hitVert = vert
-                        break
-                    else :
-                        # ヒットしたポイントより後ろなら採択
-                        v1 = matrix @ vert.hitPosition
-                        v2 = matrix @ hitTemp.hitPosition
-                        if v1.z <= v2.z :
-                            hitVert = vert
-                            break
-
         # Todo:ヒットするエッジを探す
         hitEdge = ElementItem.Empty()
         ignoreEdges =  [ i for i in ignore if isinstance( i , bmesh.types.BMEdge ) ]
         candidateEdges = self.highlight.CollectEdge( coord , radius , ignoreEdges )
+
+        for vert in candidateVerts :
+            # 各点からRayを飛ばす
+            hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces  )
+            if hitTemp.isEmpty :
+                # 何の面にもヒットしないなら採択
+                hitVert = vert
+                break
+            else :
+                if vert.element in hitTemp.element.verts :
+                    # ヒットした面に含まれているなら採択
+                    hitVert = vert
+                    break
+                else :
+                    # ヒットしたポイントより後ろなら採択
+                    v1 = matrix @ vert.hitPosition
+                    v2 = matrix @ hitTemp.hitPosition
+                    if v1.z <= v2.z :
+                        hitVert = vert
+                        break
+
         for edge in candidateEdges :
             hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces )
         
@@ -96,6 +90,9 @@ class QMesh(QMeshOperators) :
 
 
         if hitVert.isEmpty and hitEdge.isEmpty :
+            # hitする面を探す
+            hitFace = self.highlight.PickFace( coord , ignoreFaces )
+
             # 候補頂点/エッジがないなら面を返す
             if hitFace.isNotEmpty :
                 hitElement = hitFace

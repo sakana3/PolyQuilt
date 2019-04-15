@@ -52,7 +52,7 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glDisable(bgl.GL_BLEND)
 
 def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
-    r = radius * dpm()
+    r = radius
     if isWire is False :
         verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) )
         shader2D.bind()
