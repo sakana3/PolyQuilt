@@ -39,9 +39,8 @@ class QMeshHighlight :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            mw = self.pqo.obj.matrix_world
+            world_matrix = self.pqo.obj.matrix_world
             perspective_matrix = rv3d.perspective_matrix
-            mwp = mw @ perspective_matrix
 
             verts = self.pqo.bm.verts
 #            mw = np.array( mw )
@@ -52,12 +51,13 @@ class QMeshHighlight :
 
             def ProjVert( vt ) :
                 v = vt.co
-                wv = mw @ v
-                pv = mwp @ v.to_4d()
+                wv = world_matrix @ v
+                pv = perspective_matrix @ wv.to_4d()
                 if pv.w < 0.0 :
                     return None
 
                 t = Vector( (halfW+halfW * pv.x / pv.w , halfH+halfH * pv.y / pv.w ))
+
                 return [ vt , t , wv ]
 
 #           x1 = [ (v,mwp @ v.co.to_4d(),mw @ v.co) for v in verts ]

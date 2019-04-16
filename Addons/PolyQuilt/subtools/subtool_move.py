@@ -31,7 +31,7 @@ class SubToolMove(SubTool) :
             if self.currentTarget.isVert :# and ( self.currentTarget.element.is_manifold is False or self.currentTarget.element.is_boundary )  :
                 tmp = self.subTarget
                 ignore = [self.currentTarget.element]
-                ignore.extend( self.currentTarget.element.link_faces )
+#               ignore.extend( self.currentTarget.element.link_faces )
                 ignore.extend( self.currentTarget.element.link_edges )
 #                for face in self.currentTarget.element.link_faces :
 #                    ignore.extend( face.verts )
@@ -63,5 +63,6 @@ class SubToolMove(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
+        self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight()  , self.preferences )
+        self.subTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
     

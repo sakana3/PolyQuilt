@@ -135,19 +135,19 @@ class SubToolMakePoly(SubTool) :
         if self.currentTarget.isNotEmpty :
             self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
 
-            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size* dpm() , color )
+            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size , color )
 
             if self.currentTarget.element == self.mekePolyList[-1] :
-                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 * dpm() , self.color_create() , True )
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_create() , True )
             elif self.currentTarget.element in self.mekePolyList:
-                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 * dpm(), self.color_delete() , True )
+                draw_util.draw_pivot2D(  lp , self.preferences.highlight_vertex_size * 1.5 , self.color_delete() , True )
         else :
-            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size* dpm() , self.color_create() )
+            draw_util.draw_pivot2D( lp , self.preferences.highlight_vertex_size , self.color_create() )
 
-        draw_util.drawElementsHilight( self.bmo.obj , self.mekePolyList , self.preferences.highlight_vertex_size* dpm() , self.color_create() )
+        draw_util.drawElementsHilight( self.bmo.obj , self.mekePolyList , self.preferences.highlight_vertex_size , self.color_create() )
 
         if self.EdgeLoops != None :
-            draw_util.drawElementsHilight( self.bmo.obj , self.EdgeLoops , self.preferences.highlight_vertex_size* dpm() , self.color_delete() )
+            draw_util.drawElementsHilight( self.bmo.obj , self.EdgeLoops , self.preferences.highlight_vertex_size , self.color_delete() )
 
     def AddVert( self , vert ) :
         ret = True

@@ -52,7 +52,7 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glDisable(bgl.GL_BLEND)
 
 def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
-    r = radius
+    r = radius * dpm()
     if isWire is False :
         verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) )
         shader2D.bind()
@@ -173,7 +173,7 @@ def drawElementHilight( obj , element, radius , color = (1,1,1,1) ) :
 
 def drawElementsHilight3D( obj , elements, radius,width ,alpha, color = (1,1,1,1) ) :
     for element in elements :
-        drawElementHilight(obj , element, radius ,width,alpha, color)
+        drawElementHilight3D(obj , element, radius ,width,alpha, color)
 
 def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
     bgl.glEnable(bgl.GL_BLEND)
