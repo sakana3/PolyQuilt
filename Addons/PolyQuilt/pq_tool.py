@@ -9,7 +9,7 @@ class ToolPolyQuilt(WorkSpaceTool):
     bl_idname = "mesh_tool.poly_quilt"
     bl_label = "PolyQuilt"
     bl_description = ( "Lowpoly Tool" )
-    bl_icon = "ops.mesh.polybuild_hover"
+    bl_icon = bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_icon")
     bl_widget = "MESH_GGT_PQ_Preselect"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'},None) ,
