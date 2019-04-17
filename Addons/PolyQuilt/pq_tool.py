@@ -19,7 +19,7 @@ class ToolPolyQuilt(WorkSpaceTool):
     def draw_settings(context, layout, tool):
         props = tool.operator_properties("mesh.poly_quilt")
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
-        layout.prop(props, "geometry_type" , text = "Make", toggle = True , expand = True  )
+        layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
         layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 

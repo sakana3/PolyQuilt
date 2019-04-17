@@ -16,7 +16,7 @@ from bpy.types import AddonPreferences
 
 __all__ = [
     "PolyQuiltPreferences" ,
-    "PQ_OT_SetupLeftMouseDownToClick",
+    "PQ_OT_SetupUnityLikeKeymap",
     "PQ_OT_CheckAddonUpdate" ,
     "PQ_OT_UpdateAddon" ,
     "register_updater"
@@ -40,7 +40,7 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
     bl_description = "Update Add-on"
     bl_options = {'REGISTER', 'UNDO'}
 
-    branch_name = StringProperty(
+    branch_name : StringProperty(
         name="Branch Name",
         description="Branch name to update",
         default="",
@@ -140,14 +140,14 @@ class PolyQuiltPreferences(AddonPreferences):
     highlight_vertex_size : FloatProperty(
         name="Highlight Vertex Size",
         description="Highlight Vertex Size",
-        default= 1.5,
+        default= 1.25,
         min=0.5,
         max=8.0)
 
     highlight_line_width : FloatProperty(
         name="Highlight Line Width",
         description="Highlight Line Width",
-        default=3.0,
+        default=2.0,
         min=1.0,
         max=10.0)        
 
@@ -219,17 +219,17 @@ class PolyQuiltPreferences(AddonPreferences):
             icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded
             else 'DISCLOSURE_TRI_RIGHT')
         if self.extra_setting_expanded : 
-            layout.row().prop(self, "is_debug" , text = "Debug")
-
-            self.draw_updater_ui()            
+            self.draw_updater_ui(layout)            
             col = layout.column()
             col.scale_y = 2            
-            col.operator(PQ_OT_SetupLeftMouseDownToClick.bl_idname,
-                        text="Setup metaseq like Keymap(experimental)",
+            col.operator(PQ_OT_SetupUnityLikeKeymap.bl_idname,
+                        text="Setup Unity like Keymap(experimental)",
                         icon='MONKEY')
+            col = layout.column()
+            col.scale_y = 1            
+            layout.row().prop(self, "is_debug" , text = "Debug")
 
-    def draw_updater_ui(self):
-        layout = self.layout
+    def draw_updater_ui(self,layout):
         updater = AddonUpdatorManager.get_instance()
 
         layout.separator()
@@ -282,10 +282,10 @@ class PolyQuiltPreferences(AddonPreferences):
 
 
 
-class PQ_OT_SetupLeftMouseDownToClick(bpy.types.Operator) :
-    bl_idname = "addon.setup_leftmouse_down_to_click"
-    bl_label = "SetupLeftMouse"
-    bl_description = "Setup Left Mouse Click"
+class PQ_OT_SetupUnityLikeKeymap(bpy.types.Operator) :
+    bl_idname = "addon.set_unity_like_keymap"
+    bl_label = "SetupUnityLikeKeymap"
+    bl_description = "Setup Unity Like Keymap"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -298,12 +298,19 @@ class PQ_OT_SetupLeftMouseDownToClick(bpy.types.Operator) :
         for keymap in context.window_manager.keyconfigs.user.keymaps:                        
             if keymap.space_type == 'VIEW_3D':
                 for key in keymap.keymap_items:
-                    if True not in [ key.any , key.alt , key.ctrl ,key.shift ]:
-                        if key.idname == 'view3d.rotate' and key.map_type == 'MOUSE' :
-                            key.type == 'RIGHTMOUSE'
-                            key.value = 'CLICK_DRAG'
-                        elif key.idname == 'view3d.move' and key.map_type == 'MOUSE' :
-                            key.type == 'MIDDLEMOUSE'
-                            key.value = 'CLICK_DRAG'
+                    if key.idname == 'view3d.rotate' and key.map_type == 'MOUSE' :
+                        key.type = 'RIGHTMOUSE'
+                        key.value = 'CLICK_DRAG'
+                        key.any = False
+                        key.alt = False
+                        key.ctrl = False
+                        key.shift = False
+                    elif key.idname == 'view3d.move' and key.map_type == 'MOUSE' :
+                        key.type = 'MIDDLEMOUSE'
+                        key.value = 'CLICK_DRAG'
+                        key.any = False
+                        key.alt = False
+                        key.ctrl = False
+                        key.shift = False
 
         return {'FINISHED'}

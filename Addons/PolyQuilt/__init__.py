@@ -33,7 +33,7 @@ classes = (
     PQ_Gizmo_Preselect ,
     PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,
-    PQ_OT_SetupLeftMouseDownToClick ,
+    PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
     PQ_OT_CheckAddonUpdate ,
     PQ_OT_UpdateAddon
