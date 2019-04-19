@@ -1,3 +1,16 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import bpy
 import bmesh
 import math
@@ -91,10 +104,9 @@ class QMeshHighlight :
         return [ ElementItem( i[0] , i[1] , i[2] ) for i in r ] 
 
     def PickFace( self ,coord , ignore = [] ) -> ElementItem :
-        ray_origin_obj , ray_direction_obj = handleutility.calc_object_space_ray( bpy.context , self.pqo.obj , coord )
-
-        pos,nrm,index,dist = self.pqo.btree.ray_cast( ray_origin_obj , ray_direction_obj )
-        prePos = ray_origin_obj
+        ray = handleutility.Ray.from_screen( bpy.context , coord ).to_object_space( self.pqo.obj )
+        pos,nrm,index,dist = self.pqo.btree.ray_cast( ray.origin , ray.vector )
+        prePos = ray.origin
         while( index is not None ) :
             face =  self.pqo.bm.faces[index]
             if (prePos -pos).length < 0.00001 :
@@ -109,13 +121,14 @@ class QMeshHighlight :
 
     def CollectEdge( self ,coord , radius : float , ignore = [] ) -> ElementItem :
         p = Vector( coord )
-        ray_origin , ray_direction = handleutility.calc_ray( bpy.context , coord )
         viewPosEdge = self.viewPosEdges
-
+        ray = handleutility.Ray.from_screen( bpy.context , coord )
+        ray_distance = ray.distance
+        location_3d_to_region_2d = handleutility.location_3d_to_region_2d
         def Conv( edge ) -> ElementItem :
-            h0 , h1 , d = handleutility.RayDistAndPos( edge[3] , (edge[3]-edge[4]).normalized() , ray_origin , ray_direction )
-            c = handleutility.location_3d_to_region_2d(h0)
-            return ElementItem( edge[0] , c , h0 , d )
+            h0 , h1 , d = ray_distance( handleutility.Ray( edge[3] , (edge[3]-edge[4]) ) )
+            c = location_3d_to_region_2d(h0)
+            return ElementItem( edge[0] , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d
         r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]

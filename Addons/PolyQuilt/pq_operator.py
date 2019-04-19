@@ -63,6 +63,17 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='OBJ',
     )
 
+    move_type : bpy.props.EnumProperty(
+        name="Geometry Type",
+        description="Move Type.",
+        items=(('FREE', "Free", ""),
+               ('X', "X", ""),
+               ('Y' , "Y", "" ),
+               ('Z', "Z", ""),
+               ('NORMAL', "Normal", "")
+            ),
+        default='FREE',
+    )
 
     radius : bpy.props.FloatProperty(
               name = "radius" ,

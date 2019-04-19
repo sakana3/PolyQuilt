@@ -1,3 +1,16 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import bpy
 import bmesh
 import math
@@ -28,6 +41,17 @@ class ElementItem :
     @property
     def coord(self) -> Vector :
         return self.__coord
+
+    @property
+    def normal(self) -> Vector :
+        if self.isVert :
+            return self.__element.normal
+        if self.isEdge :
+            return ( self.__element.verts[0].normal + self.__element.verts[1].normal ) * 0.5
+        if self.isFace :
+            return self.__element.normal
+
+        return Vector(1,0,0)
 
     @property
     def dist(self) -> float:

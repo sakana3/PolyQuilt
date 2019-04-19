@@ -1,3 +1,16 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import sys
 import bpy
 import blf
@@ -51,26 +64,13 @@ class SubToolKnife(SubTool) :
         self.CutEdgePos = [ p for p in self.CutEdgePos if p != None ]
 
     def DoKnife( self ,context,startPos , endPos ) :
-        rv3d = context.space_data.region_3d    
-        region = context.region
-
-        pc = handleutility.region_2d_to_origin_3d(region, rv3d, startPos)
-        no = handleutility.region_2d_to_vector_3d(region, rv3d, startPos)
-        p0 = handleutility.region_2d_to_location_3d(region, rv3d, startPos, no)
-        p1 = handleutility.region_2d_to_location_3d(region, rv3d, endPos, no)
-        p2 = handleutility.region_2d_to_location_3d(region, rv3d, endPos, no * 2)
-        t0 = (p1-p2)
-        t1 = (p0-p1)
-        t =  t0.cross( t1 )
-        pn = t.normalized()
+        plane = handleutility.Plane.from_screen_slice( context,startPos , endPos ).to_object_space( self.bmo.obj )
 
         bm = self.bmo.bm
         edges = self.bmo.highlight.viewPosEdges
         intersect = mathutils.geometry.intersect_line_line_2d
         cutEdge = [ edge[0] for edge in edges if intersect( edge[1], edge[2] , startPos, endPos) is not None ]
 
-        co , no = handleutility.calc_object_space( self.bmo.obj , p0 , pn )        
-
         elements = cutEdge[:] + bm.faces[:]
-        bmesh.ops.bisect_plane(bm,geom=elements,dist=0.00000001,plane_co=co,plane_no=no ,use_snap_center=False,clear_outer=False,clear_inner=False)
+        bmesh.ops.bisect_plane(bm,geom=elements,dist=0.00000001,plane_co= plane.origin ,plane_no= plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
             

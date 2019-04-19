@@ -1,3 +1,16 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import bpy
 import bgl
 import blf
@@ -13,6 +26,95 @@ from mathutils import *
 
 dpi = bpy.context.preferences.system.dpi / 100
 
+class Plane :
+    def __init__( self , origin , vector ) :
+        self.origin = Vector( origin )
+        self.vector = vector
+        self.vector.normalize()
+
+    @staticmethod
+    def from_screen( context , origin ) :
+        rv3d = context.space_data.region_3d
+        vector = -rv3d.view_matrix.inverted().col[2].xyz
+        vector.normalize()
+        return Plane( origin , vector )
+
+    def from_screen_slice( context , startPos , endPos ) :
+        rv3d = context.space_data.region_3d    
+        region = context.region
+#       pc = region_2d_to_origin_3d(region, rv3d, startPos)
+        no = region_2d_to_vector_3d(region, rv3d, startPos)
+        p0 = region_2d_to_location_3d(region, rv3d, startPos, no)
+        p1 = region_2d_to_location_3d(region, rv3d, endPos, no)
+        p2 = region_2d_to_location_3d(region, rv3d, endPos, no * 2)
+        t0 = (p1-p2)
+        t1 = (p0-p1)
+        t =  t0.cross( t1 )
+
+        return Plane( p0 , t )
+
+
+    #RayとPlaneの交点を求める
+    def intersect_ray( self , ray ) :
+        d = self.origin.dot( -self.vector )
+        t = -(d + ray.origin.z * self.vector.z + ray.origin.y * self.vector.y + ray.origin.x * self.vector.x) / (ray.vector.z * self.vector.z + ray.vector.y * self.vector.y + ray.vector.x * self.vector.x)
+        x = ray.origin + ray.vector * t
+        return x
+
+    def to_object_space( self , obj ) :
+        matrix = obj.matrix_world
+        origin_obj = matrix.inverted() @ self.origin
+        vector_obj = matrix.transposed().to_3x3() @ self.vector
+        return Ray( origin_obj , vector_obj )
+
+class Ray :
+    def __init__( self , origin , vector  ) :
+        self.origin = Vector( origin )
+        self.vector = vector
+        self.vector.normalize()
+
+    @staticmethod
+    def from_screen( context , coord ) :
+        rv3d = context.space_data.region_3d    
+        region = context.region
+        origin = region_2d_to_origin_3d(region, rv3d, coord)
+        vector = region_2d_to_vector_3d(region, rv3d, coord)
+        return Ray(origin,vector)
+    
+    def to_object_space( self , obj ) :
+        matrix_inv = obj.matrix_world.inverted()
+        target = self.origin + self.vector
+        ray_origin_obj = matrix_inv @ self.origin
+        ray_target_obj = matrix_inv @ target
+        ray_direction_obj = ray_target_obj - ray_origin_obj
+
+        return Ray( ray_origin_obj , ray_direction_obj )
+
+    def to_world_space( self , obj ) :
+        matrix = obj.matrix_world()
+        target = self.origin + self.vector
+        ray_origin_obj = matrix @ self.origin
+        ray_target_obj = matrix @ target
+        ray_direction_obj = ray_target_obj - ray_origin_obj
+
+        return Ray( ray_origin_obj , ray_direction_obj )
+
+    # RayとRayの一番近い距離
+    def distance( self , ray ) :
+        if self.vector.cross(ray.vector).length_squared < 0.000001 :
+            return None,None, ray.origin.cross(self.origin).length
+
+        Dv = self.vector.dot(ray.vector)
+        D1 = (ray.origin-self.origin).dot(self.vector)
+        D2 = (ray.origin-self.origin).dot(ray.vector)
+
+        t1 = ( D1 - D2 * Dv ) / ( 1.0 - Dv * Dv )
+        t2 = ( D2 - D1 * Dv ) / ( Dv * Dv - 1.0 )
+
+        Q1 = self.origin + self.vector * t1
+        Q2 = ray.origin + ray.vector * t2
+
+        return Q1,Q2,(Q2 - Q1).length
 
 def region_2d_to_vector_3d(region, rv3d, coord):
     """
@@ -185,13 +287,6 @@ def TransformBMVerts( obj , verts ) :
 
     return vp
 
-#RayとPlaneの交点を求める
-def IntersectPlaneToRay( planeP : Vector  , planeN : Vector , rayP: Vector  ,rayD : Vector ) :
-    d = planeP.dot( -planeN )
-    t = -(d + rayP.z * planeN.z + rayP.y * planeN.y + rayP.x * planeN.x) / (rayD.z * planeN.z + rayD.y * planeN.y + rayD.x * planeN.x)
-    x = rayP + rayD * t
-
-    return x
 
 def getViewDir() :
     rv3d = bpy.context.space_data.region_3d
@@ -201,18 +296,9 @@ def getViewDir() :
 
 # ビューポート平面上の点を計算する
 def CalcPositionFromRegion( pos , pivot : Vector ):
-    region = bpy.context.region
-    rv3d = bpy.context.space_data.region_3d
-
-    view_dir = -rv3d.view_matrix.inverted().col[2].xyz
-    view_dir.normalize()
-#   ray_vector = bpy_extras.view3d_utils.region_2d_to_vector_3d(region, rv3d, pos)
-#   ray_origin = bpy_extras.view3d_utils.region_2d_to_origin_3d(region, rv3d, pos)
-    ray_vector = region_2d_to_vector_3d(region, rv3d, pos)
-    ray_origin = region_2d_to_origin_3d(region, rv3d, pos)
-    
-    p = IntersectPlaneToRay( pivot , -view_dir , ray_origin , ray_vector )
-
+    plane = Plane.from_screen( bpy.context , pivot )
+    ray = Ray.from_screen( bpy.context , pos )
+    p = plane.intersect_ray( ray )
     return p
 
 def MovePointFromRegion( obj , element , orig , pos ):
@@ -239,72 +325,3 @@ def MakePointFromRegion( obj , bm , pos , pivot : Vector ):
     vert = bm.verts.new( p )
 
     return vert
-
-def calc_object_space( obj , origin , vector ) :
-    matrix = obj.matrix_world
-    origin_obj = matrix.inverted() @ origin
-    vector_obj = matrix.transposed().to_3x3() @ vector
-    return origin_obj , vector_obj
-
-
-def calc_ray( context , coord ) :
-    rv3d = context.space_data.region_3d    
-    region = context.region
-
-#   view_vector = bpy_extras.view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-#   ray_origin = bpy_extras.view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
-
-    view_vector = region_2d_to_vector_3d(region, rv3d, coord)
-    ray_origin = region_2d_to_origin_3d(region, rv3d, coord)
-
-    return ray_origin , view_vector
-
-
-def calc_object_space_ray( context , obj , coord ) :
-    ray_origin , view_vector = calc_ray(context,coord)
-    return calc_object_space(obj,ray_origin,view_vector)
-
-
-# 点Pと線(AB)の距離
-# # https://tokibito.hatenablog.com/entry/20121227/1356581559
-def Distance_P2L_NP( P : Vector , A : Vector , B : Vector ) :
-    u = numpy.array([B.x - A.x, B.y - A.y])
-    v = numpy.array([P.x - A.x, P.y - A.y])
-    L = abs(numpy.cross(u, v) / numpy.linalg.norm(u))
-    return L
-
-def Distance_P2L( P : Vector , A : Vector , B : Vector ) ->float :
-    a = B - A
-    t = A - P
-    r = a.length_squared
-    tt = -a.dot(t)
-    if tt < 0 :
-        return t.length_squared
-    elif tt > r :
-        return (B-P).length_squared
-
-    f = a.x - a.y
-    return (f*f)/r
-
-
-# RayとRayの一番近い距離
-# https://stackoverflow.com/questions/29188686/finding-the-intersect-location-of-two-rays
-# http://marupeke296.com/COL_3D_No19_LinesDistAndPos.html
-def RayDistAndPos( p1 : Vector , v1 : Vector  , p2 : Vector  , v2 : Vector  ) :
-    if v1.cross(v2).length_squared < 0.000001 :
-        return None,None, p1.cross(p2).length
-
-    Dv = v1.dot(v2)
-    D1 = (p2-p1).dot(v1)
-    D2 = (p2-p1).dot(v2)
-
-    t1 = ( D1 - D2 * Dv ) / ( 1.0 - Dv * Dv )
-    t2 = ( D2 - D1 * Dv ) / ( Dv * Dv - 1.0 )
-
-    Q1 = p1 + v1 * t1
-    Q2 = p2 + v2 * t2
-
-    return Q1,Q2,(Q2 - Q1).length
-
-
-

@@ -1,6 +1,20 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import bpy
 from bpy.types import WorkSpaceTool
+from bpy.utils.toolsystem import ToolDef
 
 class ToolPolyQuilt(WorkSpaceTool):
     bl_space_type='VIEW_3D'
@@ -21,6 +35,120 @@ class ToolPolyQuilt(WorkSpaceTool):
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
         layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
         layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
+        layout.prop(props, "move_type" , text = "Move", toggle = True )
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
 
+km_tool_snap_utilities_line = "3D View Tool: Edit Mesh, PolyQuilt"
+
+
+@ToolDef.from_fn
+def tool_poly_quilt():
+    def draw_settings(context, layout, tool):
+        props = tool.operator_properties("mesh.poly_quilt")
+#       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
+        layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
+        layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
+        layout.prop(props, "move_type" , text = "Move", toggle = True )
+#       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
+
+    icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+
+    return dict(
+        idname="mesh_tool.poly_quilt",
+        label="PolyQuilt",
+        description=(
+            "Lowpoly Tool"
+        ),
+        icon=os.path.join(icons_dir, "addon.poly_quilt_icon"),
+        widget="MESH_GGT_PQ_Preselect",
+        keymap = km_tool_snap_utilities_line ,      
+        draw_settings=draw_settings,
+    )
+
+def km_mesh_snap_utilities_operators():
+    return (
+        "Mesh",
+        {"space_type": 'EMPTY', "region_type": 'WINDOW'},
+        {"items": [
+            ("mesh_tool.poly_quilt", {"type": 'Q', "value": 'PRESS'},
+             {"properties": [("wait_for_input", True)],
+              "active":False}),
+        ]},
+    )
+
+
+def km_3d_view_tool_snap_utilities_line(tool_mouse):
+    return (
+        km_tool_snap_utilities_line,
+        {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
+        {"items": [
+            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS'},
+             {"properties": [("wait_for_input", False)]}),
+        ]},
+    )
+
+def km_view3d_empty(km_name):
+    return (
+        km_name,
+        {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
+        {"items": []},
+    )
+
+def generate_empty_snap_utilities_tools_keymaps():
+    return [
+        #km_view3d_empty(km_snap_utilities_modal_keymap),
+
+        km_view3d_empty(km_tool_snap_utilities_line),
+    ]
+
+def generate_snap_utilities_global_keymaps(tool_mouse = 'LEFTMOUSE'):
+    return [
+        km_mesh_snap_utilities_operators(),
+    ]
+
+def generate_snap_utilities_tools_keymaps(tool_mouse = 'LEFTMOUSE'):
+    return [
+        # Tool System.
+        km_3d_view_tool_snap_utilities_line(tool_mouse),
+    ]
+
+def generate_snap_utilities_keymaps(tool_mouse = 'LEFTMOUSE'):
+    return [
+        km_mesh_snap_utilities_operators(),
+
+        # Modal maps.
+        #km_snap_utilities_modal_map(),
+
+        # Tool System.
+        km_3d_view_tool_snap_utilities_line(tool_mouse),
+    ]
+
+
+
+def register_keymaps():
+    keyconfigs = bpy.context.window_manager.keyconfigs
+    kc_defaultconf = keyconfigs.default
+    kc_addonconf   = keyconfigs.addon
+
+    # TODO: find the user defined tool_mouse.
+    from bl_keymap_utils.io import keyconfig_init_from_data
+    keyconfig_init_from_data(kc_defaultconf, generate_empty_snap_utilities_tools_keymaps())
+    keyconfig_init_from_data(kc_addonconf, generate_snap_utilities_keymaps())
+
+    #snap_modalkeymap = kc_addonconf.keymaps.find(keys.km_snap_utilities_modal_keymap)
+    #snap_modalkeymap.assign("MESH_OT_snap_utilities_line")
+
+
+def unregister_keymaps():
+    keyconfigs = bpy.context.window_manager.keyconfigs
+    defaultmap = keyconfigs.get("blender").keymaps
+    addonmap   = keyconfigs.get("blender addon").keymaps
+
+    for keyconfig_data in generate_snap_utilities_keymaps():
+        km_name, km_args, km_content = keyconfig_data
+        addonmap.remove(addonmap.find(km_name, **km_args))
+
+    for keyconfig_data in generate_empty_snap_utilities_tools_keymaps():
+        km_name, km_args, km_content = keyconfig_data
+        defaultmap.remove(defaultmap.find(km_name, **km_args))
