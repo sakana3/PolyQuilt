@@ -155,4 +155,8 @@ class SubToolMove(SubTool) :
         for vert in self.target_verts :
             p =  self.bmo.obj.matrix_world @vert[1] + move
             vert[0].co = self.bmo.obj.matrix_world.inverted() @ p
+#           self.bmo.set_positon( vert[0] , p )
+
+            
+
 

@@ -28,13 +28,14 @@ class QMeshOperators :
         self.mesh = obj.data
         self.bm = bmesh.from_edit_mesh(self.mesh)
         self.current_matrix = None
-        self.__btree = None        
+        self.__btree = None
 
     @property
     def btree(self):
         if self.__btree == None :
             self.__btree = bvhtree.BVHTree.FromBMesh(self.bm)
         return self.__btree
+
 
     @property
     def verts(self): 
@@ -143,3 +144,30 @@ class QMeshOperators :
 
     def weld( self , targetmap ) :
         bmesh.ops.weld_verts(self.bm,targetmap)
+
+    def fine_mirror( ElementItem geom )
+        hit = None
+        dist = bpy.context.scene.tool_settings.double_threshold
+        if geon.isVert :
+            co = geom.element.co
+            rco = Vector( (-co.x , co.y , co.z) )
+
+            for vert in bm.verts :
+                po = vert.co
+                len = (co - po).length
+                if len <= dist
+                    hit = vert
+                    break
+        return hit
+
+    def set_positon( vert , pos , is_world = True ) :            
+        if is_world :
+            pos = self.bmo.obj.matrix_world.inverted() @ pos   
+        vert.co = pos
+
+        self.bmo.mesh.use_mirror_x
+
+
+
+
+

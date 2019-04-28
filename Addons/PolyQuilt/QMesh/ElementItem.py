@@ -29,10 +29,15 @@ class ElementItem :
         self.__hitPosition: Vector = hitPosition
         self.__coord: Vector = coord
         self.__dist: float = dist
+        self.__mirror = None
 
     @property
     def element(self):
         return self.__element
+
+    @property
+    def mirror(self):
+        return self.__mirror
 
     @property
     def hitPosition(self) -> Vector :
@@ -111,3 +116,28 @@ class ElementItem :
             draw_util.drawElementHilight( obj , self.element , size , color )
             if self.isEdge :
                 draw_util.draw_pivot2D( self.hitPosition , 0.75 , color )
+
+    def fine_mirror( qmesh : QMesh ) :
+        hit = None
+        dist = bpy.context.scene.tool_settings.double_threshold
+        if self.isVert :
+            co = self.element.co
+            rco = Vector( (-co.x , co.y , co.z) )
+
+            for vert in qmesh.bm.verts :
+                po = vert.co
+                len = (co - po).length
+                if len <= dist
+                    hit = vert
+                    break
+        return hit
+
+    def set_positon( qmesh , vert , pos , is_world = True ) :            
+        if is_world :
+            pos = self.bmo.obj.matrix_world.inverted() @ pos   
+        vert.co = pos
+
+        if qmesh.mesh.use_mirror_x :
+            if self.mirror == None
+                self.__mirror = self.fine_mirror( qmesh )
+            pass
