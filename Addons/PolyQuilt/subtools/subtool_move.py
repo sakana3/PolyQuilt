@@ -137,19 +137,19 @@ class SubToolMove(SubTool) :
 
         if self.operator.fix_to_x_zero and self.currentTarget.is_x_zero:
             plane = handleutility.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
-            plane.origin = self.currentTarget.hitPosition
+            plane.origin = self.startPos
 #           self.move_plane = plane
         if move_type == self.move_type :
             self.move_ray = None
             move_type = 'FREE'
         if move_type == 'X' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (1,0,0) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
             self.move_color = ( 1.0 , 0.0 ,0.0 ,1.0  )
         elif move_type == 'Y' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (0,1,0) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,1,0) ) )
             self.move_color = ( 0.0 , 1.0 ,0.0 ,1.0  )
         elif move_type == 'Z' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (0,0,1) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,0,1) ) )
             self.move_color = ( 0.0 , 0.0 ,1.0 ,1.0  )
         elif move_type == 'NORMAL' :
             self.move_ray = self.normal_ray

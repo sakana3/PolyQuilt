@@ -40,10 +40,8 @@ class SubToolKnife(SubTool) :
             if( self.startPos - self.endPos ).length > 2 :
                 self.CalcKnife( context,self.startPos,self.endPos )
         elif event.type == 'RIGHTMOUSE' :
-            if event.value == 'PRESS' :
-                pass
-            elif event.value == 'RELEASE' :
-                pass
+            if event.value == 'RELEASE' :
+                return 'FINISHED'
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 if self.CutEdge :

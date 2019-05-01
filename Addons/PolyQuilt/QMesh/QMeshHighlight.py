@@ -51,6 +51,7 @@ class QMeshHighlight :
         self.__viewPosVerts = None
         self.__viewPosEdges = None
 
+
     def UpdateView( self ,context , forced = False ):
         rv3d = context.space_data.region_3d
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
@@ -58,19 +59,15 @@ class QMeshHighlight :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            world_matrix = self.pqo.obj.matrix_world
+            matrix_world = self.pqo.obj.matrix_world
             perspective_matrix = rv3d.perspective_matrix
 
+#https://blender.stackexchange.com/questions/139511/multiply-4x4-matrix-and-array-of-3d-vectors-using-numpy/139517#139517
             verts = self.pqo.bm.verts
-#            mw = np.array( mw )
-#            mp = numpy.array( perspective_matrix )
-#            vo = numpy.array( [ (p.co.x,p.co.y,p.co.z,1.0) for p in verts] )
-#            vw = mw @ (vo.T)
-#            vp = mp @ (vw.T)
 
             def ProjVert( vt ) :
                 v = vt.co
-                wv = world_matrix @ v
+                wv = matrix_world @ v
                 pv = perspective_matrix @ wv.to_4d()
                 if pv.w < 0.0 :
                     return None
@@ -79,8 +76,6 @@ class QMeshHighlight :
 
                 return [ vt , t , wv ]
 
-#           x1 = [ (v,mwp @ v.co.to_4d(),mw @ v.co) for v in verts ]
-#           viewPos = [ (vs[0], Vector((halfW+halfW*vs[1].x/vs[1].w,halfH+halfH*vs[1].y/vs[1].w)),vs[2]) if vs[1].w > 0.0 else None for vs in x1 ]
             viewPos = [ ProjVert(p) for p in verts ]
 
             def ProjEdge( e) :

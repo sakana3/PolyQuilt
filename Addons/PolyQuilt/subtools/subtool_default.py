@@ -95,7 +95,7 @@ class SubToolDefault(SubTool) :
             self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
 
     def OnEnterSubTool( self ,context,subTool ):
-        self.currentTarget = None
+        self.currentTarget = ElementItem.Empty()
         self.LMBEvent.Reset(context)
 
     def OnExitSubTool( self ,context,subTool ):
