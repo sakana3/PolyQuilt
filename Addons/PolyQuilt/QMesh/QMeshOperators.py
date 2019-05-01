@@ -186,10 +186,6 @@ class QMeshOperators :
     # BMesh Operators
 
     def dissolve_vert( self , vert  , use_verts = False , use_face_split = False , use_boundary_tear = False, is_mirror = None  ) :
-
-        print( "" + str(vert.is_manifold) + "|" + str(vert.is_boundary) )
-#       print( vert.is_boundary )
-
         if vert.is_manifold == False :
             self.Remove( vert , is_mirror )
         else :
