@@ -36,6 +36,7 @@ class ToolPolyQuilt(WorkSpaceTool):
         layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
         layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
         layout.prop(props, "move_type" , text = "Move", toggle = True )
+        layout.prop(props, "fix_to_x_zero" , text = "Fix X=0", toggle = True )
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
 
@@ -50,7 +51,8 @@ def tool_poly_quilt():
         layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
         layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
         layout.prop(props, "move_type" , text = "Move", toggle = True )
-#       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
+        layout.prop(props, "fix_to_x_zero" , text = "Fix X=0" )
+       #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
     icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 

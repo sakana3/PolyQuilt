@@ -58,7 +58,7 @@ class SubToolEdgeSlice(SubTool) :
 
             draw_util.drawElementHilight( self.bmo.obj , self.currentEdge, 4 , self.color_split(0.25) )
             pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
-            pos = self.bmo.object_to_world_position( pos )
+            pos = self.bmo.local_to_world_pos( pos )
             pos = handleutility.location_3d_to_region_2d( pos )
             draw_util.draw_pivot2D( pos , self.preferences.highlight_vertex_size , self.color_split(0.25) )
 
@@ -82,7 +82,7 @@ class SubToolEdgeSlice(SubTool) :
             return 0.0
 
 
-        ray = handleutility.Ray.from_screen( context , coord ).to_object_space( self.bmo.obj )
+        ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         h0 , h1 , d = ray.distance( handleutility.Ray( v0 , (v1-v0) ) )
 
         dt =  (v0-v1).length

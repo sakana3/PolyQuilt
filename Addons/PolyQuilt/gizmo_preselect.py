@@ -34,7 +34,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         PQ_Gizmo_Preselect.instance = self
 
     def init( self , context ) :
-        self.bo = QMesh( context.active_object )
+        self.bo = QMesh( context.active_object , self.preferences )
         self.bo.UpdateView( context )
 
     def exit( self , context, cancel) :
@@ -45,7 +45,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def test_select(self, context, location):
         if self.bo == None :
-            self.bo = QMesh( context.active_object )
+            self.bo = QMesh( context.active_object , self.preferences )
         self.bo.CheckValid()
         self.bo.UpdateView( context )
         element = self.bo.PickElement( location , self.preferences.distance_to_highlight )

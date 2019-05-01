@@ -53,7 +53,6 @@ class Plane :
 
         return Plane( p0 , t )
 
-
     #RayとPlaneの交点を求める
     def intersect_ray( self , ray ) :
         d = self.origin.dot( -self.vector )
@@ -61,11 +60,41 @@ class Plane :
         x = ray.origin + ray.vector * t
         return x
 
-    def to_object_space( self , obj ) :
+    def intersect_line( self , p0 :Vector , p1 : Vector ) :
+        d0 = mathutils.geometry.distance_point_to_plane(p0 , self.origin , self.vector )
+        d1 = mathutils.geometry.distance_point_to_plane(p1 , self.origin , self.vector )
+
+        if ( d0 > 0 and d1 > 0 ) or ( d0 < 0 and d1 < 0 ):
+            return None
+
+        v = mathutils.geometry.intersect_line_plane( p0 , p1 , self.origin , self.vector , False )
+        return  v
+
+    def distance_point( self , pt :Vector ) :
+        d = mathutils.geometry.distance_point_to_plane(pt , self.origin , self.vector )
+        return  d
+
+    def world_to_object( self , obj ) :
         matrix = obj.matrix_world
         origin_obj = matrix.inverted() @ self.origin
         vector_obj = matrix.transposed().to_3x3() @ self.vector
-        return Ray( origin_obj , vector_obj )
+        return Plane( origin_obj , vector_obj )
+
+    def object_to_world( self , obj ) :
+        matrix = obj.matrix_world
+        origin_obj = matrix @ self.origin
+        vector_obj = matrix.inverted().transposed().to_3x3() @ self.vector
+        return Plane( origin_obj , vector_obj )
+
+    def reverse( sefl ) :
+        self.vector = -self.vector
+
+    def reversed( sefl ) :
+        return Plane( self.origin , - self.vector )
+
+    def x_mirror(self) :
+        self.origin = Vector( (-self.origin.x,self.origin.y,self.origin.z) )
+        self.vector = Vector( (-self.vector.x,self.vector.y,self.vector.z) )
 
 class Ray :
     def __init__( self , origin , vector  ) :
@@ -81,7 +110,7 @@ class Ray :
         vector = region_2d_to_vector_3d(region, rv3d, coord)
         return Ray(origin,vector)
     
-    def to_object_space( self , obj ) :
+    def world_to_object( self , obj ) :
         matrix_inv = obj.matrix_world.inverted()
         target = self.origin + self.vector
         ray_origin_obj = matrix_inv @ self.origin
@@ -90,7 +119,7 @@ class Ray :
 
         return Ray( ray_origin_obj , ray_direction_obj )
 
-    def to_world_space( self , obj ) :
+    def object_to_world( self , obj ) :
         matrix = obj.matrix_world()
         target = self.origin + self.vector
         ray_origin_obj = matrix @ self.origin
@@ -270,18 +299,20 @@ def location_3d_to_region_2d( coord ) :
         return None
 
 def TransformBMVerts( obj , verts ) : 
-    Item = collections.namedtuple('Item', ('vert', 'region' ))
+    Item = collections.namedtuple('Item', ('vert', 'region' , 'world' ))
     region = bpy.context.region
     rv3d = bpy.context.space_data.region_3d    
 
     halfW = region.width / 2.0
     halfH = region.height / 2.0
-    matrix = rv3d.perspective_matrix @ obj.matrix_world
+    matrix_world = obj.matrix_world
+    perspective_matrix = rv3d.perspective_matrix
 
     def Proj2( vt ) :
-        v = matrix @ Vector((vt.co[0], vt.co[1], vt.co[2], 1.0))
+        w = matrix_world @ vt.co 
+        v = perspective_matrix @ Vector((w[0], w[1], w[2], 1.0))
         t = None if v.w < 0 else Vector( (halfW+halfW*(v.x/v.w) , halfH+halfH*(v.y/v.w) , ))
-        return Item( vert = vt , region = t )
+        return Item( vert = vt , region = t , world = w )
 
     vp = [ Proj2(p) for p in verts ]
 
@@ -325,3 +356,4 @@ def MakePointFromRegion( obj , bm , pos , pivot : Vector ):
     vert = bm.verts.new( p )
 
     return vert
+

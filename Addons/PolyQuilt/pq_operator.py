@@ -36,7 +36,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     bl_idname = "mesh.poly_quilt"
     bl_label = "PolyQuilt"
     bl_options = {'REGISTER' , 'UNDO'}
-    __draw_handle = None
+    __draw_handle2D = None
+    __draw_handle3D = None
 
     backface : bpy.props.BoolProperty(
             name="backface",
@@ -74,6 +75,12 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             ),
         default='FREE',
     )
+
+    fix_to_x_zero : bpy.props.BoolProperty(
+              name = "fix_to_x_zero" ,
+              default = False ,
+              description="fix_to_x_zero",
+            )
 
     radius : bpy.props.FloatProperty(
               name = "radius" ,
@@ -136,40 +143,56 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             bpy.context.window.cursor_modal_set( self.currentSubTool.GetCursor() )
             context.window_manager.modal_handler_add(self)
-            MESH_OT_poly_quilt.__draw_handle = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+            MESH_OT_poly_quilt.__draw_handle2D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+            MESH_OT_poly_quilt.__draw_handle3D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
+            
             return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator" + event.type + "|" + event.value )
             return {'CANCELLED'}
-
-    def DrawView3D( self , context ):
-
-        if self.preferences.is_debug :
-            font_id = 0  # XXX, need to find out how best to get this.
-            # draw some text
-            blf.position(font_id, 15, 40, 0)
-            blf.size(font_id, 20, 72)
-            blf.draw(font_id, ">>" + self.debugStr )
-            if self.currentSubTool is not None :
-                blf.position(font_id, 15, 20, 0)
-                blf.size(font_id, 20, 72)
-                blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
-
-        if self.currentSubTool is not None :
-            self.currentSubTool.Draw(context)
 
     def cancel( self , context):
         MESH_OT_poly_quilt.handle_remove()
 
     @staticmethod
     def draw_callback_px(self , context):
-        if self != None :
-            self.DrawView3D( context )
+        try:
+            draw_util.begin2d()
+            if self != None :
+                if self.preferences.is_debug :
+                    font_id = 0  # XXX, need to find out how best to get this.
+                    # draw some text
+                    blf.position(font_id, 15, 40, 0)
+                    blf.size(font_id, 20, 72)
+                    blf.draw(font_id, ">>" + self.debugStr )
+                    if self.currentSubTool is not None :
+                        blf.position(font_id, 15, 20, 0)
+                        blf.size(font_id, 20, 72)
+                        blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
+
+                if self.currentSubTool is not None :
+                    self.currentSubTool.Draw2D(context)
+        except Exception as e:
+            print("Exception:", e.args)
+            MESH_OT_poly_quilt.handle_remove()            
+
+    def draw_callback_3d(self , context):
+        try:
+            if self != None :
+                if self.currentSubTool is not None :
+                    self.currentSubTool.Draw3D(context)
+        except Exception as e:
+            print("Exception:", e.args)
+            MESH_OT_poly_quilt.handle_remove()            
 
     @staticmethod
     def handle_remove():
-        if MESH_OT_poly_quilt.__draw_handle is not None:
-            bpy.types.SpaceView3D.draw_handler_remove( MESH_OT_poly_quilt.__draw_handle, 'WINDOW')
-            MESH_OT_poly_quilt.__draw_handle = None
+        if MESH_OT_poly_quilt.__draw_handle3D is not None:
+            bpy.types.SpaceView3D.draw_handler_remove( MESH_OT_poly_quilt.__draw_handle3D, 'WINDOW')
+            MESH_OT_poly_quilt.__draw_handle3D = None
+
+        if MESH_OT_poly_quilt.__draw_handle2D is not None:
+            bpy.types.SpaceView3D.draw_handler_remove( MESH_OT_poly_quilt.__draw_handle2D, 'WINDOW')
+            MESH_OT_poly_quilt.__draw_handle2D = None            
 
 

@@ -31,8 +31,8 @@ __all__ = ['QMesh']
         
 class QMesh(QMeshOperators) :
 
-    def __init__(self , obj ) :
-        super().__init__(obj)
+    def __init__(self , obj , preferences) :
+        super().__init__(obj, preferences)
         self.highlight = QMeshHighlight(self)
 
     def UpdateMesh( self ) :
@@ -40,7 +40,7 @@ class QMesh(QMeshOperators) :
         self.UpdateView( bpy.context , True )
 
     def UpdateView( self ,context , forced = False ):
-        self.highlight.UpdateView( context , forced )
+        self.highlight.setDirty()
 
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False ) -> ElementItem :
 

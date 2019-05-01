@@ -81,17 +81,18 @@ class SubToolDefault(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        if self.currentTarget.isNotEmpty :
-            color = self.color_highlight()
-            if self.LMBEvent.presureComplite :
-                color = self.color_delete()
-            self.currentTarget.Draw2D( self.bmo.obj , color , self.preferences )
-
         if self.LMBEvent.isPresure :
             if self.currentTarget.isNotEmpty :
                 self.LMBEvent.Draw( self.currentTarget.coord , "Melt")
             else:
                 self.LMBEvent.Draw( None , "Knife")
+
+    def OnDraw3D( self , context  ) :
+        if self.currentTarget.isNotEmpty :
+            color = self.color_highlight()
+            if self.LMBEvent.presureComplite :
+                color = self.color_delete()
+            self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
 
     def OnEnterSubTool( self ,context,subTool ):
         self.currentTarget = None

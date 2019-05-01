@@ -35,13 +35,19 @@ class QMeshHighlight :
 
     @property
     def viewPosVerts(self):
+        if self.__viewPosVerts == None :
+            self.UpdateView( bpy.context , True )
         return self.__viewPosVerts
 
     @property
     def viewPosEdges(self):
+        if self.__viewPosEdges == None :
+            self.UpdateView( bpy.context , True )
         return self.__viewPosEdges
 
     def setDirty( self ) :
+        del self.__viewPosVerts
+        del self.__viewPosEdges
         self.__viewPosVerts = None
         self.__viewPosEdges = None
 
@@ -101,10 +107,10 @@ class QMeshHighlight :
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
         r = sorted( s , key=lambda i:(i[1] - p).length )
-        return [ ElementItem( i[0] , i[1] , i[2] ) for i in r ] 
+        return [ ElementItem( self.pqo ,i[0] , i[1] , i[2] ) for i in r ] 
 
     def PickFace( self ,coord , ignore = [] ) -> ElementItem :
-        ray = handleutility.Ray.from_screen( bpy.context , coord ).to_object_space( self.pqo.obj )
+        ray = handleutility.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
         pos,nrm,index,dist = self.pqo.btree.ray_cast( ray.origin , ray.vector )
         prePos = ray.origin
         while( index is not None ) :
@@ -113,7 +119,7 @@ class QMeshHighlight :
                 break
             prePos = pos
             if face.hide is False and face not in ignore :
-                return ElementItem( face , coord , self.pqo.obj.matrix_world @ pos , dist )
+                return ElementItem( self.pqo , face , coord , self.pqo.obj.matrix_world @ pos , dist )
             pos,nrm,index,dist = self.pqo.btree.ray_cast( pos + ray_direction_obj * 0.000001 , ray_direction_obj )
 
         return ElementItem.Empty()
@@ -128,7 +134,7 @@ class QMeshHighlight :
         def Conv( edge ) -> ElementItem :
             h0 , h1 , d = ray_distance( handleutility.Ray( edge[3] , (edge[3]-edge[4]) ) )
             c = location_3d_to_region_2d(h0)
-            return ElementItem( edge[0] , c , h1 , d )
+            return ElementItem( self.pqo , edge[0] , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d
         r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]
