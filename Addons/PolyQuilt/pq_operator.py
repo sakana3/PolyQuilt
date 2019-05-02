@@ -156,34 +156,26 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     @staticmethod
     def draw_callback_px(self , context):
-        try:
-            draw_util.begin2d()
-            if self != None :
-                if self.preferences.is_debug :
-                    font_id = 0  # XXX, need to find out how best to get this.
-                    # draw some text
-                    blf.position(font_id, 15, 40, 0)
-                    blf.size(font_id, 20, 72)
-                    blf.draw(font_id, ">>" + self.debugStr )
-                    if self.currentSubTool is not None :
-                        blf.position(font_id, 15, 20, 0)
-                        blf.size(font_id, 20, 72)
-                        blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
-
+        draw_util.begin2d()
+        if self != None :
+            if self.preferences.is_debug :
+                font_id = 0  # XXX, need to find out how best to get this.
+                # draw some text
+                blf.position(font_id, 15, 40, 0)
+                blf.size(font_id, 20, 72)
+                blf.draw(font_id, ">>" + self.debugStr )
                 if self.currentSubTool is not None :
-                    self.currentSubTool.Draw2D(context)
-        except Exception as e:
-            print("Exception:", e.args)
-            MESH_OT_poly_quilt.handle_remove()            
+                    blf.position(font_id, 15, 20, 0)
+                    blf.size(font_id, 20, 72)
+                    blf.draw(font_id, self.currentSubTool.Active().name +" > " + self.currentSubTool.Active().debugStr )
+
+            if self.currentSubTool is not None :
+                self.currentSubTool.Draw2D(context)
 
     def draw_callback_3d(self , context):
-        try:
-            if self != None :
-                if self.currentSubTool is not None :
-                    self.currentSubTool.Draw3D(context)
-        except Exception as e:
-            print("Exception:", e.args)
-            MESH_OT_poly_quilt.handle_remove()            
+        if self != None :
+            if self.currentSubTool is not None :
+                self.currentSubTool.Draw3D(context)
 
     @staticmethod
     def handle_remove():

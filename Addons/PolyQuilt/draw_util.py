@@ -117,8 +117,7 @@ def draw_test():
 def begin2d() :
     bgl.glDisable(bgl.GL_DEPTH_TEST)
 
-def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hide_alpha : float = 1.0 ):
-
+def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hide_alpha : float = 1.0 , primitiveType = 'LINE_STRIP' ):
     bgl.glEnable(bgl.GL_LINE_SMOOTH)
     bgl.glLineWidth(width )    
     bgl.glEnable(bgl.GL_BLEND)
@@ -135,13 +134,15 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     shader3Dc.uniform_float("viewProjectionMatrix", matrix)
     shader3Dc.uniform_float("color", color )
 
-    batch = batch_for_shader(shader3Dc, 'LINE_STRIP', {"pos": verts} )
+    batch = batch_for_shader(shader3Dc, primitiveType , {"pos": verts} )
     batch.draw(shader3Dc)
 
     if hide_alpha < 0.99 :
         bgl.glDepthFunc( bgl.GL_GREATER )
         shader3Dc.uniform_float("color", (color[0],color[1],color[2],color[3] * 0.25) )
         batch.draw(shader3Dc)
+
+    del batch
 
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    

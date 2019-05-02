@@ -90,9 +90,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     def poll(cls, context):
         # 自分を使っているツールを探す。
         workspace = context.workspace
-        mode = workspace.tools_mode
         for tool in workspace.tools:
-            if (tool.widget == cls.bl_idname) and (tool.mode == mode):
+            if tool.widget == cls.bl_idname:
                 break
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)

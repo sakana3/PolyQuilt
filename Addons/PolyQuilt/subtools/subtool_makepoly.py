@@ -61,6 +61,7 @@ class SubToolMakePoly(SubTool) :
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
         self.mode = op.geometry_type
         self.EdgeLoops = None
+        self.VertLoops = None
         if self.mode == 'VERT' :
             self.isEnd = True
 
@@ -73,8 +74,11 @@ class SubToolMakePoly(SubTool) :
                 self.isEnd = True
             else :
                 if self.EdgeLoops != None :
-                    self.DoEdgeLoopsRemove( self.EdgeLoops )
+                    self.DoEdgeLoopsRemove( self.EdgeLoops , self.VertLoops )
+                    self.EdgeLoops = None
+                    self.VertLoops = None
                     self.isEnd = True       
+                    self.bmo.UpdateMesh()                    
                 elif self.currentTarget.isEdge :
                     self.currentTarget = self.edge_split( self.currentTarget )
                     self.bmo.UpdateMesh()
@@ -93,8 +97,8 @@ class SubToolMakePoly(SubTool) :
         elif event.type == MBEventType.LongPress :
             if len(self.mekePolyList) <= 1 and self.currentTarget.isVert and self.mekePolyList[-1] != self.currentTarget.element :
                 edge = self.bmo.edges.get( (self.mekePolyList[0] , self.currentTarget.element) )
-                if edge != None :
-                    self.EdgeLoops = self.SelectEdgeLoops( edge )
+                if edge != None and self.EdgeLoops == None :
+                    self.EdgeLoops , self.VertLoops = self.SelectEdgeLoops( edge )
         elif event.type == MBEventType.LongClick :
             if len(self.mekePolyList) <= 1 :
                 self.mode = 'EDGE'
@@ -108,6 +112,7 @@ class SubToolMakePoly(SubTool) :
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore=ignore )
             if tmp != self.currentTarget :
                 self.EdgeLoops = None
+                self.VertLoops = None
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
                 self.currentTarget = ElementItem.Empty()
 
@@ -136,7 +141,9 @@ class SubToolMakePoly(SubTool) :
 
         alpha = self.preferences.highlight_face_alpha
         vertex_size = self.preferences.highlight_vertex_size        
+        width = self.preferences.highlight_line_width
         color = self.color_create()
+
         if l == 1:
             same_edges , same_faces = self.CheckSameFaceAndEdge( self.mekePolyList[0] , self.currentTarget.element )
             if same_edges :
@@ -163,10 +170,10 @@ class SubToolMakePoly(SubTool) :
         else :
             draw_util.draw_pivots3D( (lp,) , vertex_size , self.color_create() )
 
-        draw_util.drawElementsHilight3D( self.bmo.obj , self.mekePolyList , vertex_size ,alpha, self.color_create() )
+        draw_util.drawElementsHilight3D( self.bmo.obj , self.mekePolyList , vertex_size ,width,alpha, self.color_create() )
 
         if self.EdgeLoops != None :
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.EdgeLoops , vertex_size ,alpha, self.color_delete() )
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.EdgeLoops , vertex_size ,width,alpha, self.color_delete() )
 
     def OnDraw( self , context  ) :
         l = len(self.mekePolyList)
@@ -258,29 +265,61 @@ class SubToolMakePoly(SubTool) :
         return same_edges , same_faces
 
     def SelectEdgeLoops( self , startEdge ) :
-        results = [startEdge]
+        edges = []
+        verts = []
+
+        def append( lst , geom ) :
+            if geom not in lst :
+                lst.append(geom)
+                if self.bmo.is_mirror :
+                    mirror =self.bmo.find_mirror( geom )
+                    if mirror :
+                        lst.append( mirror )
+
         for vert in startEdge.verts :
             preEdge = startEdge
             currentV = vert
-            while len(currentV.link_faces) == 4 :
-                fs = { i for i in currentV.link_faces}.intersection( { i for i in preEdge.link_faces } )
-                ff = list( { i for i in currentV.link_faces}.difference(fs) )
-                if len(ff) != 2 and currentV not in ff:
+            while currentV != None :
+                append(edges , preEdge)
+
+                if currentV.is_boundary :
+                    if len( currentV.link_faces )== 2 :
+                        if not any( [ len(f.verts) == 3 for f in currentV.link_faces ] ):
+                            if currentV not in verts :
+                                append(verts , currentV)
                     break
-                nexE = list({ i for i in ff[0].edges }.intersection( {i for i in ff[1].edges} ))
-                if len(nexE) != 1 :
+
+                if len(currentV.link_faces) == 4 :
+                    faces = set(currentV.link_faces ) ^ set(preEdge.link_faces )
+                    if len( faces ) != 2 :
+                        break
+                    faces = list(faces)
+                    share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
+                    if len(share_edges) != 1 :
+                        print(share_edges)                    
+                        break
+                    preEdge = list(share_edges)[0]
+
+                    if currentV not in verts :
+                        append(verts , currentV)
+
+                elif len(currentV.link_faces) == 2 :
+                    share_edges = [ e for e in currentV.link_edges if e != preEdge ]
+                    if len(share_edges) != 1 :
+                        break
+                    preEdge = share_edges[0]
+                else :
                     break
-                preEdge = nexE[0]
                 currentV = preEdge.other_vert(currentV)
-                if preEdge in results:
+                if currentV == vert:
                     break
-                results.append(preEdge)
+        return edges , verts
 
-        return results
 
-    def DoEdgeLoopsRemove( self , edges ) :
-        self.bmo.dissolve_edges( edges = edges , use_verts = True , use_face_split = True )        
-        self.bmo.UpdateMesh()             
+    def DoEdgeLoopsRemove( self , edges , verts ) :
+        bmesh.ops.dissolve_edges( self.bmo.bm , edges = edges , use_verts = False , use_face_split = False )  
+        vs = [ v for v in verts if v.is_valid ]
+        bmesh.ops.dissolve_verts( self.bmo.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        
         self.currentTarget = ElementItem.Empty()
 
     def calc_planned_construction_position( self ) :

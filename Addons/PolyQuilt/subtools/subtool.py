@@ -127,10 +127,6 @@ class SubTool :
         col = self.preferences.split_color            
         return (col[0],col[1],col[2],col[3] * alpha)
 
-    def color_edgeloop( self , alpha = 1.0 ) :
-        col = self.preferences.split_color            
-        return (col[0],col[1],col[2],col[3] * alpha)
-
     def color_delete( self ,alpha = 1.0 ) :
         col = self.preferences.delete_color            
         return (col[0],col[1],col[2],col[3] * alpha)

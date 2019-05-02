@@ -29,7 +29,7 @@ dpi = bpy.context.preferences.system.dpi / 100
 class Plane :
     def __init__( self , origin , vector ) :
         self.origin = Vector( origin )
-        self.vector = vector
+        self.vector = Vector( vector )
         self.vector.normalize()
 
     @staticmethod
