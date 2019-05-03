@@ -128,19 +128,19 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     else :
         bgl.glDepthFunc( bgl.GL_ALWAYS )
 
-#       shader3D.uniform_float("modelMatrix", Matrix.Identity(4) )
-    shader3Dc.bind()
+#   shader3D.uniform_float("modelMatrix", Matrix.Identity(4) )
+    shader3D.bind()
     matrix = context.region_data.perspective_matrix
-    shader3Dc.uniform_float("viewProjectionMatrix", matrix)
-    shader3Dc.uniform_float("color", color )
+#   shader3D.uniform_float("viewProjectionMatrix", matrix)
+    shader3D.uniform_float("color", color )
 
-    batch = batch_for_shader(shader3Dc, primitiveType , {"pos": verts} )
-    batch.draw(shader3Dc)
+    batch = batch_for_shader(shader3D, primitiveType , {"pos": verts} )
+    batch.draw(shader3D)
 
     if hide_alpha < 0.99 :
         bgl.glDepthFunc( bgl.GL_GREATER )
-        shader3Dc.uniform_float("color", (color[0],color[1],color[2],color[3] * 0.25) )
-        batch.draw(shader3Dc)
+        shader3D.uniform_float("color", (color[0],color[1],color[2],color[3] * hide_alpha) )
+        batch.draw(shader3D)
 
     del batch
 

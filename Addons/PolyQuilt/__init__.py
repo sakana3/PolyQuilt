@@ -24,7 +24,7 @@ bl_info = {
 }
 
 import bpy
-from .pq_operator import MESH_OT_poly_quilt
+from .pq_operator import MESH_OT_poly_quilt , register_icons , unregister_icons
 from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
 from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
 from .pq_preferences import *
@@ -71,7 +71,9 @@ def unregister_tools():
     del index
 
 
+
 def register():
+    register_icons()
     register_updater(bl_info)
 
     for cls in classes:
@@ -88,6 +90,8 @@ def unregister():
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    unregister_icons()
 
 if __name__ == "__main__":
     register()

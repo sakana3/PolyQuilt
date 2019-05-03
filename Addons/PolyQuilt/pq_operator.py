@@ -26,10 +26,48 @@ from .subtools.subtool_default import SubToolDefault
 from .subtools.subtool import SubTool
 from .QMesh import *
 
+import os
+import bpy.utils.previews
+
 __all__ = ['MESH_OT_poly_quilt']
 
 if not __package__:
     __package__ = "poly_quilt"
+
+icons = [ "icon_geom_vert" , "icon_geom_edge" , "icon_geom_triangle" , "icon_geom_quad" , "icon_geom_polygon" , "icon_move_free" , "icon_move_x" , "icon_move_y" , "icon_move_z" , "icon_move_normal" ]
+
+custom_icons = {}
+
+def register_icons():
+    global custom_icons
+    custom_icons = bpy.utils.previews.new()
+    my_icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+    for icon in icons :
+       custom_icons.load( icon , os.path.join(my_icons_dir, icon + ".png" )  , 'IMAGE')
+
+def unregister_icons():
+    global custom_icons    
+    bpy.utils.previews.remove(custom_icons)
+    custom_icons = None
+
+def enum_geometry_type_callback(scene, context):
+        items=(('VERT', "Vertex", "" , custom_icons["icon_geom_vert"].icon_id , 1),
+               ('EDGE', "Edge", "", custom_icons["icon_geom_edge"].icon_id , 2),
+               ('TRI' , "Triangle", "", custom_icons["icon_geom_triangle"].icon_id , 3 ),
+               ('QUAD', "Quad", "", custom_icons["icon_geom_quad"].icon_id , 0),
+               ('POLY', "Polygon", "", custom_icons["icon_geom_polygon"].icon_id , 4))
+        return items
+    # itemsに項目を追加する処理...
+
+def enum_move_type_callback(scene, context):
+        items=(('FREE', "Free", "" , custom_icons["icon_move_free"].icon_id , 0),
+               ('X', "X", "" , custom_icons["icon_move_x"].icon_id , 1),
+               ('Y' , "Y", ""  , custom_icons["icon_move_y"].icon_id , 2),
+               ('Z', "Z", "" , custom_icons["icon_move_z"].icon_id , 3),
+               ('NORMAL', "Normal", "" , custom_icons["icon_move_normal"].icon_id , 4)
+            )
+        return items
+
 
 class MESH_OT_poly_quilt(bpy.types.Operator):
     """Draw Polygons with the mouse"""
@@ -38,7 +76,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     bl_options = {'REGISTER' , 'UNDO'}
     __draw_handle2D = None
     __draw_handle3D = None
-
+ 
     backface : bpy.props.BoolProperty(
             name="backface",
             description="Ignore Backface",
@@ -47,33 +85,22 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
         description="Geometry Type.",
-        items=(('VERT', "Vertex", ""),
-               ('EDGE', "Edge", ""),
-               ('TRI' , "Triangle", "" ),
-               ('QUAD', "Quad", ""),
-               ('POLY', "Polygon", "")),
-        default='QUAD',
+        items=enum_geometry_type_callback 
     )
 
     plane_pivot : bpy.props.EnumProperty(
         name="Plane Pivot",
         description="Plane Pivot",
-        items=[('OBJ' , "Object Center", "" , "OBJECT_ORIGIN" , 0),
+        items=[('OBJ' , "Object Center", "" , "PIVOT_MEDIAN" , 0),
                ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ),
                ('Origin'  , "Origin", "" , "ORIENTATION_GLOBAL" , 2) ],
         default='OBJ',
     )
 
     move_type : bpy.props.EnumProperty(
-        name="Geometry Type",
+        name="Move Type",
         description="Move Type.",
-        items=(('FREE', "Free", ""),
-               ('X', "X", ""),
-               ('Y' , "Y", "" ),
-               ('Z', "Z", ""),
-               ('NORMAL', "Normal", "")
-            ),
-        default='FREE',
+        items=enum_move_type_callback,
     )
 
     fix_to_x_zero : bpy.props.BoolProperty(
@@ -97,6 +124,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         self.count = self.count + 1
         context.area.tag_redraw()
+
         t = time.time()
         self.bmo.UpdateView( context )
         ret = 'FINISHED'
@@ -127,7 +155,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     def invoke(self, context, event):
         self.preferences = context.preferences.addons[__package__].preferences
         from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect        
-        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH':
+        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None:
             args = (self, context)
             self.bmo = PQ_Gizmo_Preselect.instance.bo
             self.bmo.UpdateView( context )

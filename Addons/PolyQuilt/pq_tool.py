@@ -31,12 +31,14 @@ class ToolPolyQuilt(WorkSpaceTool):
     )
 
     def draw_settings(context, layout, tool):
+        global custom_icons
+
         props = tool.operator_properties("mesh.poly_quilt")
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
-        layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
-        layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
-        layout.prop(props, "move_type" , text = "Move", toggle = True )
-        layout.prop(props, "fix_to_x_zero" , text = "Fix X=0", toggle = True )
+        layout.prop(props, "geometry_type" , text = "Geom" , icon = "OUTLINER_DATA_LATTICE", toggle = True , expand = True , icon_only = True  )
+        layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True, expand = True )
+        layout.prop(props, "move_type" , text = "Move", toggle = True, expand = True )
+        layout.prop(props, "fix_to_x_zero" , text = "Fix X=0" )
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
 
@@ -48,11 +50,40 @@ def tool_poly_quilt():
     def draw_settings(context, layout, tool):
         props = tool.operator_properties("mesh.poly_quilt")
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
-        layout.prop(props, "geometry_type" , text = "Geom", toggle = True , expand = True  )
-        layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True )
-        layout.prop(props, "move_type" , text = "Move", toggle = True )
+
+        row = layout.row()        
+#       row.alignment = 'LEFT'
+        row.scale_x = 1.5
+        row.scale_y = 1
+        row.prop(props, "geometry_type" , text = "Geom" , toggle = True , expand = True , icon_only = True  )
+        row = row.row()          
+        row.label( text = props.geometry_type )
+
+        row = layout.row()
+        row.scale_x = 1.5
+        row.scale_y = 1       
+        row.prop(props, "plane_pivot" , text = "Pivot", toggle = True, expand = True, icon_only = True  )
+        row = row.row()          
+        row.label( text = props.plane_pivot )
+                
+        row = layout.row()
+        row.scale_x = 1.5
+        row.scale_y = 1       
+        row.prop(props, "move_type" , text = "Move", toggle = True, expand = True, icon_only = True )
+        row = row.row()          
+        row.label( text = props.move_type )
+
         layout.prop(props, "fix_to_x_zero" , text = "Fix X=0" )
+
        #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
+
+        layout.prop(context.active_object.data, "use_mirror_x")
+        tool_settings = context.tool_settings
+ #      layout.prop(tool_settings, "use_edge_path_live_unwrap")
+#       layout.prop(tool_settings, "use_mesh_automerge")
+#       layout.prop(tool_settings, "double_threshold")
+#       layout.prop(tool_settings, "edge_path_mode")
+
 
     icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 

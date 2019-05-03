@@ -26,8 +26,8 @@ __all__ = ['ElementItem']
 class ElementItem :
     def __init__(self , qmesh , element : bmesh.types.BMVert , coord : Vector, hitPosition : Vector , dist = 0 ) :
         self.__element = element
-        self.__hitPosition: Vector = hitPosition
-        self.__coord: Vector = coord
+        self.__hitPosition: Vector = copy.copy(hitPosition)
+        self.__coord: Vector = copy.copy(coord)
         self.__dist: float = dist
         self.__mirror = None
         self.__qmesh = qmesh
@@ -53,11 +53,15 @@ class ElementItem :
 
     @property
     def hitPosition(self) -> Vector :
-        return self.__hitPosition
+        return copy.copy(self.__hitPosition)
+
+    @hitPosition.setter
+    def hitPosition(self , value : Vector ) -> Vector :
+         self.__hitPosition = copy.copy(value)
 
     @property
     def coord(self) -> Vector :
-        return self.__coord
+        return copy.copy(self.__coord)
 
     @property
     def normal(self) -> Vector :
@@ -81,6 +85,10 @@ class ElementItem :
     @property
     def isNotEmpty(self) -> bool :
         return self.__element is not None
+
+    @property
+    def is_valid(self) -> bool :
+        return self.__element is not None and self.__element.is_valid
 
     @property
     def isVert(self) -> bool :
@@ -136,7 +144,7 @@ class ElementItem :
         return ElementItem( qmesh ,e , p , co , 0.0 )
 
     def Draw( self , obj , color , preferences ) :
-        if self.isNotEmpty :
+        if self.is_valid :
             size = preferences.highlight_vertex_size
             width = preferences.highlight_line_width
             alpha = preferences.highlight_face_alpha
@@ -144,16 +152,6 @@ class ElementItem :
             if self.isEdge :
                 draw_util.draw_pivots3D( (self.hitPosition,) , 0.75 , color )
 
-            if self.mirror is not None :
+            if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 draw_util.drawElementHilight3D( obj , self.mirror , size , width ,alpha , color )
-
-    def Draw2D( self , obj , color , preferences ) :
-        if self.isNotEmpty :
-            size = preferences.highlight_vertex_size
-            width = preferences.highlight_line_width
-            alpha = preferences.highlight_face_alpha
-            draw_util.drawElementHilight( obj , self.element , size , color )
-            if self.isEdge :
-                draw_util.draw_pivot2D( self.hitPosition , 0.75 , color )
-

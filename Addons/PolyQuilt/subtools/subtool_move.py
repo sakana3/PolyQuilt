@@ -102,6 +102,12 @@ class SubToolMove(SubTool) :
                 self.bmo.UpdateMesh()
 
                 return 'FINISHED'
+        elif event.type == 'WHEELUPMOUSE' :
+            a = { 'FREE' : 'X' , 'X' : 'Y'  , 'Y' : 'Z' , 'Z' : 'NORMAL' , 'NORMAL' : 'FREE' }
+            self.ChangeRay( a[self.move_type] )
+        elif event.type == 'WHEELDOWNMOUSE' :
+            a = { 'FREE' : 'NORMAL' , 'X' : 'FREE' , 'Y' : 'X' , 'Z' : 'Y' , 'NORMAL' : 'Z' }
+            self.ChangeRay( a[self.move_type] )
         elif event.value == 'PRESS' :
             if self.repeat == False :
                 if event.type == 'X' :
@@ -127,9 +133,9 @@ class SubToolMove(SubTool) :
         self.currentTarget.Draw( self.bmo.obj , self.color_highlight()  , self.preferences )
         self.subTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
         if self.move_ray != None :
-            v1 = self.move_ray.origin + self.move_ray.vector * 1000000.0 
-            v2 = self.move_ray.origin - self.move_ray.vector * 1000000.0 
-            draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.25 )
+            v1 = self.move_ray.origin + self.move_ray.vector * 10000.0 
+            v2 = self.move_ray.origin - self.move_ray.vector * 10000.0 
+            draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.2 )
 
     def ChangeRay( self , move_type ) :
         self.move_ray = None
@@ -173,6 +179,8 @@ class SubToolMove(SubTool) :
 
             move = (vG - vS)
 
+        self.currentTarget.hitPosition = self.startPos + move
+
         for vert in self.target_verts :
             p = self.bmo.obj.matrix_world @ vert[1]
             p = p + move
@@ -191,5 +199,3 @@ class SubToolMove(SubTool) :
                 p.x = 0.0
             self.bmo.set_positon( vert[0] , p , False )
             
-
-
