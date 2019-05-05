@@ -16,6 +16,7 @@ import bpy
 import math
 import mathutils
 import bmesh
+import copy
 import bpy_extras
 import collections
 from .. import handleutility
@@ -30,9 +31,9 @@ class SubToolMove(SubTool) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.subTarget = ElementItem.Empty()
-        self.startMousePos = startTarget.coord
-        self.mouse_pos = startMousePos
-        self.startPos = startTarget.hitPosition
+        self.startMousePos = copy.copy(startTarget.coord)
+        self.mouse_pos = copy.copy(startMousePos)
+        self.startPos = copy.copy(startTarget.hitPosition)
         self.target_verts = [ v for v in startTarget.verts ]
         if self.bmo.is_mirror :
             self.mirror_verts = [ v for v in [ self.bmo.find_mirror(v) for v in startTarget.verts ] if v != None ]
@@ -46,13 +47,15 @@ class SubToolMove(SubTool) :
 
         self.normal_ray = handleutility.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
         self.normal_ray.origin = self.startPos
-        self.move_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
+        self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
+        self.move_plane = self.screen_space_plane
         self.move_type = 'FREE'
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )        
         self.ChangeRay(op.move_type )
         self.repeat = False
         self.MoveTo( bpy.context , self.mouse_pos )
         self.bmo.UpdateMesh()
+
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -118,6 +121,8 @@ class SubToolMove(SubTool) :
                     self.ChangeRay( 'Z' )
                 elif event.type == 'N' :
                     self.ChangeRay( 'NORMAL'  )
+                elif event.type == 'T' :
+                    self.ChangeRay( 'TANGENT'  )
             self.repeat = True
         elif event.value == 'RELEASE' :
             self.repeat = False
@@ -139,12 +144,14 @@ class SubToolMove(SubTool) :
 
     def ChangeRay( self , move_type ) :
         self.move_ray = None
+        self.move_plane = self.screen_space_plane
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
 
         if self.operator.fix_to_x_zero and self.currentTarget.is_x_zero:
             plane = handleutility.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
             plane.origin = self.startPos
 #           self.move_plane = plane
+
         if move_type == self.move_type :
             self.move_ray = None
             move_type = 'FREE'
@@ -160,6 +167,8 @@ class SubToolMove(SubTool) :
         elif move_type == 'NORMAL' :
             self.move_ray = self.normal_ray
             self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
+        elif move_type == 'TANGENT' :
+            self.move_plane = handleutility.Plane( self.startPos , self.normal_ray.vector )
 
         self.move_type = move_type
 

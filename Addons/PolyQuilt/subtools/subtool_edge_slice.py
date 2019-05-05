@@ -39,16 +39,22 @@ class SubToolEdgeSlice(SubTool) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            self.sliceRate = self.CalcSplitRate( context ,self.mouse_pos , self.currentEdge )
-            pass
+            if self.fixCenter :
+                self.sliceRate =  0.5
+            else :
+                ray = handleutility.Ray.from_screen( context , self.mouse_pos ).world_to_object( self.bmo.obj )
+                dist = self.preferences.distance_to_highlight* dpm()
+
+                self.sliceRate = handleutility.CalcRateEdgeRay( self.bmo.obj , context , self.currentEdge , self.currentEdge.verts[0] , self.mouse_pos , ray , dist )
+
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass
             elif event.value == 'RELEASE' :
                 pass
-        elif event.type == 'LEFTMOUSE' : 
+        elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
-                if self.sliceRate > 0 and self.sliceRate < 1 :                
+                if self.sliceRate > 0 and self.sliceRate < 1 :
                     self.DoSlice(self.currentEdge , self.sliceRate )
                 return 'FINISHED'
         return 'RUNNING_MODAL'
@@ -82,33 +88,16 @@ class SubToolEdgeSlice(SubTool) :
                     lines.append(v1)
                 draw_util.draw_lines3D( context , lines , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
-
-
     def CalcSplitRate( self , context ,coord , baseEdge ) :
         if self.fixCenter :
             return 0.5
 
-        matrix = self.bmo.obj.matrix_world        
-        v0 = baseEdge.verts[0].co
-        v1 = baseEdge.verts[1].co
-        p0 = handleutility.location_3d_to_region_2d( matrix @ v0)
-        p1 = handleutility.location_3d_to_region_2d( matrix @ v1)
-        intersects = mathutils.geometry.intersect_line_sphere_2d( p0 , p1 , coord , self.preferences.distance_to_highlight * dpm() )
-        if any(intersects) == False:
-            return 0.0
-
         ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
-        h0 , h1 , d = ray.distance( handleutility.Ray( v0 , (v1-v0) ) )
+        dist = self.preferences.distance_to_highlight* dpm()
 
-        dt =  (v0-v1).length
-        d0 = (v0-h1).length
-        d1 = (v1-h1).length
-        if d0 > dt :
-            return 1.0
-        elif d1 > dt :
-            return 0.0
-        else :
-            return max( 0 , min( 1 , d0 / dt ))
+        d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
+
+        return d
 
     def CalcSlice( self , startEdge ) :
         check_edges = []

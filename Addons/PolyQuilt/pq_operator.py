@@ -22,6 +22,7 @@ import collections
 import time
 from . import handleutility
 from . import draw_util
+from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
 from .subtools.subtool import SubTool
 from .QMesh import *
@@ -34,40 +35,23 @@ __all__ = ['MESH_OT_poly_quilt']
 if not __package__:
     __package__ = "poly_quilt"
 
-icons = [ "icon_geom_vert" , "icon_geom_edge" , "icon_geom_triangle" , "icon_geom_quad" , "icon_geom_polygon" , "icon_move_free" , "icon_move_x" , "icon_move_y" , "icon_move_z" , "icon_move_normal" ]
-
-custom_icons = {}
-
-def register_icons():
-    global custom_icons
-    custom_icons = bpy.utils.previews.new()
-    my_icons_dir = os.path.join(os.path.dirname(__file__), "icons")
-    for icon in icons :
-       custom_icons.load( icon , os.path.join(my_icons_dir, icon + ".png" )  , 'IMAGE')
-
-def unregister_icons():
-    global custom_icons    
-    bpy.utils.previews.remove(custom_icons)
-    custom_icons = None
-
 def enum_geometry_type_callback(scene, context):
-        items=(('VERT', "Vertex", "" , custom_icons["icon_geom_vert"].icon_id , 1),
-               ('EDGE', "Edge", "", custom_icons["icon_geom_edge"].icon_id , 2),
-               ('TRI' , "Triangle", "", custom_icons["icon_geom_triangle"].icon_id , 3 ),
-               ('QUAD', "Quad", "", custom_icons["icon_geom_quad"].icon_id , 0),
-               ('POLY', "Polygon", "", custom_icons["icon_geom_polygon"].icon_id , 4))
+        items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
+               ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
+               ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
+               ('QUAD', "Quad", "", custom_icon("icon_geom_quad") , 0),
+               ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
         return items
-    # itemsに項目を追加する処理...
 
 def enum_move_type_callback(scene, context):
-        items=(('FREE', "Free", "" , custom_icons["icon_move_free"].icon_id , 0),
-               ('X', "X", "" , custom_icons["icon_move_x"].icon_id , 1),
-               ('Y' , "Y", ""  , custom_icons["icon_move_y"].icon_id , 2),
-               ('Z', "Z", "" , custom_icons["icon_move_z"].icon_id , 3),
-               ('NORMAL', "Normal", "" , custom_icons["icon_move_normal"].icon_id , 4)
+        items=(('FREE', "Free", "" , custom_icon("icon_move_free") , 0),
+               ('X', "X", "" , custom_icon("icon_move_x") , 1),
+               ('Y' , "Y", ""  , custom_icon("icon_move_y") , 2),
+               ('Z', "Z", "" , custom_icon("icon_move_z") , 3),
+               ('NORMAL', "Normal", "" , custom_icon("icon_move_normal") , 4) ,
+               ('TANGENT', "Tangent", "" , custom_icon("icon_move_tangent") , 5)
             )
         return items
-
 
 class MESH_OT_poly_quilt(bpy.types.Operator):
     """Draw Polygons with the mouse"""
@@ -106,7 +90,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     fix_to_x_zero : bpy.props.BoolProperty(
               name = "fix_to_x_zero" ,
               default = False ,
-              description="fix_to_x_zero",
+              description="Fix X=0",
+            )
+
+    ignore_backsurface : bpy.props.BoolProperty(
+              name = "ignore_backsurface" ,
+              default = False ,
+              description="ignore_backsurface",
             )
 
     radius : bpy.props.FloatProperty(

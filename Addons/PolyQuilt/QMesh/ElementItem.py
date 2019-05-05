@@ -155,3 +155,4 @@ class ElementItem :
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 draw_util.drawElementHilight3D( obj , self.mirror , size , width ,alpha , color )
+

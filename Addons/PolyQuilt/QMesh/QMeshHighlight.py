@@ -94,17 +94,22 @@ class QMeshHighlight :
             self.current_matrix = matrix        
 
                 
-    def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False ) -> ElementItem :
+    def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         r = radius
         p = Vector( coord )
         viewPos = self.viewPosVerts
         s = [ i for i in viewPos if i[1] != None and (i[1] - p).length <= r and i[0] not in ignore ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
+
+        if backface_culling :
+            ray = handleutility.Ray.from_screen( bpy.context , coord )
+            s = [ i for i in s if i[0].is_manifold == False or i[0].is_boundary or i[0].normal.dot( ray.vector ) < 0 ]
+
         r = sorted( s , key=lambda i:(i[1] - p).length )
         return [ ElementItem( self.pqo ,i[0] , i[1] , i[2] ) for i in r ] 
 
-    def PickFace( self ,coord , ignore = [] ) -> ElementItem :
+    def PickFace( self ,coord , ignore = []  , backface_culling = True ) -> ElementItem :
         ray = handleutility.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
         pos,nrm,index,dist = self.pqo.btree.ray_cast( ray.origin , ray.vector )
         prePos = ray.origin
@@ -114,13 +119,17 @@ class QMeshHighlight :
                 break
             prePos = pos
             if face.hide is False and face not in ignore :
-                return ElementItem( self.pqo , face , coord , self.pqo.obj.matrix_world @ pos , dist )
-            pos,nrm,index,dist = self.pqo.btree.ray_cast( pos + ray_direction_obj * 0.000001 , ray_direction_obj )
+                if backface_culling == False or face.normal.dot( ray.vector ) < 0 :
+                    return ElementItem( self.pqo , face , coord , self.pqo.obj.matrix_world @ pos , dist )
+                else :
+                    return ElementItem.Empty()
+            ray.origin = ray.origin + ray.vector * 0.00001
+            pos,nrm,index,dist = self.pqo.btree.ray_cast( ray.origin , ray.vector )
 
         return ElementItem.Empty()
 
 
-    def CollectEdge( self ,coord , radius : float , ignore = [] ) -> ElementItem :
+    def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True ) -> ElementItem :
         p = Vector( coord )
         viewPosEdge = self.viewPosEdges
         ray = handleutility.Ray.from_screen( bpy.context , coord )
@@ -133,6 +142,12 @@ class QMeshHighlight :
 
         intersect = geometry.intersect_line_sphere_2d
         r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]
+
+        if backface_culling :
+            r = [ i for i in r
+                if  i.element.is_manifold == False or i.element.is_boundary or
+                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray.vector ) < 0 ]
+        
         s = sorted( r , key=lambda i:(i.coord - p).length )
 
         return s

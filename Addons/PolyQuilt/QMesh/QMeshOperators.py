@@ -326,3 +326,12 @@ class QMeshOperators :
             return None
 
         return result
+
+    @staticmethod
+    def get_shading(context):
+        # Get settings from 3D viewport or OpenGL render engine
+        view = context.space_data
+        if view.type == 'VIEW_3D':
+            return view.shading
+        else:
+            return context.scene.display.shading

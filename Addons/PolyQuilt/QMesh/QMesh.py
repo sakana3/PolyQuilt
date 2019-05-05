@@ -42,8 +42,8 @@ class QMesh(QMeshOperators) :
     def UpdateView( self ,context , forced = False ):
         self.highlight.setDirty()
 
-    def PickElement( self , coord , radius : float , ignore = [] , edgering = False ) -> ElementItem :
-
+    def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = False ) -> ElementItem :
+        backface_culling = self.get_shading(bpy.context).show_backface_culling
         rv3d = bpy.context.space_data.region_3d
         matrix = self.obj.matrix_world @ rv3d.perspective_matrix
         radius = radius * dpm()
@@ -55,16 +55,16 @@ class QMesh(QMeshOperators) :
         # Hitする頂点を探す
         hitVert = ElementItem.Empty()
         ignoreVerts =  [ i for i in ignore if isinstance( i , bmesh.types.BMVert ) ]
-        candidateVerts = self.highlight.CollectVerts( coord , radius , ignoreVerts , edgering )
+        candidateVerts = self.highlight.CollectVerts( coord , radius , ignoreVerts , edgering , backface_culling = backface_culling  )
 
         # Todo:ヒットするエッジを探す
         hitEdge = ElementItem.Empty()
         ignoreEdges =  [ i for i in ignore if isinstance( i , bmesh.types.BMEdge ) ]
-        candidateEdges = self.highlight.CollectEdge( coord , radius , ignoreEdges )
+        candidateEdges = self.highlight.CollectEdge( coord , radius , ignoreEdges , backface_culling = backface_culling )
 
         for vert in candidateVerts :
             # 各点からRayを飛ばす
-            hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces  )
+            hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces , backface_culling = False  )
             if hitTemp.isEmpty :
                 # 何の面にもヒットしないなら採択
                 hitVert = vert
@@ -83,7 +83,7 @@ class QMesh(QMeshOperators) :
                         break
 
         for edge in candidateEdges :
-            hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces )
+            hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces , backface_culling = False )
         
             if hitTemp.isEmpty :
                 hitEdge = edge
@@ -104,7 +104,7 @@ class QMesh(QMeshOperators) :
 
         if hitVert.isEmpty and hitEdge.isEmpty :
             # hitする面を探す
-            hitFace = self.highlight.PickFace( coord , ignoreFaces )
+            hitFace = self.highlight.PickFace( coord , ignoreFaces , backface_culling = backface_culling  )
 
             # 候補頂点/エッジがないなら面を返す
             if hitFace.isNotEmpty :

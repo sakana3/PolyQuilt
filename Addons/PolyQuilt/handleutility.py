@@ -357,3 +357,26 @@ def MakePointFromRegion( obj , bm , pos , pivot : Vector ):
 
     return vert
 
+
+def CalcRateEdgeRay( obj , context , edge , vert , coord , ray , dist ) :
+    matrix = obj.matrix_world        
+    v0 = vert.co
+    v1 = edge.other_vert(vert).co
+    p0 = location_3d_to_region_2d( matrix @ v0)
+    p1 = location_3d_to_region_2d( matrix @ v1)
+    intersects = mathutils.geometry.intersect_line_sphere_2d( p0 , p1 , coord , dist )
+    if any(intersects) == False:
+        return 0.0
+
+    ray = Ray.from_screen( context , coord ).world_to_object( obj )
+    h0 , h1 , d = ray.distance( Ray( v0 , (v1-v0) ) )
+
+    dt =  (v0-v1).length
+    d0 = (v0-h1).length
+    d1 = (v1-h1).length
+    if d0 > dt :
+        return 1.0
+    elif d1 > dt :
+        return 0.0
+    else :
+        return max( 0 , min( 1 , d0 / dt ))        

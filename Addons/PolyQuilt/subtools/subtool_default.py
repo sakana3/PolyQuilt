@@ -26,6 +26,7 @@ from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
 from .subtool_move import *
+from .subtool_fin_slice import *
 
 class SubToolDefault(SubTool) :
     name = "DefaultSubTool"
@@ -66,6 +67,8 @@ class SubToolDefault(SubTool) :
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
                 self.SetSubTool( SubToolEdgeSlice(self.operator,self.currentTarget.element) )   
+            elif self.currentTarget.isVert :
+                self.SetSubTool( SubToolFinSlice(self.operator,self.currentTarget ) )   
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator,event.mouse_pos) )   
 
