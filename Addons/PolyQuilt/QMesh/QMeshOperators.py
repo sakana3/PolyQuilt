@@ -227,7 +227,7 @@ class QMeshOperators :
                     if (v0 not in face.verts or v1 not in face.verts ) and (v0 not in new_face.verts or v1 not in new_face.verts ):
                         return
                     if v0 in new_face.verts and v1 in new_face.verts :
-                        return bmesh.utils.face_split( new_face , v0  , v1 , coords , use_exist )
+                        return bmesh.utils.face_split( new_face , v0  , v1 )
             
         return bmesh.utils.face_split( face , v0  , v1 , coords , use_exist )
 
