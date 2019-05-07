@@ -16,6 +16,7 @@ import bpy
 import math
 import mathutils
 import bmesh
+import copy
 import bpy_extras
 import collections
 from .. import handleutility
@@ -30,30 +31,31 @@ class SubToolMove(SubTool) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.subTarget = ElementItem.Empty()
-        self.startMousePos = startMousePos
-        self.mouse_pos = startMousePos
-        self.startPos = startTarget.hitPosition
-        p = handleutility.MovePointFromRegion( self.bmo.obj , self.currentTarget.element ,self.currentTarget.hitPosition, self.mouse_pos )
-        self.currentTarget = ElementItem.FormElement( self.currentTarget.element , p )
-        self.bmo.UpdateMesh()
-
-        if startTarget.isVert :
-            self.target_verts = [(startTarget.element, mathutils.Vector( startTarget.element.co) ) ]
-        elif startTarget.isEdge :
-            self.target_verts = [ (v, mathutils.Vector(v.co)) for v in startTarget.element.verts ]
-        elif startTarget.isFace :
-            self.target_verts = [ (v, mathutils.Vector(v.co)) for v in startTarget.element.verts ]
+        self.startMousePos = copy.copy(startTarget.coord)
+        self.mouse_pos = copy.copy(startMousePos)
+        self.startPos = copy.copy(startTarget.hitPosition)
+        self.target_verts = [ v for v in startTarget.verts ]
+        if self.bmo.is_mirror :
+            self.mirror_verts = [ v for v in [ self.bmo.find_mirror(v) for v in startTarget.verts ] if v != None ]
+            same = set(self.mirror_verts) & set(self.target_verts)
+            self.target_verts = [ v for v in self.target_verts if (v not in same) or v.co.x >= 0.0 ]
+            self.mirror_verts = [ v for v in self.mirror_verts if (v not in same) or v.co.x < 0.0 ]
         else :
-            self.target_verts = []
+            self.mirror_verts = []
+        self.target_verts = [ (v,mathutils.Vector(v.co)) for v in self.target_verts ]
+        self.mirror_verts = [ (v,mathutils.Vector(v.co)) for v in self.mirror_verts ]
 
-        self.normal_ray = handleutility.Ray( self.startPos , startTarget.normal ).to_object_space( self.bmo.obj )
+        self.normal_ray = handleutility.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
         self.normal_ray.origin = self.startPos
-#       print( self.move_normal )
-        self.move_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
+        self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
+        self.move_plane = self.screen_space_plane
         self.move_type = 'FREE'
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )        
-        self.ChangeRay(op.move_type)
+        self.ChangeRay(op.move_type )
         self.repeat = False
+        self.MoveTo( bpy.context , self.mouse_pos )
+        self.bmo.UpdateMesh()
+
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -66,24 +68,49 @@ class SubToolMove(SubTool) :
                 ignore.extend( self.currentTarget.element.link_edges )
 #                for face in self.currentTarget.element.link_faces :
 #                    ignore.extend( face.verts )
+                if self.currentTarget.mirror is not None :
+                    ignore.append( self.currentTarget.mirror )
+                    ignore.extend( self.currentTarget.mirror.link_edges )
+
                 self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore )
 
-                if self.subTarget.isVert and self.currentTarget.element != self.subTarget.element :
+                if self.subTarget.isVert \
+                        and self.currentTarget.element != self.subTarget.element \
+                        and (self.operator.fix_to_x_zero and self.currentTarget.is_x_zero and self.subTarget.is_x_zero is False ) is False :
                     self.currentTarget.element.co = self.subTarget.element.co
-                    self.currentTarget = ElementItem.FormVert( self.currentTarget.element )                    
+                    if self.currentTarget.mirror is not None :
+                        self.currentTarget.mirror.co = self.bmo.mirror_pos(self.currentTarget.element.co)
                 else :
                     self.subTarget = ElementItem.Empty()
+
+                if self.currentTarget.mirror is not None :
+                    if self.bmo.check_near(self.currentTarget.element.co ,self.currentTarget.mirror.co ) :
+                        x_zero = self.bmo.zero_pos(self.currentTarget.element.co)
+                        self.currentTarget.element.co = x_zero
+                        self.currentTarget.mirror.co = x_zero
+                else :
+                    if self.bmo.is_mirror :
+                        mp = self.bmo.mirror_pos( self.currentTarget.element.co )
+                        if self.bmo.check_near(self.currentTarget.element.co , mp ) :
+                            self.currentTarget.element.co = self.bmo.zero_pos(mp)
 
             self.bmo.UpdateMesh()
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
-                if self.currentTarget.isVert and self.subTarget.isVert :
-                    v0 = self.currentTarget.element
-                    v1 = self.subTarget.element
-#                   bmesh.utils.vert_splice( v0 , v1 )
-                    bmesh.ops.pointmerge( self.bmo.bm , verts = ( v0 , v1 ) , merge_co = v1.co )
-                    self.bmo.UpdateMesh()                    
+                threshold = bpy.context.scene.tool_settings.double_threshold
+                verts = set( [ v[0] for v in self.target_verts] ) | set( [ v[0] for v in self.mirror_verts] )
+                if self.subTarget.isVert :
+                    verts.add( self.subTarget.element )
+                bmesh.ops.automerge( self.bmo.bm , verts = list(verts) , dist = threshold )
+                self.bmo.UpdateMesh()
+
                 return 'FINISHED'
+        elif event.type == 'WHEELUPMOUSE' :
+            a = { 'FREE' : 'X' , 'X' : 'Y'  , 'Y' : 'Z' , 'Z' : 'NORMAL' , 'NORMAL' : 'FREE' }
+            self.ChangeRay( a[self.move_type] )
+        elif event.type == 'WHEELDOWNMOUSE' :
+            a = { 'FREE' : 'NORMAL' , 'X' : 'FREE' , 'Y' : 'X' , 'Z' : 'Y' , 'NORMAL' : 'Z' }
+            self.ChangeRay( a[self.move_type] )
         elif event.value == 'PRESS' :
             if self.repeat == False :
                 if event.type == 'X' :
@@ -93,7 +120,9 @@ class SubToolMove(SubTool) :
                 elif event.type == 'Z' :
                     self.ChangeRay( 'Z' )
                 elif event.type == 'N' :
-                    self.ChangeRay( 'NORMAL' )
+                    self.ChangeRay( 'NORMAL'  )
+                elif event.type == 'T' :
+                    self.ChangeRay( 'TANGENT'  )
             self.repeat = True
         elif event.value == 'RELEASE' :
             self.repeat = False
@@ -103,36 +132,43 @@ class SubToolMove(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        self.currentTarget.Draw2D( self.bmo.obj , self.color_highlight()  , self.preferences )
-        self.subTarget.Draw2D( self.bmo.obj , self.color_highlight() , self.preferences )
+        pass
 
+    def OnDraw3D( self , context  ) :
+        self.currentTarget.Draw( self.bmo.obj , self.color_highlight()  , self.preferences )
+        self.subTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
         if self.move_ray != None :
-            v1 = self.move_ray.origin + self.move_ray.vector * 500.0 
-            v2 = self.move_ray.origin - self.move_ray.vector * 500.0 
-            v1 = handleutility.location_3d_to_region_2d( v1 )
-            v2 = handleutility.location_3d_to_region_2d( v2 )
-            draw_util.draw_lines2D( (v1,v2) , self.move_color )
-    
+            v1 = self.move_ray.origin + self.move_ray.vector * 10000.0 
+            v2 = self.move_ray.origin - self.move_ray.vector * 10000.0 
+            draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.2 )
 
     def ChangeRay( self , move_type ) :
         self.move_ray = None
+        self.move_plane = self.screen_space_plane
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
+
+        if self.operator.fix_to_x_zero and self.currentTarget.is_x_zero:
+            plane = handleutility.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
+            plane.origin = self.startPos
+#           self.move_plane = plane
 
         if move_type == self.move_type :
             self.move_ray = None
             move_type = 'FREE'
         if move_type == 'X' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (1,0,0) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
             self.move_color = ( 1.0 , 0.0 ,0.0 ,1.0  )
         elif move_type == 'Y' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (0,1,0) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,1,0) ) )
             self.move_color = ( 0.0 , 1.0 ,0.0 ,1.0  )
         elif move_type == 'Z' :
-            self.move_ray = handleutility.Ray( self.currentTarget.hitPosition , mathutils.Vector( (0,0,1) ) )
+            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,0,1) ) )
             self.move_color = ( 0.0 , 0.0 ,1.0 ,1.0  )
         elif move_type == 'NORMAL' :
             self.move_ray = self.normal_ray
             self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
+        elif move_type == 'TANGENT' :
+            self.move_plane = handleutility.Plane( self.startPos , self.normal_ray.vector )
 
         self.move_type = move_type
 
@@ -152,7 +188,23 @@ class SubToolMove(SubTool) :
 
             move = (vG - vS)
 
-        for vert in self.target_verts :
-            p =  self.bmo.obj.matrix_world @vert[1] + move
-            vert[0].co = self.bmo.obj.matrix_world.inverted() @ p
+        self.currentTarget.hitPosition = self.startPos + move
 
+        for vert in self.target_verts :
+            p = self.bmo.obj.matrix_world @ vert[1]
+            p = p + move
+            p = self.bmo.obj.matrix_world.inverted() @ p
+            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( vert[1] ) :
+                p.x = 0.0
+
+            self.bmo.set_positon( vert[0] , p , False )
+
+        for vert in self.mirror_verts :
+            p = self.bmo.obj.matrix_world @ self.bmo.mirror_pos(vert[1])
+            p = p + move
+            p = self.bmo.obj.matrix_world.inverted() @ p
+            p = self.bmo.mirror_pos(p)
+            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( vert[1] ) :
+                p.x = 0.0
+            self.bmo.set_positon( vert[0] , p , False )
+            

@@ -31,10 +31,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def setup(self):
         self.bo = None        
         self.currentElement = ElementItem.Empty()
-        PQ_Gizmo_Preselect.instance = self
 
     def init( self , context ) :
-        self.bo = QMesh( context.active_object )
+        self.bo = QMesh( context.active_object , self.preferences )
         self.bo.UpdateView( context )
 
     def exit( self , context, cancel) :
@@ -43,11 +42,14 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.currentElement = None
         PQ_Gizmo_Preselect.instance = None
 
+
     def test_select(self, context, location):
+        PQ_Gizmo_Preselect.instance = self        
         if self.bo == None :
-            self.bo = QMesh( context.active_object )
+            self.bo = QMesh( context.active_object , self.preferences )
         self.bo.CheckValid()
         self.bo.UpdateView( context )
+
         element = self.bo.PickElement( location , self.preferences.distance_to_highlight )
         if self.currentElement.element != element.element :
             context.area.tag_redraw()
@@ -68,7 +70,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.currentElement = ElementItem.Empty()
 
     def use(self) :
-        self.currentElement = ElementItem.Empty()         
+        self.currentElement = ElementItem.Empty()
 
 
 class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
@@ -88,9 +90,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     def poll(cls, context):
         # 自分を使っているツールを探す。
         workspace = context.workspace
-        mode = workspace.tools_mode
         for tool in workspace.tools:
-            if (tool.widget == cls.bl_idname) and (tool.mode == mode):
+            if tool.widget == cls.bl_idname:
                 break
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)

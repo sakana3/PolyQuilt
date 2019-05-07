@@ -58,6 +58,9 @@ class SubTool :
     def OnDraw( self , context  ) :
         pass
 
+    def OnDraw3D( self , context  ) :
+        pass
+
     def Update( self , context , event ) :
 
         ret = 'FINISHED'
@@ -83,11 +86,18 @@ class SubTool :
         self.step += 1
         return ret
 
-    def Draw( self , context  ) :
+    def Draw2D( self , context  ) :
         if self.subTool != None :
-            self.subTool.Draw(context )
+            self.subTool.Draw2D(context )
         else :
             self.OnDraw(context)
+        pass
+
+    def Draw3D( self , context  ) :
+        if self.subTool != None :
+            self.subTool.Draw3D(context )
+        else :
+            self.OnDraw3D(context)
         pass
 
     def OnEnterSubTool( self ,context,subTool ):
@@ -114,10 +124,6 @@ class SubTool :
         return (col[0],col[1],col[2],col[3] * alpha)
 
     def color_split( self , alpha = 1.0 ) :
-        col = self.preferences.split_color            
-        return (col[0],col[1],col[2],col[3] * alpha)
-
-    def color_edgeloop( self , alpha = 1.0 ) :
         col = self.preferences.split_color            
         return (col[0],col[1],col[2],col[3] * alpha)
 

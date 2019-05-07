@@ -25,11 +25,34 @@ from gpu_extras.batch import batch_for_shader
 from .handleutility import *
 from .dpi import *
 
+vertex_shader = '''
+    uniform mat4 viewProjectionMatrix;
+
+    in vec3 pos;
+
+    void main()
+    {
+        gl_Position = viewProjectionMatrix * vec4(pos, 1.0f);
+    }
+'''
+
+fragment_shader = '''
+    uniform vec4 color;
+
+    void main()
+    {
+        gl_FragColor = color;
+    }
+'''
+
 
 #shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+shader3Dc = gpu.types.GPUShader(vertex_shader, fragment_shader)
 
+coords = [(1, 1, 1), (2, 0, 0), (-2, -1, 3)]
+batcht = batch_for_shader(shader3Dc, 'TRIS', {"pos": coords})
 
 def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 ):
     r = radius * dpm()
@@ -64,6 +87,67 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
 
+shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+coords = (
+    (-1, -1, -1), (+1, -1, -1),
+    (-1, +1, -1), (+1, +1, -1),
+    (-1, -1, +1), (+1, -1, +1),
+    (-1, +1, +1), (+1, +1, +1))
+
+indices = (
+    (0, 1), (0, 2), (1, 3), (2, 3),
+    (4, 5), (4, 6), (5, 7), (6, 7),
+    (0, 4), (1, 5), (2, 6), (3, 7))
+
+
+def draw_test():
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glLineWidth(2 )    
+    bgl.glEnable(bgl.GL_BLEND)
+
+    shader3D.bind()
+    batch = batch_for_shader(shader3D, 'LINES', {"pos": coords}, indices=indices)
+    shader3D.uniform_float("color", (1, 0, 0, 1))
+    batch.draw(shader3D)
+
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
+    bgl.glDisable(bgl.GL_BLEND)
+
+def begin2d() :
+    bgl.glDisable(bgl.GL_DEPTH_TEST)
+
+def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hide_alpha : float = 1.0 , primitiveType = 'LINE_STRIP' ):
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glLineWidth(width )    
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glEnable(bgl.GL_DEPTH_TEST)
+
+    if hide_alpha < 0.99 :
+        bgl.glDepthFunc( bgl.GL_LESS )
+    else :
+        bgl.glDepthFunc( bgl.GL_ALWAYS )
+
+#   shader3D.uniform_float("modelMatrix", Matrix.Identity(4) )
+    shader3D.bind()
+    matrix = context.region_data.perspective_matrix
+#   shader3D.uniform_float("viewProjectionMatrix", matrix)
+    shader3D.uniform_float("color", color )
+
+    batch = batch_for_shader(shader3D, primitiveType , {"pos": verts} )
+    batch.draw(shader3D)
+
+    if hide_alpha < 0.99 :
+        bgl.glDepthFunc( bgl.GL_GREATER )
+        shader3D.uniform_float("color", (color[0],color[1],color[2],color[3] * hide_alpha) )
+        batch.draw(shader3D)
+
+    del batch
+
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
+    bgl.glDisable(bgl.GL_BLEND)
+
 def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
     r = radius * dpm()
     if isWire is False :
@@ -79,8 +163,8 @@ def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
         batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts} )
         batch.draw(shader2D)
 
-def draw_pivot3D( pos , radius , color = (1,1,1,1) ):
-    verts = ( pos , )
+
+def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)        
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glPointSize(radius * dpm() * 2 )
@@ -88,7 +172,7 @@ def draw_pivot3D( pos , radius , color = (1,1,1,1) ):
 
     shader3D.bind()
     shader3D.uniform_float("color", color )
-    batch = batch_for_shader(shader3D, 'POINTS', {"pos": verts} )
+    batch = batch_for_shader(shader3D, 'POINTS', {"pos": poss} )
     batch.draw(shader3D)
 
     bgl.glPointSize(1 )
@@ -157,6 +241,7 @@ def draw_Edge3D( obj , edge : bmesh.types.BMEdge , color = (1,1,1,1) , width = 1
     bgl.glEnable(bgl.GL_LINE_SMOOTH)
     bgl.glLineWidth(width)    
     bgl.glEnable(bgl.GL_BLEND)
+    bgl.glDepthFunc(bgl.GL_ALWAYS)
     verts = ( obj.matrix_world @ edge.verts[0].co ,  obj.matrix_world @ edge.verts[1].co )
 
     shader3D.bind()
@@ -194,7 +279,7 @@ def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1
 
     if isinstance( element , bmesh.types.BMVert ) :
         v = obj.matrix_world @ element.co
-        draw_pivot3D( v , radius , color )
+        draw_pivots3D( (v,) , radius , color )
     elif isinstance( element , bmesh.types.BMFace  ) :
         draw_Face3D(obj,element, (color[0],color[1],color[2],color[3] * alpha) )
     elif isinstance( element , bmesh.types.BMEdge ) :

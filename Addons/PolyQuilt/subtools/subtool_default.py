@@ -26,6 +26,7 @@ from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
 from .subtool_move import *
+from .subtool_fin_slice import *
 
 class SubToolDefault(SubTool) :
     name = "DefaultSubTool"
@@ -66,6 +67,8 @@ class SubToolDefault(SubTool) :
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
                 self.SetSubTool( SubToolEdgeSlice(self.operator,self.currentTarget.element) )   
+            elif self.currentTarget.isVert :
+                self.SetSubTool( SubToolFinSlice(self.operator,self.currentTarget ) )   
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator,event.mouse_pos) )   
 
@@ -81,20 +84,21 @@ class SubToolDefault(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        if self.currentTarget.isNotEmpty :
-            color = self.color_highlight()
-            if self.LMBEvent.presureComplite :
-                color = self.color_delete()
-            self.currentTarget.Draw2D( self.bmo.obj , color , self.preferences )
-
         if self.LMBEvent.isPresure :
             if self.currentTarget.isNotEmpty :
                 self.LMBEvent.Draw( self.currentTarget.coord , "Melt")
             else:
                 self.LMBEvent.Draw( None , "Knife")
 
+    def OnDraw3D( self , context  ) :
+        if self.currentTarget.isNotEmpty :
+            color = self.color_highlight()
+            if self.LMBEvent.presureComplite :
+                color = self.color_delete()
+            self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
+
     def OnEnterSubTool( self ,context,subTool ):
-        self.currentTarget = None
+        self.currentTarget = ElementItem.Empty()
         self.LMBEvent.Reset(context)
 
     def OnExitSubTool( self ,context,subTool ):
