@@ -34,13 +34,22 @@ class QMesh(QMeshOperators) :
     def __init__(self , obj , preferences) :
         super().__init__(obj, preferences)
         self.highlight = QMeshHighlight(self)
+        self.invalid = False
 
     def UpdateMesh( self ) :
         super().UpdateMesh()
-        self.UpdateView( bpy.context , True )
+        self.highlight.setDirty()
+
+    def CheckValid( self , context ) :
+        val = super()._CheckValid(context)
+        if val == False or self.invalid :
+            self.highlight.setDirty()
+            self.reload_obj(context)
+            self.invalid = False
+        return val
 
     def UpdateView( self ,context , forced = False ):
-        self.highlight.setDirty()
+        self.highlight.UpdateView(context)
 
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = False ) -> ElementItem :
         backface_culling = self.get_shading(bpy.context).show_backface_culling

@@ -165,8 +165,8 @@ class SubToolMakePoly(SubTool) :
             elif self.currentTarget.element in self.mekePolyList:
                 draw_util.draw_pivots3D(  (lp,) , vertex_size * 1.5 , self.color_delete() )
 
-            self.currentTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
             draw_util.draw_pivots3D( (lp,) , vertex_size , color )
+            self.currentTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
         else :
             draw_util.draw_pivots3D( (lp,) , vertex_size , self.color_create() )
 

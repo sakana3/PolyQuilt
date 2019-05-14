@@ -46,11 +46,13 @@ class QMeshHighlight :
         return self.__viewPosEdges
 
     def setDirty( self ) :
-        del self.__viewPosVerts
-        del self.__viewPosEdges
+        if self.__viewPosVerts :
+            del self.__viewPosVerts
         self.__viewPosVerts = None
+        if self.__viewPosEdges :
+            del self.__viewPosEdges
         self.__viewPosEdges = None
-
+        self.current_matrix = None    
 
     def UpdateView( self ,context , forced = False ):
         rv3d = context.space_data.region_3d
@@ -74,31 +76,22 @@ class QMeshHighlight :
 
                 t = Vector( (halfW+halfW * pv.x / pv.w , halfH+halfH * pv.y / pv.w ))
 
-                return [ vt , t , wv ]
+                return ( vt , t , wv )
 
-            viewPos = [ ProjVert(p) for p in verts ]
-
-            def ProjEdge( e) :
-                verts = e.verts
-                p0 = viewPos[ verts[0].index ]
-                p1 = viewPos[ verts[1].index ]
-                if p0 == None or p1 == None:
-                    return None
-                return ( e , p0[1] , p1[1] , p0[2] , p1[2] )
+            viewPos = { p : ProjVert(p) for p in verts }
 
             edges = self.pqo.bm.edges
-            viewPosEdge = [ ProjEdge(e) for e in edges ]
-            self.__viewPosEdges = [ e for e in viewPosEdge if e is not None and e[0].hide is False ]
-            self.__viewPosVerts = [ p for p in viewPos if p is not None and p[0].hide is False ]
+            self.__viewPosEdges = [ (e, p1[1] , p2[1] , p1[2] , p2[2] ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
+            self.__viewPosVerts = [ p for p in viewPos.values() if p and not p[0].hide ]
 
             self.current_matrix = matrix        
 
-                
+
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         r = radius
         p = Vector( coord )
         viewPos = self.viewPosVerts
-        s = [ i for i in viewPos if i[1] != None and (i[1] - p).length <= r and i[0] not in ignore ]
+        s = [ i for i in viewPos if (i[1] - p).length <= r and i[0] not in ignore ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
@@ -135,13 +128,13 @@ class QMeshHighlight :
         ray = handleutility.Ray.from_screen( bpy.context , coord )
         ray_distance = ray.distance
         location_3d_to_region_2d = handleutility.location_3d_to_region_2d
-        def Conv( edge ) -> ElementItem :
-            h0 , h1 , d = ray_distance( handleutility.Ray( edge[3] , (edge[3]-edge[4]) ) )
+        def Conv( edge , v1, v2 ) -> ElementItem :
+            h0 , h1 , d = ray_distance( handleutility.Ray( v1 , (v1-v2) ) )
             c = location_3d_to_region_2d(h0)
-            return ElementItem( self.pqo , edge[0] , c , h1 , d )
+            return ElementItem( self.pqo , edge , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d
-        r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]
+        r = [ Conv(e,v1,v2) for e,p1,p2,v1,v2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
 
         if backface_culling :
             r = [ i for i in r

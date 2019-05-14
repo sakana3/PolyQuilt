@@ -24,13 +24,13 @@ bl_info = {
 }
 
 import bpy
+from bpy.utils.toolsystem import ToolDef
 from .pq_operator import MESH_OT_poly_quilt
 from .pq_icon import *
 from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
 from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
 from .pq_preferences import *
-
-from bpy.utils.toolsystem import ToolDef
+from .translation import pq_translation_dict
 
 
 classes = (
@@ -74,6 +74,7 @@ def unregister_tools():
 
 
 def register():
+    bpy.app.translations.register(__name__, pq_translation_dict)    
     register_icons()
     register_updater(bl_info)
 
@@ -93,6 +94,7 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     unregister_icons()
+    bpy.app.translations.unregister(__name__)
 
 if __name__ == "__main__":
     register()

@@ -34,7 +34,6 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def init( self , context ) :
         self.bo = QMesh( context.active_object , self.preferences )
-        self.bo.UpdateView( context )
 
     def exit( self , context, cancel) :
         if self.bo :
@@ -47,8 +46,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         PQ_Gizmo_Preselect.instance = self        
         if self.bo == None :
             self.bo = QMesh( context.active_object , self.preferences )
-        self.bo.CheckValid()
-        self.bo.UpdateView( context )
+        self.bo.CheckValid( context )
+        self.bo.UpdateView(context)
 
         element = self.bo.PickElement( location , self.preferences.distance_to_highlight )
         if self.currentElement.element != element.element :
@@ -63,10 +62,17 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         if self.currentElement != None and self.bo != None :
             self.currentElement.Draw( self.bo.obj , self.preferences.highlight_color , self.preferences )
 
+    def invoke(self, context, event):
+        print( "invoke" )
+        return {'RUNNING_MODAL'}
+
+    def modal( self , context, event, tweak) :
+        print( event.type)
+        return {'RUNNING_MODAL'}
+
     def refresh( self , context ) :
         if self.bo != None :
-            self.bo.CheckValid()            
-            self.bo.UpdateMesh()  
+            self.bo.invalid = True
             self.currentElement = ElementItem.Empty()
 
     def use(self) :
@@ -102,6 +108,7 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     def setup(self, context):
         self.widget = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
         self.widget.init(context)   
+#       self.widget.use_draw_modal = True
 #       self.gizmos.new("GIZMO_GT_mesh_preselect_elem_3d")  
 
         for op in context.window_manager.operators :

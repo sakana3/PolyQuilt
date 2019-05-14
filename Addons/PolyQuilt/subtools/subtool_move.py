@@ -55,12 +55,14 @@ class SubToolMove(SubTool) :
         self.repeat = False
         self.MoveTo( bpy.context , self.mouse_pos )
         self.bmo.UpdateMesh()
+        self.is_snap = False
 
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             self.MoveTo( context , self.mouse_pos )
 
+            self.is_snap = False
             if self.currentTarget.isVert and self.move_ray == None :# and ( self.currentTarget.element.is_manifold is False or self.currentTarget.element.is_boundary )  :
                 tmp = self.subTarget
                 ignore = [self.currentTarget.element]
@@ -77,6 +79,7 @@ class SubToolMove(SubTool) :
                 if self.subTarget.isVert \
                         and self.currentTarget.element != self.subTarget.element \
                         and (self.operator.fix_to_x_zero and self.currentTarget.is_x_zero and self.subTarget.is_x_zero is False ) is False :
+                    self.is_snap = True
                     self.currentTarget.element.co = self.subTarget.element.co
                     if self.currentTarget.mirror is not None :
                         self.currentTarget.mirror.co = self.bmo.mirror_pos(self.currentTarget.element.co)
@@ -88,11 +91,13 @@ class SubToolMove(SubTool) :
                         x_zero = self.bmo.zero_pos(self.currentTarget.element.co)
                         self.currentTarget.element.co = x_zero
                         self.currentTarget.mirror.co = x_zero
+                        self.is_snap = True
                 else :
                     if self.bmo.is_mirror :
                         mp = self.bmo.mirror_pos( self.currentTarget.element.co )
                         if self.bmo.check_near(self.currentTarget.element.co , mp ) :
                             self.currentTarget.element.co = self.bmo.zero_pos(mp)
+                            self.is_snap = True
 
             self.bmo.UpdateMesh()
         elif event.type == 'LEFTMOUSE' : 
@@ -132,11 +137,16 @@ class SubToolMove(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        pass
+        if self.is_snap :
+            size = self.preferences.highlight_vertex_size
+            pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.currentTarget.element.co ) )
+            draw_util.draw_circle2D( pos , size + 1.5 , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
         self.currentTarget.Draw( self.bmo.obj , self.color_highlight()  , self.preferences )
-        self.subTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
+        if self.subTarget.isNotEmpty :
+            self.subTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
+
         if self.move_ray != None :
             v1 = self.move_ray.origin + self.move_ray.vector * 10000.0 
             v2 = self.move_ray.origin - self.move_ray.vector * 10000.0 
