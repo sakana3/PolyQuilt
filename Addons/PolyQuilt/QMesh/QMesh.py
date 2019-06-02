@@ -36,9 +36,10 @@ class QMesh(QMeshOperators) :
         self.highlight = QMeshHighlight(self)
         self.invalid = False
 
-    def UpdateMesh( self ) :
+    def UpdateMesh( self , updateHighLight = True ) :
         super().UpdateMesh()
-        self.highlight.setDirty()
+        if updateHighLight :
+            self.highlight.setDirty()
 
     def CheckValid( self , context ) :
         val = super()._CheckValid(context)

@@ -102,7 +102,7 @@ class SubToolDefault(SubTool) :
         self.LMBEvent.Reset(context)
 
     def OnExitSubTool( self ,context,subTool ):
-        self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
+        self.currentTarget = ElementItem.Empty() # self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
         return 'FINISHED'
 
     def OnExit( self ) :

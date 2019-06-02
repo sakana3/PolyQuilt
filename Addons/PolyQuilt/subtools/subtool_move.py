@@ -54,7 +54,7 @@ class SubToolMove(SubTool) :
         self.ChangeRay(op.move_type )
         self.repeat = False
         self.MoveTo( bpy.context , self.mouse_pos )
-        self.bmo.UpdateMesh()
+        self.bmo.UpdateMesh(False)
         self.is_snap = False
 
 
@@ -99,7 +99,7 @@ class SubToolMove(SubTool) :
                             self.currentTarget.element.co = self.bmo.zero_pos(mp)
                             self.is_snap = True
 
-            self.bmo.UpdateMesh()
+            self.bmo.UpdateMesh(False)
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
