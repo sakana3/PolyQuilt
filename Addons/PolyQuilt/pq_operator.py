@@ -76,8 +76,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         name="Plane Pivot",
         description="Plane Pivot",
         items=[('OBJ' , "Object Center", "" , "PIVOT_MEDIAN" , 0),
-               ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ),
-               ('Origin'  , "Origin", "" , "ORIENTATION_GLOBAL" , 2) ],
+               ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ) ],
         default='OBJ',
     )
 
