@@ -135,7 +135,7 @@ def _get_all_branches_data(owner, repository):
 
 
 def _parse_release_version(version):
-    return [int(c) for c in version[1:].split(".")]
+    return [int(c) for c in version.split(".")]
 
 
 # ver1 > ver2   : >  0

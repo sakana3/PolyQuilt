@@ -32,15 +32,18 @@ class SubToolFinSlice(SubTool) :
         super().__init__(op)
         self.currentTarget = target
         self.slice_rate = 0.0
+        self.slice_dist = 0.0
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            self.slice_rate = self.CalcRate(context,self.mouse_pos)
+            self.slice_rate , self.slice_dist = self.CalcRate(context,self.mouse_pos)
         elif event.type == 'RIGHTMOUSE' :
             return 'FINISHED'
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
-                if self.slice_rate > 0 and self.slice_rate < 1 :
+                if self.slice_rate == 1 :
+                    self.DoSplit()
+                elif self.slice_rate > 0 :
                     self.DoSlice()
                 return 'FINISHED'
         return 'RUNNING_MODAL'
@@ -55,39 +58,60 @@ class SubToolFinSlice(SubTool) :
         for edge in self.currentTarget.element.link_edges :
             v0 = edge.verts[0].co
             v1 = edge.verts[1].co
-            draw_util.draw_lines3D( context , (v0,v1) , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
-
-        if self.bmo.is_mirror and self.currentTarget.mirror is not None :
-            s0 = set(self.currentTarget.element.link_edges)
-            s1 = set(self.currentTarget.mirror.link_edges)
-            edges = ( s0 | s1 ) - ( s0 & s1 )
-            vs = [self.currentTarget.element,self.currentTarget.mirror]
-        else :
-            edges = self.currentTarget.element.link_edges
-            vs = [self.currentTarget.element]
+            draw_util.draw_lines3D( context , (v0,v1) , self.color_split(0.25) , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
+            if self.slice_rate == 1.0 :
+                draw_util.draw_pivots3D( ( edge.other_vert(self.currentTarget.element).co , ) , 1 , self.color_split() )
 
         rate = self.slice_rate
+        virts , edges = self.collect_geom( self.currentTarget.element , self.currentTarget.mirror )
 
-        for vert in vs :
+        for vert in virts :
             for face in vert.link_faces :
                 links = [ e for e in face.edges if e in edges ]
                 if len(links) == 2 :
-                    for v in vs :
+                    for v in virts :
                         if v in links[0].verts :
                             v0 = v.co *(1-rate) + links[0].other_vert(v).co * rate
                         if v in links[1].verts :
                             v1 = v.co *(1-rate) + links[1].other_vert(v).co * rate
                     draw_util.draw_lines3D( context , (v0,v1) , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
+    def collect_geom( self , element , mirror ) :
+        if self.bmo.is_mirror and mirror is not None :
+            s0 = set(element.link_edges)
+            s1 = set(mirror.link_edges)
+            edges = ( s0 | s1 ) - ( s0 & s1 )
+            virts = [ element, mirror]
+        else :
+            edges = element.link_edges
+            virts = [element]
+        return virts , edges
+
     def CalcRate( self , context , coord ):
         rate = 0.0
+        dist = 0.0
         ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
-        dist = self.preferences.distance_to_highlight* dpm()
+        d = self.preferences.distance_to_highlight* dpm()
         for edge in self.currentTarget.element.link_edges :
-            d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , dist )
-            if d > rate :
-                rate = d
-        return rate
+            r = handleutility.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )
+            if r > rate :
+                rate = r
+                dist = d * (edge.verts[0].co - edge.verts[1].co).length
+        return rate , dist
+
+    def DoSplit( self ) :
+        verts , edges = self.collect_geom( self.currentTarget.element , self.currentTarget.mirror )
+
+        for vert in verts :
+            for face in vert.link_faces :
+                links = [ e for e in face.edges if e in edges ]
+                if len(links) == 2 :
+                    v0 = links[0].other_vert(vert)
+                    v1 = links[1].other_vert(vert)
+
+                    if self.bmo.bm.edges.get( (v0 , v1) ) == None :
+                        bmesh.utils.face_split( face , v0  , v1 )
+        self.bmo.UpdateMesh()
 
     def DoSlice( self ) :
         _slice = {}

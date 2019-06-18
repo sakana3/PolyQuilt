@@ -32,7 +32,9 @@ class SubToolKnife(SubTool) :
         self.startPos = startPos
         self.endPos = startPos
         self.CutEdgePos3D = []
+        self.CutEdgePos3D_mirror = []
         self.CutEdge = []
+        self.CutEdge_mirror = []
 
     def OnUpdate( self , context , event ) :
         self.endPos = self.mouse_pos
@@ -59,10 +61,17 @@ class SubToolKnife(SubTool) :
     def OnDraw3D( self , context  ) :
         if self.CutEdgePos3D :
             draw_util.draw_pivots3D( self.CutEdgePos3D , 1 , self.color_delete() )
+        if self.CutEdgePos3D_mirror :
+            draw_util.draw_pivots3D( self.CutEdgePos3D_mirror , 1 , self.color_delete() )
 
     def CalcKnife( self ,context,startPos , endPos ) :
         slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
         self.CutEdge , self.CutEdgePos3D = self.calc_slice( slice_plane , plane0 , plane1 )
+        if self.bmo.is_mirror :
+            slice_plane.x_mirror()
+            plane0.x_mirror()
+            plane1.x_mirror()   
+            self.CutEdge_mirror , self.CutEdgePos3D_mirror = self.calc_slice( slice_plane , plane0 , plane1 )
 
     def make_slice_planes( self , context,startPos , endPos ):
         slice_plane_world = handleutility.Plane.from_screen_slice( context,startPos , endPos )
@@ -93,6 +102,7 @@ class SubToolKnife(SubTool) :
 
         matrix = self.bmo.obj.matrix_world
         CutEdge = [ p for p in [ (edge,chk( edge )) for edge in edges ] if p[1] != None ]
+
         return [ e[0] for e in CutEdge ] , [ matrix @ e[1] for e in CutEdge ]
 
     def DoKnife( self ,context,startPos , endPos ) :

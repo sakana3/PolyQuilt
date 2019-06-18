@@ -32,7 +32,8 @@ class QMeshOperators :
         self.current_matrix = None
         self.__btree = None
         self.__kdtree = None
-        self.preferences = preferences        
+        self.preferences = preferences
+
 
     @property
     def btree(self):
@@ -105,24 +106,36 @@ class QMeshOperators :
         return (c0-c1).length <= radius 
 
 
-    def CheckValid( self ) :
-        if not self.bm.is_valid :
-            self.bm = bmesh.from_edit_mesh(self.mesh)
+    def _CheckValid( self , context ) :
+        if self.obj != context.active_object or self.bm.is_valid is False :
+            return False
+        return True
 
-    def UpdateMesh( self ) :
-        self.CheckValid()
-        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
+    def reload_obj( self , context ) :
+        self.obj = context.active_object
+        self.mesh = self.obj.data
+        self.bm = bmesh.from_edit_mesh(self.mesh)
         self.bm.faces.ensure_lookup_table()
         self.bm.verts.ensure_lookup_table()
-        self.bm.edges.ensure_lookup_table()
-        self.bm.normal_update()        
-        bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
+        self.bm.edges.ensure_lookup_table()            
+        self.current_matrix = None            
         if self.__btree :
             del self.__btree
             self.__btree = None
         if self.__kdtree :
             del self.__kdtree
             self.__kdtree = None
+
+    def UpdateMesh( self ) :
+        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
+        self.bm.faces.ensure_lookup_table()
+        self.bm.verts.ensure_lookup_table()
+        self.bm.edges.ensure_lookup_table()
+        self.bm.normal_update()        
+        bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
+        self.__btree = None
+        self.__kdtree = None
+        self.current_matrix = None    
 
     def AddVertex( self , local_pos : Vector , is_mirror = None ) :
         vert = self.bm.verts.new( local_pos )
@@ -150,7 +163,7 @@ class QMeshOperators :
             mirror = [ self.find_mirror(v,False) for v in verts[::-1] ]
             if all(mirror) :
                 if set(verts) ^ set(mirror) :
-                    face = self.bm.faces.new( mirror )
+                    face_mirror = self.bm.faces.new( mirror )
 
         return face
 
@@ -227,7 +240,7 @@ class QMeshOperators :
                     if (v0 not in face.verts or v1 not in face.verts ) and (v0 not in new_face.verts or v1 not in new_face.verts ):
                         return
                     if v0 in new_face.verts and v1 in new_face.verts :
-                        return bmesh.utils.face_split( new_face , v0  , v1 , coords , use_exist )
+                        return bmesh.utils.face_split( new_face , v0  , v1 )
             
         return bmesh.utils.face_split( face , v0  , v1 , coords , use_exist )
 

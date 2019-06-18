@@ -46,11 +46,49 @@ class QMeshHighlight :
         return self.__viewPosEdges
 
     def setDirty( self ) :
-        del self.__viewPosVerts
-        del self.__viewPosEdges
+        if self.__viewPosVerts :
+            del self.__viewPosVerts
         self.__viewPosVerts = None
+        if self.__viewPosEdges :
+            del self.__viewPosEdges
         self.__viewPosEdges = None
+        self.current_matrix = None
 
+    def UpdateViewNP( self ,context , forced = False ):
+        rv3d = context.space_data.region_3d
+        matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        if forced == True or matrix != self.current_matrix :
+            region = context.region
+            halfW = region.width / 2.0
+            halfH = region.height / 2.0
+            matrix_world = self.pqo.obj.matrix_world
+            perspective_matrix = rv3d.perspective_matrix
+
+            verts = self.pqo.bm.verts
+
+            vertCount = len(verts)
+            verts_co = np.array( [ v.co for v in verts ] )
+            verts_co.shape = (vertCount, 3) 
+            verts_co_4d = np.ones(shape=(vertCount, 4), dtype=np.float) 
+            verts_co_4d[:, :-1] = verts_co
+            verts_world = np.einsum( 'ij,aj->ai' , matrix_world , verts_co_4d)
+            verts_view = np.einsum( 'ij,aj->ai' , perspective_matrix , verts_world ) 
+            verts_xyz = verts_view[:,[0,1,2]] 
+            verts_w = verts_view[:,[3]]
+            verts_proj = verts_xyz / verts_w * np.array( (halfW , halfH , 1) ) + np.array( (halfW , halfH , 0) ) 
+            verts_proj_xy = verts_view[:,[0,1]] 
+
+            viewPos = { v : ( v , Vector( p ).to_2d() ) for (v,p,w) in zip(verts , verts_proj , verts_world ) }
+
+            edges = self.pqo.bm.edges
+            edges_size = len(edges) 
+#           edges_verts = [ (e.verts[0].index,e.verts[1].index) for e in edges ]
+#           self.__viewPosEdges = [ (e , verts_xyz[e[0]] , verts_xyz[e[1]] ) for e in edges_verts ]
+
+            self.__viewPosEdges = [ (e, p1[1] , p2[1] ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
+            self.__viewPosVerts = [ p for p in viewPos.values() if p and not p[0].hide ]
+
+            self.current_matrix = matrix        
 
     def UpdateView( self ,context , forced = False ):
         rv3d = context.space_data.region_3d
@@ -61,44 +99,31 @@ class QMeshHighlight :
             halfH = region.height / 2.0
             matrix_world = self.pqo.obj.matrix_world
             perspective_matrix = rv3d.perspective_matrix
+            matrix = matrix_world @ perspective_matrix
+            half = Vector( (halfW,halfH) )
 
-#https://blender.stackexchange.com/questions/139511/multiply-4x4-matrix-and-array-of-3d-vectors-using-numpy/139517#139517
             verts = self.pqo.bm.verts
 
             def ProjVert( vt ) :
-                v = vt.co
-                wv = matrix_world @ v
-                pv = perspective_matrix @ wv.to_4d()
-                if pv.w < 0.0 :
-                    return None
+                pv = matrix @ vt.co.to_4d()
+                w = pv.w 
+                return Vector( (pv.x * halfW , pv.y * halfH ) ) / w + half if w > 0.0 else None
 
-                t = Vector( (halfW+halfW * pv.x / pv.w , halfH+halfH * pv.y / pv.w ))
-
-                return [ vt , t , wv ]
-
-            viewPos = [ ProjVert(p) for p in verts ]
-
-            def ProjEdge( e) :
-                verts = e.verts
-                p0 = viewPos[ verts[0].index ]
-                p1 = viewPos[ verts[1].index ]
-                if p0 == None or p1 == None:
-                    return None
-                return ( e , p0[1] , p1[1] , p0[2] , p1[2] )
+            viewPos = { p : ProjVert(p) for p in verts }
 
             edges = self.pqo.bm.edges
-            viewPosEdge = [ ProjEdge(e) for e in edges ]
-            self.__viewPosEdges = [ e for e in viewPosEdge if e is not None and e[0].hide is False ]
-            self.__viewPosVerts = [ p for p in viewPos if p is not None and p[0].hide is False ]
 
-            self.current_matrix = matrix        
+            self.__viewPosEdges = [ (e, p1 , p2 ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
+            self.__viewPosVerts = [ (v,p) for v,p in viewPos.items() if p and not v.hide ]
 
-                
+            self.current_matrix = copy.copy(matrix)
+
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         r = radius
         p = Vector( coord )
         viewPos = self.viewPosVerts
-        s = [ i for i in viewPos if i[1] != None and (i[1] - p).length <= r and i[0] not in ignore ]
+        rr = Vector( (r,0) )
+        s = [ i for i in viewPos if i[1] - p <= rr ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
@@ -106,8 +131,40 @@ class QMeshHighlight :
             ray = handleutility.Ray.from_screen( bpy.context , coord )
             s = [ i for i in s if i[0].is_manifold == False or i[0].is_boundary or i[0].normal.dot( ray.vector ) < 0 ]
 
-        r = sorted( s , key=lambda i:(i[1] - p).length )
-        return [ ElementItem( self.pqo ,i[0] , i[1] , i[2] ) for i in r ] 
+        s = [ i for i in s if i[0] not in ignore ]
+
+        r = sorted( s , key=lambda i:(i[1] - p).length_squared )
+        matrix_world = self.pqo.obj.matrix_world        
+        return [ ElementItem( self.pqo ,i[0] , i[1] , matrix_world @ i[0].co ) for i in r ] 
+
+
+    def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True ) -> ElementItem :
+        p = Vector( coord )
+        viewPosEdge = self.viewPosEdges
+        ray = handleutility.Ray.from_screen( bpy.context , coord )
+        ray_distance = ray.distance
+        location_3d_to_region_2d = handleutility.location_3d_to_region_2d
+        matrix_world = self.pqo.obj.matrix_world      
+
+        def Conv( edge ) -> ElementItem :
+            v1 = matrix_world @ edge.verts[0].co
+            v2 = matrix_world @ edge.verts[1].co
+            h0 , h1 , d = ray_distance( handleutility.Ray( v1 , (v1-v2) ) )
+            c = location_3d_to_region_2d(h1)
+            return ElementItem( self.pqo , edge , c , h1 , d )
+
+        intersect = geometry.intersect_line_sphere_2d
+        r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+
+        if backface_culling :
+            r = [ i for i in r
+                if  i.element.is_manifold == False or i.element.is_boundary or
+                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray.vector ) < 0 ]
+        
+        s = sorted( r , key=lambda i:(i.coord - p).length_squared )
+
+        return s
+
 
     def PickFace( self ,coord , ignore = []  , backface_culling = True ) -> ElementItem :
         ray = handleutility.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
@@ -128,29 +185,6 @@ class QMeshHighlight :
 
         return ElementItem.Empty()
 
-
-    def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True ) -> ElementItem :
-        p = Vector( coord )
-        viewPosEdge = self.viewPosEdges
-        ray = handleutility.Ray.from_screen( bpy.context , coord )
-        ray_distance = ray.distance
-        location_3d_to_region_2d = handleutility.location_3d_to_region_2d
-        def Conv( edge ) -> ElementItem :
-            h0 , h1 , d = ray_distance( handleutility.Ray( edge[3] , (edge[3]-edge[4]) ) )
-            c = location_3d_to_region_2d(h0)
-            return ElementItem( self.pqo , edge[0] , c , h1 , d )
-
-        intersect = geometry.intersect_line_sphere_2d
-        r = [ Conv(i) for i in viewPosEdge if None not in intersect( i[1] ,i[2] ,p,radius ) and i[0] not in ignore ]
-
-        if backface_culling :
-            r = [ i for i in r
-                if  i.element.is_manifold == False or i.element.is_boundary or
-                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray.vector ) < 0 ]
-        
-        s = sorted( r , key=lambda i:(i.coord - p).length )
-
-        return s
 
 
     def find_view_range( self , coord , radius ) :

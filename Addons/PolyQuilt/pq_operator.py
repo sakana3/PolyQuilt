@@ -39,7 +39,7 @@ def enum_geometry_type_callback(scene, context):
         items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
                ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
                ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
-               ('QUAD', "Quad", "", custom_icon("icon_geom_quad") , 0),
+               ('QUAD', bpy.app.translations.pgettext("Quad") , "", custom_icon("icon_geom_quad") , 0),
                ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
         return items
 
@@ -76,8 +76,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         name="Plane Pivot",
         description="Plane Pivot",
         items=[('OBJ' , "Object Center", "" , "PIVOT_MEDIAN" , 0),
-               ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ),
-               ('Origin'  , "Origin", "" , "ORIENTATION_GLOBAL" , 2) ],
+               ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ) ],
         default='OBJ',
     )
 
@@ -116,7 +115,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         context.area.tag_redraw()
 
         t = time.time()
-        self.bmo.UpdateView( context )
+        self.bmo.CheckValid( context )
         ret = 'FINISHED'
 
         if event.type == 'ESC':
@@ -148,7 +147,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None:
             args = (self, context)
             self.bmo = PQ_Gizmo_Preselect.instance.bo
-            self.bmo.UpdateView( context )
             self.currentSubTool = SubToolDefault(self , PQ_Gizmo_Preselect.instance.currentElement)
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
