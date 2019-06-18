@@ -86,6 +86,7 @@ class SubToolMakePoly(SubTool) :
                 elif self.currentTarget.isEmpty :
                     self.pivot = self.calc_planned_construction_position()
                     addVert = self.bmo.AddVertexWorld(self.pivot)
+                    self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , addVert.co , 0.0 )
                 if self.currentTarget.isVert :
                     if self.currentTarget.element not in self.mekePolyList :
@@ -106,7 +107,7 @@ class SubToolMakePoly(SubTool) :
             if isinstance( self.targetElement , bmesh.types.BMFace ) :
                 ignore = self.targetElement.edges
             elif isinstance( self.targetElement , bmesh.types.BMEdge ):
-                ignore = [ self.targetElement ]
+                ignore =  [ self.targetElement ]
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore=ignore )
             if tmp != self.currentTarget :
                 self.EdgeLoops = None
@@ -195,7 +196,7 @@ class SubToolMakePoly(SubTool) :
             if self.bmo.is_mirror :
                 if target.mirror == None and target.is_x_zero is False :
                     self.bmo.AddVertex( self.bmo.mirror_pos( target.element.co ) , False )
-                    dirty = True
+                    self.bmo.UpdateMesh()
 
             self.mekePolyList.append(target.element)
             ret = True

@@ -163,7 +163,7 @@ class QMeshOperators :
             mirror = [ self.find_mirror(v,False) for v in verts[::-1] ]
             if all(mirror) :
                 if set(verts) ^ set(mirror) :
-                    face = self.bm.faces.new( mirror )
+                    face_mirror = self.bm.faces.new( mirror )
 
         return face
 

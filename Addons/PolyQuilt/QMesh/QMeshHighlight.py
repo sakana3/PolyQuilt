@@ -54,7 +54,7 @@ class QMeshHighlight :
         self.__viewPosEdges = None
         self.current_matrix = None
 
-    def UpdateView2( self ,context , forced = False ):
+    def UpdateViewNP( self ,context , forced = False ):
         rv3d = context.space_data.region_3d
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
         if forced == True or matrix != self.current_matrix :
@@ -150,7 +150,7 @@ class QMeshHighlight :
             v1 = matrix_world @ edge.verts[0].co
             v2 = matrix_world @ edge.verts[1].co
             h0 , h1 , d = ray_distance( handleutility.Ray( v1 , (v1-v2) ) )
-            c = location_3d_to_region_2d(h0)
+            c = location_3d_to_region_2d(h1)
             return ElementItem( self.pqo , edge , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d

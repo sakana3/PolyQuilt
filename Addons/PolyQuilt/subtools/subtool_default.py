@@ -86,9 +86,9 @@ class SubToolDefault(SubTool) :
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :
             if self.currentTarget.isNotEmpty :
-                self.LMBEvent.Draw( self.currentTarget.coord , "Melt")
+                self.LMBEvent.Draw( self.currentTarget.coord )
             else:
-                self.LMBEvent.Draw( None , "Knife")
+                self.LMBEvent.Draw( None )
 
     def OnDraw3D( self , context  ) :
         if self.currentTarget.isNotEmpty :
