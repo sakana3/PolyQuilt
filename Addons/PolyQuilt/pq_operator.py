@@ -110,11 +110,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        MESH_OT_poly_quilt.handle_remove()
 
-        self.count = self.count + 1
         context.area.tag_redraw()
 
-        t = time.time()
+        if self.preferences.is_debug :
+            t = time.time()
+
         self.bmo.CheckValid( context )
         ret = 'FINISHED'
 
@@ -126,41 +128,44 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if self.currentSubTool is not None :
             ret = self.currentSubTool.Update(context, event)
 
+        if self.preferences.is_debug :
+            self.count = self.count + 1
+            self.time = time.time() - t
+            if self.maxTime < self.time :
+                self.maxTime = self.time
+            self.debugStr = "eventValue = " + str(event.value) + " type = "+ str(event.type) + " - " + str(self.count) + " time = " + str(self.time) + " max = " + str(self.maxTime)
+
         if ret == 'FINISHED' :
-            MESH_OT_poly_quilt.handle_remove()
             bpy.context.window.cursor_modal_restore()
-
-        self.time = time.time() - t
-
-        if self.maxTime < self.time :
-            self.maxTime = self.time
-
-        self.debugStr = "eventValue = " + str(event.value) + " type = "+ str(event.type) + " - " + str(self.count) + " time = " + str(self.time) + " max = " + str(self.maxTime)
+        else :
+            MESH_OT_poly_quilt.handle_add(self,context)    
 
         return {ret}
-        if ret == 'RUNNING_MODAL' :
-            return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
         self.preferences = context.preferences.addons[__package__].preferences
-        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect        
+        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None:
-            args = (self, context)
+
+            if context.space_data.show_gizmo is False :
+                self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
+                return {'CANCELLED'}
+
             self.bmo = PQ_Gizmo_Preselect.instance.bo
             self.currentSubTool = SubToolDefault(self , PQ_Gizmo_Preselect.instance.currentElement)
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
             PQ_Gizmo_Preselect.instance.use()
 
-            self.debugStr = "invoke"
-            self.count = 0
-            self.time = 0
-            self.maxTime = 0
+            if self.preferences.is_debug :
+                self.debugStr = "invoke"
+                self.count = 0
+                self.time = 0
+                self.maxTime = 0
 
             bpy.context.window.cursor_modal_set( self.currentSubTool.GetCursor() )
             context.window_manager.modal_handler_add(self)
-            MESH_OT_poly_quilt.__draw_handle2D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
-            MESH_OT_poly_quilt.__draw_handle3D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
+            MESH_OT_poly_quilt.handle_add(self,context)
             
             return {'RUNNING_MODAL'}
         else:
@@ -188,10 +193,22 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             if self.currentSubTool is not None :
                 self.currentSubTool.Draw2D(context)
 
+    @staticmethod
     def draw_callback_3d(self , context):
         if self != None :
             if self.currentSubTool is not None :
                 self.currentSubTool.Draw3D(context)
+
+    @staticmethod
+    def handle_reset(self,context):
+        MESH_OT_poly_quilt.handle_remove()
+        MESH_OT_poly_quilt.handle_add(self,context)    
+
+    @staticmethod
+    def handle_add(self,context):
+        args = (self, context)        
+        MESH_OT_poly_quilt.__draw_handle2D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+        MESH_OT_poly_quilt.__draw_handle3D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
 
     @staticmethod
     def handle_remove():
