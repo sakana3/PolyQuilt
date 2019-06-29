@@ -101,7 +101,10 @@ class ButtonEventUtil :
             if self.Press :
                 if self.presureComplite :
                     self.presureCompOnce = True
-                if (time.time()-self.PressTime ) > 0.15 and (self.mouse_pos-self.PressPos ).length > 4:
+                drag_threshold = context.preferences.inputs.drag_threshold_mouse
+                if event.is_tablet : 
+                    drag_threshold = context.preferences.inputs.drag_threshold_tablet
+                if (time.time()-self.PressTime ) > 0.15 and (self.mouse_pos-self.PressPos ).length > drag_threshold:
                    self.Presure = False
                 if self.Presure is False :
                     if self.presureCompOnce :
