@@ -20,9 +20,9 @@ from bpy.props import (
     EnumProperty,
     StringProperty,
 )
-from .utils.addon_updator import (
-    AddonUpdatorManager,
-    AddonUpdatorConfig,
+from .utils.addon_updater import (
+    AddonUpdaterManager,
+    AddonUpdaterConfig,
     get_separator,
 )
 from bpy.types import AddonPreferences
@@ -42,7 +42,7 @@ class PQ_OT_CheckAddonUpdate(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, _):
-        updater = AddonUpdatorManager.get_instance()
+        updater = AddonUpdaterManager.get_instance()
         updater.check_update_candidate()
 
         return {'FINISHED'}
@@ -60,7 +60,7 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
     )
 
     def execute(self, _):
-        updater = AddonUpdatorManager.get_instance()
+        updater = AddonUpdaterManager.get_instance()
         updater.update(self.branch_name)
 
         return {'FINISHED'}
@@ -68,7 +68,7 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
 
 
 def register_updater(bl_info):
-    config = AddonUpdatorConfig()
+    config = AddonUpdaterConfig()
     config.owner = "sakana3"
     config.repository = "PolyQuilt"
     config.current_addon_path = os.path.dirname(os.path.realpath(__file__))
@@ -77,12 +77,16 @@ def register_updater(bl_info):
         config.current_addon_path[
             :config.current_addon_path.rfind(get_separator())]
     config.min_release_version = bl_info["version"]
-    config.target_addon_path = "addons/PolyQuilt"
-    updater = AddonUpdatorManager.get_instance()
+    config.default_target_addon_path = "PolyQuilt"
+    config.target_addon_path = {
+        "master": "Addons{}PolyQuilt".format(get_separator()),
+        "develop": "Addons{}PolyQuilt".format(get_separator())
+    }
+    updater = AddonUpdaterManager.get_instance()
     updater.init(bl_info, config)
 
 def get_update_candidate_branches(_, __):
-    manager = AddonUpdatorManager.get_instance()
+    manager = AddonUpdaterManager.get_instance()
     if not manager.candidate_checked():
         return []
 
@@ -111,7 +115,7 @@ class PolyQuiltPreferences(AddonPreferences):
         max=1.0,
         size=4,
         subtype='COLOR'
-    )    
+    )
 
     split_color : FloatVectorProperty(
         name="SplitColor",
@@ -121,7 +125,7 @@ class PolyQuiltPreferences(AddonPreferences):
         max=1.0,
         size=4,
         subtype='COLOR'
-    )    
+    )
 
     threshold : FloatVectorProperty(
         name="DeleteColor",
@@ -131,7 +135,7 @@ class PolyQuiltPreferences(AddonPreferences):
         max=1.0,
         size=4,
         subtype='COLOR'
-    )    
+    )
 
     delete_color : FloatVectorProperty(
         name="DeleteColor",
@@ -141,14 +145,14 @@ class PolyQuiltPreferences(AddonPreferences):
         max=1.0,
         size=4,
         subtype='COLOR'
-    )    
+    )
 
     distance_to_highlight : FloatProperty(
         name="distance_to_highlight",
         description="distance_to_highlight",
         default=4.0,
         min=1.0,
-        max=10.0) 
+        max=10.0)
 
     highlight_vertex_size : FloatProperty(
         name="Highlight Vertex Size",
@@ -162,21 +166,21 @@ class PolyQuiltPreferences(AddonPreferences):
         description="Highlight Line Width",
         default=2.0,
         min=1.0,
-        max=10.0)        
+        max=10.0)
 
     highlight_face_alpha : FloatProperty(
         name="Highlight Face Alpha",
         description="Highlight Face Alpha",
         default=0.2,
         min=0.1,
-        max=1.0)             
+        max=1.0)
 
     longpress_time : FloatProperty(
         name="LongPressTime",
         description="Long press Time",
         default=0.5,
         min=0.3,
-        max=2.0)             
+        max=2.0)
 
 
     extra_setting_expanded : BoolProperty(
@@ -231,19 +235,19 @@ class PolyQuiltPreferences(AddonPreferences):
         layout.prop( self, "extra_setting_expanded", text="Extra Settings",
             icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded
             else 'DISCLOSURE_TRI_RIGHT')
-        if self.extra_setting_expanded : 
-            self.draw_updater_ui(layout)            
+        if self.extra_setting_expanded :
+            self.draw_updater_ui(layout)
             col = layout.column()
-            col.scale_y = 2            
+            col.scale_y = 2
             col.operator(PQ_OT_SetupUnityLikeKeymap.bl_idname,
                         text="Setup Unity like Keymap(experimental)",
                         icon='MONKEY')
             col = layout.column()
-            col.scale_y = 1            
+            col.scale_y = 1
             layout.row().prop(self, "is_debug" , text = "Debug")
 
     def draw_updater_ui(self,layout):
-        updater = AddonUpdatorManager.get_instance()
+        updater = AddonUpdaterManager.get_instance()
 
         layout.separator()
 
@@ -302,13 +306,13 @@ class PQ_OT_SetupUnityLikeKeymap(bpy.types.Operator) :
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        for keymap in context.window_manager.keyconfigs.user.keymaps:                        
+        for keymap in context.window_manager.keyconfigs.user.keymaps:
             if keymap.space_type == 'EMPTY':
                 for key in keymap.keymap_items:
                     if True not in [ key.any , key.alt , key.ctrl ,key.shift ]:
                         if key.map_type == 'MOUSE' and key.type == 'RIGHTMOUSE' :
                             key.value = 'CLICK'
-        for keymap in context.window_manager.keyconfigs.user.keymaps:                        
+        for keymap in context.window_manager.keyconfigs.user.keymaps:
             if keymap.space_type == 'VIEW_3D':
                 for key in keymap.keymap_items:
                     if key.idname == 'view3d.rotate' and key.map_type == 'MOUSE' :
