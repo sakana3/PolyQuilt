@@ -18,4 +18,4 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from . import addon_updator
+from . import addon_updater
