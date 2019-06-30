@@ -70,7 +70,7 @@ class SubToolDefault(SubTool) :
             elif self.currentTarget.isVert :
                 self.SetSubTool( SubToolFinSlice(self.operator,self.currentTarget ) )   
             elif self.currentTarget.isEmpty :
-                self.SetSubTool( SubToolKnife(self.operator,event.mouse_pos) )   
+                self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
     def OnUpdate( self , context , event ) :
         if self.isExit :
