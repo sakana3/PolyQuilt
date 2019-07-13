@@ -89,26 +89,22 @@ def tool_poly_quilt():
         def get_shading():
             # Get settings from 3D viewport or OpenGL render engine
             view = context.space_data
+#            return bpy.data.screens["Modeling"].shading
             if view.type == 'VIEW_3D':
                 return view.shading
             else:
                 return context.scene.display.shading
 
   
-        layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
+#       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
+        layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False , icon = "MOD_MIRROR" )
         layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
-#       box.prop(props, "ignore_backsurface" , text = "Ignore Back", toggle = toggle )
 
-#bpy.context.space_data.show_backface_culling
-        
+#        shading = get_shading()
+#        if shading.type == 'SOLID':        
+#            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))
 
-    #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
-
-        layout.prop(get_shading(), "show_backface_culling", toggle = toggle, icon_value = custom_icon("icon_opt_backcull"))
-
-        tool_settings = context.tool_settings
-
-
+#       tool_settings = context.tool_settings
 #      layout.prop(tool_settings, "use_edge_path_live_unwrap")
 #       layout.prop(tool_settings, "use_mesh_automerge")
 #       layout.prop(tool_settings, "double_threshold")

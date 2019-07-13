@@ -227,10 +227,10 @@ class PolyQuiltPreferences(AddonPreferences):
         row = layout.row()
         row.column().label(text="Color settings:" , icon = 'COLOR')
         box = row.box()
-        box.row().prop(self, "highlight_color" , text = "Highlight")
-        box.row().prop(self, "makepoly_color" , text = "Make Polygon")
-        box.row().prop(self, "split_color" , text = "Split" )
-        box.row().prop(self, "delete_color" , text = "Delete")
+        box.row().prop(self, "highlight_color" , text = "HighlightColor")
+        box.row().prop(self, "makepoly_color" , text = "MakePolyColor")
+        box.row().prop(self, "split_color" , text = "SplitColor" )
+        box.row().prop(self, "delete_color" , text = "DeleteColor")
 
         layout.prop( self, "extra_setting_expanded", text="Extra Settings",
             icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded
@@ -240,7 +240,7 @@ class PolyQuiltPreferences(AddonPreferences):
             col = layout.column()
             col.scale_y = 2
             col.operator(PQ_OT_SetupUnityLikeKeymap.bl_idname,
-                        text="Setup Unity like Keymap(experimental)",
+                        text= bpy.app.translations.pgettext("Setup GameEngine like Keymaps"),
                         icon='MONKEY')
             col = layout.column()
             col.scale_y = 1
@@ -301,8 +301,8 @@ class PolyQuiltPreferences(AddonPreferences):
 
 class PQ_OT_SetupUnityLikeKeymap(bpy.types.Operator) :
     bl_idname = "addon.set_unity_like_keymap"
-    bl_label = "SetupUnityLikeKeymap"
-    bl_description = "Setup Unity Like Keymap"
+    bl_label = "SetupGameEngineLikeKeymap"
+    bl_description = "Setup GameEngine like Keymaps"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
