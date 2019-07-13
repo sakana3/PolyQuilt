@@ -4,7 +4,7 @@ PolyQuiltはローポリモデリングをサポートするBlender2.8用アド�
 
 # β版について
 
-ダウンロードは[こちら](https://github.com/sakana3/PolyQuilt/releases/download/0.1.2/PolyQuilt_v0.1.2.zip)から
+ダウンロードは[こちら](https://github.com/sakana3/PolyQuilt/releases/download/0.9.0/PolyQuilt_v0.9.0.zip)から
 
 現在、Blender2.8はβテスト中の為、幾つかの不具合や実装待ち項目があります。本アドオンを利用したことによるデータの破損などは責任を持ちません。フィードバックはこちらの[Issues](https://github.com/sakana3/PolyQuilt/issues)かTwitterアカウント[sakana3](https://twitter.com/sakanaya) まで宜しくお願い致します。
 
