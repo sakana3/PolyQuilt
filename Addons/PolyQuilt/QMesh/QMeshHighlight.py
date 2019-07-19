@@ -138,7 +138,7 @@ class QMeshHighlight :
         return [ ElementItem( self.pqo ,i[0] , i[1] , matrix_world @ i[0].co ) for i in r ] 
 
 
-    def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True ) -> ElementItem :
+    def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True , edgering = False ) -> ElementItem :
         p = Vector( coord )
         viewPosEdge = self.viewPosEdges
         ray = handleutility.Ray.from_screen( bpy.context , coord )
@@ -154,7 +154,10 @@ class QMeshHighlight :
             return ElementItem( self.pqo , edge , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d
-        r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+        if edgering :        
+            r = [ Conv(e) for e,p1,p2 in viewPosEdge if e.is_boundary and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+        else :
+            r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
 
         if backface_culling :
             r = [ i for i in r

@@ -37,6 +37,11 @@ class SubToolEdgeSlice(SubTool) :
         self.fixCenter = False
         self.CalcSlice(self.currentEdge)
 
+    def isForcus( self ) :
+        if self.sliceRate > 0 and self.sliceRate < 1 :
+            return True
+        return False
+
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             if self.fixCenter :
@@ -56,7 +61,9 @@ class SubToolEdgeSlice(SubTool) :
             if event.value == 'RELEASE' :
                 if self.sliceRate > 0 and self.sliceRate < 1 :
                     self.DoSlice(self.currentEdge , self.sliceRate )
-                return 'FINISHED'
+                    return 'FINISHED'
+                else :
+                    return 'CANCEL'
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :

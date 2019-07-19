@@ -31,7 +31,7 @@ class SubTool :
         self.operator = op
         self.bmo : QMesh = op.bmo
         self.debugStr = ""
-        self.subTool = None
+        self.subTool = []
         self.__enterySubTool = None
         self.step = 0
         self.mouse_pos = mathutils.Vector((0,0))
@@ -44,7 +44,13 @@ class SubTool :
         return 'DEFAULT'
 
     def SetSubTool( self , subTool ) :
-        self.__enterySubTool = subTool 
+        if isinstance( subTool , list) :
+            self.__enterySubTool = subTool
+        else :
+            self.__enterySubTool = [ subTool ]
+
+    def isForcus( self ) :
+        return True
 
     def OnInit( self , context ) :
         pass
@@ -69,33 +75,43 @@ class SubTool :
         if self.__enterySubTool != None :
             self.subTool = self.__enterySubTool
             self.__enterySubTool = None
-            self.OnEnterSubTool( context , self.subTool)
+            for subTool in self.subTool :
+                self.OnEnterSubTool( context , subTool)
 
-        if self.subTool != None :
-            ret = self.subTool.Update(context , event)
+        if self.subTool :
+            for subTool in self.subTool :
+                ret = subTool.Update(context , event)
+                if ret == 'FINISHED' :
+                    break
+                if subTool.isForcus() :
+                    break
+
             if ret == 'FINISHED' :
-                self.subTool.OnExit()
-                ret = self.OnExitSubTool( context , self.subTool)
-                self.subTool = None
+                for subTool in self.subTool :
+                    subTool.OnExit()
+                self.OnExitSubTool( context , subTool)
         else :
             ret = self.OnUpdate(context,event)
 
-        if ret == 'FINISHED' :
+        if ret != 'RUNNING_MODAL'  :
+            self.subTool = []
             self.OnExit()
 
         self.step += 1
         return ret
 
     def Draw2D( self , context  ) :
-        if self.subTool != None :
-            self.subTool.Draw2D(context )
+        if self.subTool :
+            for subTool in self.subTool :
+                subTool.Draw2D(context )
         else :
             self.OnDraw(context)
         pass
 
     def Draw3D( self , context  ) :
-        if self.subTool != None :
-            self.subTool.Draw3D(context )
+        if self.subTool :
+            for subTool in self.subTool :
+                subTool.Draw3D(context )
         else :
             self.OnDraw3D(context)
         pass

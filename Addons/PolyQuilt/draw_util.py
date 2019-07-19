@@ -148,6 +148,24 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
 
+def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide_alpha = 0.5 ):
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glEnable(bgl.GL_DEPTH_TEST)
+    bgl.glDepthFunc( bgl.GL_LESS )
+
+    polys = mathutils.geometry.tessellate_polygon( (verts,) )
+    shader3D.bind()
+    shader3D.uniform_float("color", color )
+    batch = batch_for_shader(shader3D, 'TRIS', {"pos": verts } , indices=polys )
+    batch.draw(shader3D) 
+
+    if hide_alpha > 0.0 :
+        bgl.glDepthFunc( bgl.GL_GREATER )
+        shader3D.uniform_float("color", (color[0],color[1],color[2],color[3] * hide_alpha) )
+        batch.draw(shader3D)
+
+    bgl.glDisable(bgl.GL_BLEND)
+
 def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
     r = radius * dpm()
     if isWire is False :

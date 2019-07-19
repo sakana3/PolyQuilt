@@ -109,7 +109,7 @@ class Ray :
         origin = region_2d_to_origin_3d(region, rv3d, coord)
         vector = region_2d_to_vector_3d(region, rv3d, coord)
         return Ray(origin,vector)
-    
+
     def world_to_object( self , obj ) :
         matrix_inv = obj.matrix_world.inverted()
         target = self.origin + self.vector

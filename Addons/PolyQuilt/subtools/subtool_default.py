@@ -17,6 +17,7 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
+import copy
 from .. import handleutility
 from .. import draw_util
 from ..QMesh import *
@@ -25,6 +26,7 @@ from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
+from .subtool_edge_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
@@ -66,7 +68,7 @@ class SubToolDefault(SubTool) :
 
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
-                self.SetSubTool( SubToolEdgeSlice(self.operator,self.currentTarget.element) )   
+                self.SetSubTool( [ SubToolEdgeSlice(self.operator,self.currentTarget.element) , SubToolEdgeExtrude(self.operator,self.currentTarget) ] )   
             elif self.currentTarget.isVert :
                 self.SetSubTool( SubToolFinSlice(self.operator,self.currentTarget ) )   
             elif self.currentTarget.isEmpty :
@@ -103,7 +105,6 @@ class SubToolDefault(SubTool) :
 
     def OnExitSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty() # self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
-        return 'FINISHED'
 
     def OnExit( self ) :
         pass
