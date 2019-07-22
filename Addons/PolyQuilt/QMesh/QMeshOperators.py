@@ -155,7 +155,7 @@ class QMeshOperators :
             face.normal_update()
             dp = face.normal.dot( normal )
             if dp > 0.0 :
-                bmesh.utils.face_flip(face)
+                face.normal_flip()
                 face.normal_update()           
                 verts = verts[::-1] 
 

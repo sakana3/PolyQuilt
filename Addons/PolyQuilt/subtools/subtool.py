@@ -36,9 +36,10 @@ class SubTool :
         self.step = 0
         self.mouse_pos = mathutils.Vector((0,0))
         self.preferences = op.preferences
+        self.activeSubTool = None
 
     def Active(self) :
-        return self if self.subTool == None else self.subTool
+        return self if self.activeSubTool == None else self.activeSubTool
 
     def GetCursor(self) :
         return 'DEFAULT'
@@ -49,14 +50,14 @@ class SubTool :
         else :
             self.__enterySubTool = [ subTool ]
 
-    def isForcus( self ) :
-        return True
-
     def OnInit( self , context ) :
         pass
 
     def OnExit( self ) :
         pass
+
+    def OnForcus( self , context , event  ) :
+        return True
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
@@ -69,7 +70,7 @@ class SubTool :
 
     def Update( self , context , event ) :
 
-        ret = 'FINISHED'
+        ret = None
         self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))
 
         if self.__enterySubTool != None :
@@ -78,20 +79,28 @@ class SubTool :
             for subTool in self.subTool :
                 self.OnEnterSubTool( context , subTool)
 
+        self.activeSubTool = None
         if self.subTool :
             for subTool in self.subTool :
                 ret = subTool.Update(context , event)
-                if ret == 'FINISHED' :
+                if ret == 'RUNNING_MODAL' :
+                    self.activeSubTool = subTool
                     break
-                if subTool.isForcus() :
+                elif ret == 'FINISHED' :
                     break
+                elif ret == 'PASSTHROUGH' :
+                    ret = None
 
             if ret == 'FINISHED' :
                 for subTool in self.subTool :
                     subTool.OnExit()
                 self.OnExitSubTool( context , subTool)
-        else :
-            ret = self.OnUpdate(context,event)
+
+        if ret == None :
+            if self.OnForcus(context , event) :            
+                ret = self.OnUpdate(context,event)
+            else :
+                return 'PASSTHROUGH'
 
         if ret != 'RUNNING_MODAL'  :
             self.subTool = []
@@ -101,20 +110,16 @@ class SubTool :
         return ret
 
     def Draw2D( self , context  ) :
-        if self.subTool :
-            for subTool in self.subTool :
-                subTool.Draw2D(context )
+        if self.activeSubTool :
+            self.activeSubTool.Draw2D(context )
         else :
             self.OnDraw(context)
-        pass
 
     def Draw3D( self , context  ) :
-        if self.subTool :
-            for subTool in self.subTool :
-                subTool.Draw3D(context )
+        if self.activeSubTool :
+            self.activeSubTool.Draw3D(context )
         else :
             self.OnDraw3D(context)
-        pass
 
     def OnEnterSubTool( self ,context,subTool ):
         pass

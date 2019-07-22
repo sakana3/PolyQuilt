@@ -40,10 +40,21 @@ class SubToolEdgeExtrude(SubTool) :
         self.subTarget = ElementItem.Empty()
         self.subVertTarget = [ ElementItem.Empty() , ElementItem.Empty() ]
 
-    def OnUpdate( self , context , event ) :
-        if self.currentEdge.element.is_boundary == False :
-            pass
+        self.ignoreVerts = []
+        for face in self.currentEdge.element.link_faces :
+            self.ignoreVerts.extend(face.verts)
+        self.ignoreVerts = set(self.ignoreVerts )
 
+        self.ignoreEdges = []
+        for face in self.currentEdge.element.link_faces :
+            self.ignoreEdges.extend(face.edges)
+        self.ignoreEdges = set(self.ignoreEdges )
+
+    @staticmethod
+    def Check( target ) :
+        return target.element.is_boundary or target.element.is_manifold == False
+
+    def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             rayS = handleutility.Ray.from_screen( context , self.startMousePos )
             rayG = handleutility.Ray.from_screen( context , self.mouse_pos )      
@@ -51,12 +62,14 @@ class SubToolEdgeExtrude(SubTool) :
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS)    
             self.targetPos = self.startPos + move
-            self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['EDGE'] )            
+            self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )            
             if self.subTarget.isEmpty :
-                c0 = handleutility.location_3d_to_region_2d(self.currentEdge.element.verts[0].co + move)        
-                c1 = handleutility.location_3d_to_region_2d(self.currentEdge.element.verts[1].co + move)        
-                e0 = self.bmo.PickElement( c0 , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] )                    
-                e1 = self.bmo.PickElement( c1 , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] )                    
+                p0 = self.bmo.local_to_world_pos( self.currentEdge.element.verts[0].co )
+                p1 = self.bmo.local_to_world_pos( self.currentEdge.element.verts[1].co )
+                c0 = handleutility.location_3d_to_region_2d(p0 + move)        
+                c1 = handleutility.location_3d_to_region_2d(p1 + move)        
+                e0 = self.bmo.PickElement( c0 , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'], ignore=self.ignoreVerts )                    
+                e1 = self.bmo.PickElement( c1 , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'], ignore=self.ignoreVerts )                    
                 self.subVertTarget = [ e0 , e1]
             else :
                 self.subVertTarget = [ ElementItem.Empty() , ElementItem.Empty() ]
@@ -80,14 +93,14 @@ class SubToolEdgeExtrude(SubTool) :
 
     def OnDraw3D( self , context  ) :
         move = self.targetPos - self.startPos
-        p0 = self.currentEdge.element.verts[0].co
-        p1 = self.currentEdge.element.verts[1].co
+        p0 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[0].co)
+        p1 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[1].co)
         t0 = p0 + move
         t1 = p1 + move
         if self.subTarget.isEdge :
             v0,v1 = self.AdsorptionEdge(t0,t1,self.subTarget.element)
-            t0 = v0.co
-            t1 = v1.co
+            t0 = self.bmo.local_to_world_pos(v0.co)
+            t1 = self.bmo.local_to_world_pos(v1.co)
             if v0 in self.currentEdge.element.verts :
                 lines = (p0,t1,p1,p0)
                 polys = (p0,t1,p1)
@@ -99,9 +112,9 @@ class SubToolEdgeExtrude(SubTool) :
                 polys = (p0,t0,t1,p1)
         else :
             if self.subVertTarget[0].isVert :
-                t0 = self.subVertTarget[0].element.co
+                t0 = self.bmo.local_to_world_pos(self.subVertTarget[0].element.co)
             if self.subVertTarget[1].isVert :
-                t1 = self.subVertTarget[1].element.co
+                t1 = self.bmo.local_to_world_pos(self.subVertTarget[1].element.co)
             lines = (p0,t0,t1,p1,p0)
             polys = (p0,t0,t1,p1)
 
@@ -111,35 +124,22 @@ class SubToolEdgeExtrude(SubTool) :
     def AdsorptionEdge( self , p0 , p1 , edge ) :
         st0 = handleutility.location_3d_to_region_2d(p0)
         st1 = handleutility.location_3d_to_region_2d(p1)
-        se0 = handleutility.location_3d_to_region_2d(edge.verts[0].co)
-        se1 = handleutility.location_3d_to_region_2d(edge.verts[1].co)
-        if (st0-se0).length < (st0-se1).length :
-            if (st0-se0).length < (st1-se0).length :
-                t0 = self.subTarget.element.verts[0]
-                t1 = self.subTarget.element.verts[1]
-            else :
-                t0 = self.subTarget.element.verts[1]
-                t1 = self.subTarget.element.verts[0]
+        se0 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
+        se1 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
+        if (st0-se0).length + (st1-se1).length > (st0-se1).length + (st1-se0).length :
+            t0 = self.subTarget.element.verts[1]
+            t1 = self.subTarget.element.verts[0]
         else :
-            if (st0-se1).length > (st1-se1).length :
-                t0 = self.subTarget.element.verts[0]
-                t1 = self.subTarget.element.verts[1]
-            else :
-                t0 = self.subTarget.element.verts[1]
-                t1 = self.subTarget.element.verts[0]
+            t0 = self.subTarget.element.verts[0]
+            t1 = self.subTarget.element.verts[1]
 
         return t0,t1
 
     def MakePoly( self ) :
         move = self.targetPos - self.startPos
         edge = self.currentEdge.element
-        p0 = edge.verts[0].co + move
-        p1 = edge.verts[1].co + move
-
-        normal = handleutility.getViewDir()
-        if len( edge.link_faces ) == 1 :
-            if normal.dot( edge.link_faces[0].normal ) > 0.0 :
-                normal = -normal
+        p0 = self.bmo.local_to_world_pos(edge.verts[0].co) + move
+        p1 = self.bmo.local_to_world_pos(edge.verts[1].co) + move
 
         if self.subTarget.isEdge :
             v0,v1 = self.AdsorptionEdge(p0,p1,self.subTarget.element)
@@ -162,5 +162,14 @@ class SubToolEdgeExtrude(SubTool) :
                 v1 = self.bmo.AddVertexWorld( p1 )
             verts = [edge.verts[0],edge.verts[1],v1,v0]
 
-        self.bmo.AddFace( verts , normal )
+        normal = None
+        if edge.link_faces :
+            for loop in edge.link_faces[0].loops :
+                if edge == loop.edge :
+                    if loop.vert == edge.verts[0] :
+                        verts.reverse()
+        else :
+            normal = handleutility.getViewDir()
+
+        face = self.bmo.AddFace( verts , normal )
         self.bmo.UpdateMesh()

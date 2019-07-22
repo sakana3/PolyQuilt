@@ -33,26 +33,16 @@ class SubToolEdgeSlice(SubTool) :
         self.draw_deges = []
         self.split_deges = []         
         self.endTriangles = {}    
-        self.sliceRate = 0
+        self.sliceRate = 0.5
         self.fixCenter = False
         self.CalcSlice(self.currentEdge)
 
-    def isForcus( self ) :
-        if self.sliceRate > 0 and self.sliceRate < 1 :
-            return True
-        return False
+    def OnForcus( self , context , event  ) :
+        self.sliceRate = self.CalcSplitRate( context ,self.mouse_pos , self.currentEdge )
+        return self.sliceRate > 0 and self.sliceRate < 1
 
     def OnUpdate( self , context , event ) :
-        if event.type == 'MOUSEMOVE':
-            if self.fixCenter :
-                self.sliceRate =  0.5
-            else :
-                ray = handleutility.Ray.from_screen( context , self.mouse_pos ).world_to_object( self.bmo.obj )
-                dist = self.preferences.distance_to_highlight* dpm()
-
-                self.sliceRate = handleutility.CalcRateEdgeRay( self.bmo.obj , context , self.currentEdge , self.currentEdge.verts[0] , self.mouse_pos , ray , dist )
-
-        elif event.type == 'RIGHTMOUSE' :
+        if event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass
             elif event.value == 'RELEASE' :
@@ -61,9 +51,7 @@ class SubToolEdgeSlice(SubTool) :
             if event.value == 'RELEASE' :
                 if self.sliceRate > 0 and self.sliceRate < 1 :
                     self.DoSlice(self.currentEdge , self.sliceRate )
-                    return 'FINISHED'
-                else :
-                    return 'CANCEL'
+                return 'FINISHED'
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
@@ -72,6 +60,7 @@ class SubToolEdgeSlice(SubTool) :
             matrix = self.bmo.obj.matrix_world
             pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
             pos = self.bmo.local_to_world_pos( pos )
+            pos = handleutility.location_3d_to_region_2d( pos )            
             draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , pos , (0,2) )                    
 
     def OnDraw3D( self , context  ) :
@@ -94,6 +83,19 @@ class SubToolEdgeSlice(SubTool) :
                     lines.append(v0)
                     lines.append(v1)
                 draw_util.draw_lines3D( context , lines , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
+
+
+    def CalcSplitRate( self , context ,coord , baseEdge ) :
+        if self.fixCenter :
+            return 0.5
+
+        ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
+        dist = self.preferences.distance_to_highlight* dpm()
+
+        d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
+
+        return d
+
 
     def CalcSplitRate( self , context ,coord , baseEdge ) :
         if self.fixCenter :

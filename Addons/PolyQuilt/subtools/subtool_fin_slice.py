@@ -34,10 +34,13 @@ class SubToolFinSlice(SubTool) :
         self.slice_rate = 0.0
         self.slice_dist = 0.0
 
-    def OnUpdate( self , context , event ) :
+    def OnForcus( self , context , event  ) :
         if event.type == 'MOUSEMOVE':
             self.slice_rate , self.slice_dist = self.CalcRate(context,self.mouse_pos)
-        elif event.type == 'RIGHTMOUSE' :
+        return self.slice_rate > 0 
+
+    def OnUpdate( self , context , event ) :
+        if event.type == 'RIGHTMOUSE' :
             return 'FINISHED'
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
@@ -56,11 +59,12 @@ class SubToolFinSlice(SubTool) :
         self.currentTarget.Draw( self.bmo.obj , self.color_split() , self.preferences )
 
         for edge in self.currentTarget.element.link_edges :
-            v0 = edge.verts[0].co
-            v1 = edge.verts[1].co
+            v0 = self.bmo.local_to_world_pos(edge.verts[0].co)
+            v1 = self.bmo.local_to_world_pos(edge.verts[1].co)
             draw_util.draw_lines3D( context , (v0,v1) , self.color_split(0.25) , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
             if self.slice_rate == 1.0 :
-                draw_util.draw_pivots3D( ( edge.other_vert(self.currentTarget.element).co , ) , 1 , self.color_split() )
+                p = self.bmo.local_to_world_pos(edge.other_vert(self.currentTarget.element).co)
+                draw_util.draw_pivots3D( ( p , ) , 1 , self.color_split() )
 
         rate = self.slice_rate
         virts , edges = self.collect_geom( self.currentTarget.element , self.currentTarget.mirror )
@@ -70,10 +74,13 @@ class SubToolFinSlice(SubTool) :
                 links = [ e for e in face.edges if e in edges ]
                 if len(links) == 2 :
                     for v in virts :
+                        p0 = self.bmo.local_to_world_pos(v.co)
                         if v in links[0].verts :
-                            v0 = v.co *(1-rate) + links[0].other_vert(v).co * rate
+                            p1 = self.bmo.local_to_world_pos(links[0].other_vert(v).co)
+                            v0 = p0 *(1-rate) + p1 * rate
                         if v in links[1].verts :
-                            v1 = v.co *(1-rate) + links[1].other_vert(v).co * rate
+                            p1 = self.bmo.local_to_world_pos(links[1].other_vert(v).co)
+                            v1 = p0 *(1-rate) + p1 * rate
                     draw_util.draw_lines3D( context , (v0,v1) , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
     def collect_geom( self , element , mirror ) :

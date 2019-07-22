@@ -88,7 +88,7 @@ class ElementItem :
 
     @property
     def is_valid(self) -> bool :
-        return self.__element is not None and self.__element.is_valid
+        return self.__element != None and self.__element.is_valid
 
     @property
     def isVert(self) -> bool :

@@ -105,8 +105,9 @@ class QMeshHighlight :
             verts = self.pqo.bm.verts
 
             def ProjVert( vt ) :
-                pv = matrix @ vt.co.to_4d()
-                w = pv.w 
+                wp = matrix_world @ vt.co
+                pv = perspective_matrix @ wp.to_4d()
+                w = pv.w
                 return Vector( (pv.x * halfW , pv.y * halfH ) ) / w + half if w > 0.0 else None
 
             viewPos = { p : ProjVert(p) for p in verts }
@@ -155,7 +156,7 @@ class QMeshHighlight :
 
         intersect = geometry.intersect_line_sphere_2d
         if edgering :        
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if e.is_boundary and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(e) for e,p1,p2 in viewPosEdge if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
         else :
             r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
 

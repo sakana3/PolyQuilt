@@ -20,6 +20,7 @@ import bmesh
 import bpy_extras
 import collections
 import time
+import copy
 from . import handleutility
 from . import draw_util
 from .pq_icon import *
@@ -151,8 +152,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
                 return {'CANCELLED'}
 
+            element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)
+            if element == None or ( element.isEmpty == False and element.is_valid == False ) :
+                self.report({'WARNING'}, "Invalid Data..." )
+                return {'CANCELLED'}
+
             self.bmo = PQ_Gizmo_Preselect.instance.bo
-            self.currentSubTool = SubToolDefault(self , PQ_Gizmo_Preselect.instance.currentElement)
+            self.currentSubTool = SubToolDefault(self , element )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
             PQ_Gizmo_Preselect.instance.use()

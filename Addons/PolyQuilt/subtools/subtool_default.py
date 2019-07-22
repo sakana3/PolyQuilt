@@ -27,6 +27,7 @@ from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
 from .subtool_edge_extrude import *
+from .subtool_vert_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
@@ -68,9 +69,18 @@ class SubToolDefault(SubTool) :
 
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
-                self.SetSubTool( [ SubToolEdgeSlice(self.operator,self.currentTarget.element) , SubToolEdgeExtrude(self.operator,self.currentTarget) ] )   
+                tools = []
+                if len(self.currentTarget.element.link_faces) > 0 :
+                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
+                if SubToolEdgeExtrude.Check(self.currentTarget) : 
+                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget))
+                self.SetSubTool( tools )
             elif self.currentTarget.isVert :
-                self.SetSubTool( SubToolFinSlice(self.operator,self.currentTarget ) )   
+                tools = []
+                tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
+                if SubToolVertExtrude.Check( self.currentTarget ) :
+                    tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
+                self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
