@@ -108,6 +108,13 @@ class ElementItem :
         return all( [ abs(v.co.x) < dist for v in self.verts ] )
 
     @property
+    def is_straddle_x_zero(self) -> bool :
+        if self.__qmesh.is_mirror_mode and self.__mirror == None and self.__element != None :
+            if self.__element == self.__qmesh.find_mirror( self.__element , False ) :
+                return True
+        return False
+
+    @property
     def verts( self ) -> bmesh.types.BMVert:
         if self.isEmpty :
             return []

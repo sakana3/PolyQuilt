@@ -29,7 +29,7 @@ from .subtool import SubTool
 class SubToolEdgeExtrude(SubTool) :
     name = "EdgeExtrudeTool"
 
-    def __init__(self,op, target ) :
+    def __init__(self,op, target : ElementItem ) :
         super().__init__(op)
         self.currentEdge = target
         self.startPos = target.hitPosition
@@ -38,9 +38,7 @@ class SubToolEdgeExtrude(SubTool) :
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
         self.subTarget = ElementItem.Empty()
-        self.subVertTarget = [ ElementItem.Empty() , ElementItem.Empty() ]
         self.is_center_snap = False
-        self.is_sub_center_snaps = [False,False]
 
         self.ignoreVerts = []
         for face in self.currentEdge.element.link_faces :
@@ -51,6 +49,8 @@ class SubToolEdgeExtrude(SubTool) :
         for face in self.currentEdge.element.link_faces :
             self.ignoreEdges.extend(face.edges)
         self.ignoreEdges = set(self.ignoreEdges )
+
+        self.newEdge = [ self.bmo.local_to_world_pos( self.currentEdge.element.verts[0].co ) , self.bmo.local_to_world_pos( self.currentEdge.element.verts[1].co ) ]
 
     @staticmethod
     def Check( target ) :
@@ -66,38 +66,73 @@ class SubToolEdgeExtrude(SubTool) :
             self.targetPos = self.startPos + move
             dist = self.preferences.distance_to_highlight
 
+            p0 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[0].co) + move
+            p1 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[1].co) + move
+            self.newEdge = [p0,p1]
+
             # X=0でのスナップをチェック
             self.is_center_snap = False
             if self.bmo.is_mirror_mode :
-                self.is_center_snap = self.bmo.is_x0_snap( self.targetPos )
+                if not self.currentEdge.is_straddle_x_zero :
+                    self.is_center_snap = self.bmo.is_x0_snap( self.targetPos )
+                    if self.bmo.is_x0_snap( self.targetPos ) :
+                        self.newEdge = [ self.bmo.zero_pos_w2l(p) for p in self.newEdge ]
+                else :
+                    l0 = self.bmo.world_to_local_pos( self.newEdge[0] )
+                    l1 = self.bmo.world_to_local_pos( self.newEdge[1] )
+                    max = abs(l0.x) if abs(l0.x) > abs(l1.x) else abs(l1.x)
+                    l0.x = max if self.currentEdge.element.verts[0].co.x > 0 else -max
+                    l1.x = max if self.currentEdge.element.verts[1].co.x > 0 else -max
+                    self.newEdge = [ self.bmo.local_to_world_pos(l0) , self.bmo.local_to_world_pos(l1) ]
 
             # スナップする辺を探す
             if self.is_center_snap == False :
-                self.subTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )            
+                self.subTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )         
+                if self.bmo.is_mirror_mode and self.subTarget.isEdge and self.currentEdge.is_straddle_x_zero :
+                    if not self.subTarget.is_straddle_x_zero :
+                        self.subTarget = ElementItem.Empty()                        
+                if self.subTarget.isEdge :
+                    self.newEdge = self.AdsorptionEdge( p0 , p1 ,  self.subTarget.element )
             else :
                 self.subTarget = ElementItem.Empty()
 
             # 頂点のスナップ先を探す
-            self.is_sub_center_snaps = [False,False]
             if self.subTarget.isEmpty :
                 for i in range(2) :
-                    p = self.bmo.local_to_world_pos( self.currentEdge.element.verts[i].co ) + move
-                    if self.is_center_snap : 
-                        p = self.bmo.zero_pos_w2l(p)
-                    c = handleutility.location_3d_to_region_2d(p)
+                    p = self.newEdge[i]
                     # スナップする頂点を探す
+                    c = handleutility.location_3d_to_region_2d(p)
                     e = self.bmo.PickElement( c , dist , edgering=True , backface_culling = True , elements=['VERT'], ignore=self.ignoreVerts )
-                    self.subVertTarget[i] = e
+                    if e.isVert :
+                        self.newEdge[i] = e.element
                     # X=０境界でのスナップをチェック
-                    if self.is_center_snap == False and self.subVertTarget[i].isEmpty and self.bmo.is_mirror_mode and self.bmo.is_x0_snap( p ) :
-                        self.is_sub_center_snaps[i] = True
-                        self.subVertTarget[i] = ElementItem.Empty()
+                    if not self.is_center_snap and e.isEmpty and self.bmo.is_mirror_mode and self.bmo.is_x0_snap( p ) and not self.currentEdge.is_straddle_x_zero :
+                        self.newEdge[i] = self.bmo.zero_pos_w2l(self.newEdge[i])
+
+                if self.bmo.is_mirror_mode and self.currentEdge.is_straddle_x_zero :
+                    if isinstance( self.newEdge[0] , bmesh.types.BMVert ) and isinstance( self.newEdge[1] , bmesh.types.BMVert ) :
+                        if self.currentEdge.element.verts[0].co.x > self.currentEdge.element.verts[1].co.x :
+                            mirror = self.bmo.find_mirror( self.newEdge[0] )
+                            if mirror != None :
+                                self.newEdge[1] = mirror                        
+                        else :
+                            mirror = self.bmo.find_mirror( self.newEdge[1] )
+                            if mirror != None :
+                                self.newEdge[0] = mirror                        
+                    elif isinstance( self.newEdge[0] , bmesh.types.BMVert ) and isinstance( self.newEdge[1] , mathutils.Vector ) :
+                        self.newEdge[1] = self.bmo.local_to_world_pos( self.bmo.mirror_pos( self.newEdge[0].co ) )
+                        mirror = self.bmo.find_mirror( self.newEdge[0] )
+                        if mirror != None :
+                            self.newEdge[1] = mirror
+                    elif isinstance( self.newEdge[1] , bmesh.types.BMVert ) and isinstance( self.newEdge[0] , mathutils.Vector ) :
+                        self.newEdge[0] = self.bmo.local_to_world_pos( self.bmo.mirror_pos( self.newEdge[1].co ) )
+                        mirror = self.bmo.find_mirror( self.newEdge[1] )
+                        if mirror != None :
+                            self.newEdge[0] = mirror
+
                 # 両点がスナップするなら辺スナップに変更
-                if all(self.is_sub_center_snaps) :
+                if isinstance( self.newEdge[0] , bmesh.types.BMVert ) and isinstance( self.newEdge[1] , bmesh.types.BMVert ) :
                     self.is_center_snap = True
-                    self.is_sub_center_snaps = [False,False]
-            else :
-                self.subVertTarget = [ ElementItem.Empty() , ElementItem.Empty() ]
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass
@@ -111,16 +146,13 @@ class SubToolEdgeExtrude(SubTool) :
 
     def OnDraw( self , context  ) :
         size = self.preferences.highlight_vertex_size
-        for vert in self.subVertTarget :
-            if vert.isVert :            
-                pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( vert.element.co ) )
-                draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
-
-        for i in range(2) :
-            if self.is_sub_center_snaps[i] :
-                move = self.targetPos - self.startPos
-                p = self.bmo.local_to_world_pos( self.currentEdge.element.verts[i].co ) + move
-                pos = handleutility.location_3d_to_region_2d( self.bmo.mirror_pos_w2l(p) )
+        for vert in self.newEdge :
+            if isinstance( vert , mathutils.Vector ) :
+                if not self.is_center_snap and self.bmo.is_mirror_mode and self.bmo.is_x_zero_pos_w2l( vert ) :
+                    pos = handleutility.location_3d_to_region_2d( vert )
+                    draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
+            elif isinstance( vert , bmesh.types.BMVert ) :       
+                pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( vert.co ) )
                 draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
         if self.is_center_snap :
@@ -128,54 +160,34 @@ class SubToolEdgeExtrude(SubTool) :
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
-        move = self.targetPos - self.startPos
         p0 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[0].co)
         p1 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[1].co)
-        t0 = p0 + move
-        t1 = p1 + move
 
-        if self.is_center_snap :
-            t0 = self.bmo.zero_pos_w2l(t0)
-            t1 = self.bmo.zero_pos_w2l(t1)
+        t = [p0,p1]
+        for i in range(2) :
+            if isinstance( self.newEdge[i] , mathutils.Vector ) :
+                t[i] = self.newEdge[i]
+            elif isinstance( self.newEdge[i] , bmesh.types.BMVert ) :
+                if self.newEdge[i] in self.currentEdge.element.verts :
+                    t[i] = None
+                else :
+                    t[i] = self.bmo.local_to_world_pos(self.newEdge[i].co)
 
-        if self.is_sub_center_snaps[0] :
-            t0 = self.bmo.zero_pos_w2l(t0)
-        if self.is_sub_center_snaps[1] :
-            t1 = self.bmo.zero_pos_w2l(t1)
-
-        if self.subTarget.isEdge :
-            v0,v1 = self.AdsorptionEdge(t0,t1,self.subTarget.element)
-            t0 = self.bmo.local_to_world_pos(v0.co)
-            t1 = self.bmo.local_to_world_pos(v1.co)
-            if v0 in self.currentEdge.element.verts :
-                lines = (p0,t1,p1,p0)
-                polys = (p0,t1,p1)
-            elif v1 in self.currentEdge.element.verts :
-                lines = (p0,t0,p1,p0)
-                polys = (p0,t0,p1)
-            else :
-                lines = (p0,t0,t1,p1,p0)
-                polys = (p0,t0,t1,p1)
-        else :
-            if self.subVertTarget[0].isVert :
-                t0 = self.bmo.local_to_world_pos(self.subVertTarget[0].element.co)
-            if self.subVertTarget[1].isVert :
-                t1 = self.bmo.local_to_world_pos(self.subVertTarget[1].element.co)
-            lines = (p0,t0,t1,p1,p0)
-            polys = (p0,t0,t1,p1)
+        lines = [ v for v in (p0,t[0],t[1],p1,p0) if v != None ]
+        polys = [ v for v in (p0,t[0],t[1],p1) if v != None ]
 
         draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
         draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
         if self.subTarget.isEdge :
-            draw_util.draw_lines3D( context , [ t0 , t1 ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
+            draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
-        if self.bmo.is_mirror_mode :
+        if self.bmo.is_mirror_mode and not self.currentEdge.is_straddle_x_zero:
             lines = [ self.bmo.mirror_pos_w2l(p) for p in lines ]
             polys = [ self.bmo.mirror_pos_w2l(p) for p in polys ]
             draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.25), hide_alpha = 0.25  )        
             draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
             if self.is_center_snap :            
-                draw_util.draw_lines3D( context , [ t0 , t1 ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
+                draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
     def AdsorptionEdge( self , p0 , p1 , edge ) :
         st0 = handleutility.location_3d_to_region_2d(p0)
@@ -192,41 +204,21 @@ class SubToolEdgeExtrude(SubTool) :
         return t0,t1
 
     def MakePoly( self ) :
-        move = self.targetPos - self.startPos
         edge = self.currentEdge.element
-        p0 = self.bmo.local_to_world_pos(edge.verts[0].co) + move
-        p1 = self.bmo.local_to_world_pos(edge.verts[1].co) + move
+        mirror = False if self.currentEdge.is_straddle_x_zero else None
 
-        if self.is_center_snap :
-            p0 = self.bmo.zero_pos_w2l(p0)
-            p1 = self.bmo.zero_pos_w2l(p1)
+        t = [None,None]
+        for i in range(2) :
+            if isinstance( self.newEdge[i] , mathutils.Vector ) :
+                t[i] = self.bmo.AddVertexWorld( self.newEdge[i] , mirror )
+                self.bmo.UpdateMesh()
+            elif isinstance( self.newEdge[i] , bmesh.types.BMVert ) :
+                if self.newEdge[i] in self.currentEdge.element.verts :
+                    t[i] = None
+                else :
+                    t[i] = self.newEdge[i]
 
-        if self.is_sub_center_snaps[0] :
-            p0 = self.bmo.zero_pos_w2l(p0)
-        if self.is_sub_center_snaps[1] :
-            p1 = self.bmo.zero_pos_w2l(p1)
-
-        if self.subTarget.isEdge :
-            v0,v1 = self.AdsorptionEdge(p0,p1,self.subTarget.element)
-            if v0 in edge.verts :
-                verts = [edge.verts[0],edge.verts[1],v1]
-            elif v1 in edge.verts :
-                verts = [edge.verts[0],edge.verts[1],v0]
-            else :
-                verts = [edge.verts[0],edge.verts[1],v1,v0]
-            normal = None
-        else :
-            if self.subVertTarget[0].isVert :
-                v0 = self.subVertTarget[0].element
-            else :
-                v0 = self.bmo.AddVertexWorld( p0 )
-
-            if self.subVertTarget[1].isVert :
-                v1 = self.subVertTarget[1].element
-            else:
-                v1 = self.bmo.AddVertexWorld( p1 )
-            verts = [edge.verts[0],edge.verts[1],v1,v0]
-            self.bmo.UpdateMesh()
+        verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
 
         normal = None
         if edge.link_faces :
@@ -237,5 +229,5 @@ class SubToolEdgeExtrude(SubTool) :
         else :
             normal = handleutility.getViewDir()
 
-        face = self.bmo.AddFace( verts , normal )
+        face = self.bmo.AddFace( verts , normal , mirror )
         self.bmo.UpdateMesh()

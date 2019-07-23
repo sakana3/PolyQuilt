@@ -36,10 +36,11 @@ class SubToolEdgeSlice(SubTool) :
         self.sliceRate = 0.5
         self.fixCenter = False
         self.CalcSlice(self.currentEdge)
+        self.is_forcus = True
 
     def OnForcus( self , context , event  ) :
         self.sliceRate = self.CalcSplitRate( context ,self.mouse_pos , self.currentEdge )
-        return self.sliceRate > 0 and self.sliceRate < 1
+        return self.is_forcus
 
     def OnUpdate( self , context , event ) :
         if event.type == 'RIGHTMOUSE' :
@@ -86,25 +87,15 @@ class SubToolEdgeSlice(SubTool) :
 
 
     def CalcSplitRate( self , context ,coord , baseEdge ) :
-        if self.fixCenter :
-            return 0.5
-
         ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         dist = self.preferences.distance_to_highlight* dpm()
 
         d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
 
-        return d
+        self.is_forcus = d > 0 and d < 1
 
-
-    def CalcSplitRate( self , context ,coord , baseEdge ) :
         if self.fixCenter :
             return 0.5
-
-        ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
-        dist = self.preferences.distance_to_highlight* dpm()
-
-        d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
 
         return d
 

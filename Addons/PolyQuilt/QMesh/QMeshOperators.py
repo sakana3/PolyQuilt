@@ -101,6 +101,11 @@ class QMeshOperators :
         dist = bpy.context.scene.tool_settings.double_threshold
         return abs(pos[0]) < dist
 
+    def is_x_zero_pos_w2l( self , pos : Vector ) :
+        wp = self.world_to_local_pos(pos)        
+        dist = bpy.context.scene.tool_settings.double_threshold
+        return abs(wp[0]) < dist
+
     def is_snap( self , p1 : Vector  , p2 : Vector  ) :
         p0 = handleutility.location_3d_to_region_2d(p0)
         p1 = handleutility.location_3d_to_region_2d(p1)
