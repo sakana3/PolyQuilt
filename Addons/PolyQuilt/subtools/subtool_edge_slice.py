@@ -115,7 +115,7 @@ class SubToolEdgeSlice(SubTool) :
 
         startEdges = [ (startEdge,0) ]
 
-        if self.bmo.is_mirror :
+        if self.bmo.is_mirror_mode :
             mirrorEdge = self.bmo.find_mirror(startEdge,False)
             if mirrorEdge is not None :
                 if mirrorEdge != startEdge :

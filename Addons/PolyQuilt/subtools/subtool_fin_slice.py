@@ -84,7 +84,7 @@ class SubToolFinSlice(SubTool) :
                     draw_util.draw_lines3D( context , (v0,v1) , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
     def collect_geom( self , element , mirror ) :
-        if self.bmo.is_mirror and mirror is not None :
+        if self.bmo.is_mirror_mode and mirror is not None :
             s0 = set(element.link_edges)
             s1 = set(mirror.link_edges)
             edges = ( s0 | s1 ) - ( s0 & s1 )
@@ -133,7 +133,7 @@ class SubToolFinSlice(SubTool) :
                     _edges.append( edge )
                 _slice[ edge ] = self.slice_rate if ( edge.verts[0] == vert ) else (1.0 - self.slice_rate)
 
-        if self.bmo.is_mirror and self.currentTarget.mirror is not None :
+        if self.bmo.is_mirror_mode and self.currentTarget.mirror is not None :
             append( self.currentTarget.element , self.currentTarget.mirror )
             append( self.currentTarget.mirror , self.currentTarget.element )
         else :

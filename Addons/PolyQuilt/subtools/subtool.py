@@ -19,6 +19,7 @@ import bmesh
 from enum import Enum , auto
 import bpy_extras
 import collections
+from .. import handleutility
 from ..QMesh.QMesh import *
 import time
 
@@ -135,7 +136,7 @@ class SubTool :
         if SubTool.__timer_handle is not None:
             context.window_manager.event_timer_remove(SubTool.__timer_handle)
             SubTool.__timer_handle = None
-        
+
     def color_highlight( self , alpha = 1.0 ) :
         col = self.preferences.highlight_color
         return (col[0],col[1],col[2],col[3] * alpha)

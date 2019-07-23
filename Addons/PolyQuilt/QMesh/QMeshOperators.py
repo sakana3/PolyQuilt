@@ -64,11 +64,11 @@ class QMeshOperators :
         return self.bm.edges
 
     @property
-    def is_mirror(self) :
+    def is_mirror_mode(self) :
         return self.mesh.use_mirror_x
 
     def check_mirror(self , is_mirror ) :
-        r = self.is_mirror if is_mirror is None else is_mirror
+        r = self.is_mirror_mode if is_mirror is None else is_mirror
         return r
 
     def local_to_world_pos(  self ,pos : Vector ) :
@@ -81,14 +81,37 @@ class QMeshOperators :
     def mirror_pos( pos : Vector ) :
         return Vector( (-pos[0],pos[1],pos[2]) )
 
+    def mirror_pos_w2l( self , pos : Vector ) :
+        wp = self.world_to_local_pos(pos)
+        wp[0] = - wp[0]
+        return self.local_to_world_pos(wp)
+
     @staticmethod
     def zero_pos( pos : Vector ) :
         return Vector( (0,pos[1],pos[2]) )
+
+    def zero_pos_w2l( self , pos : Vector ) :
+        wp = self.world_to_local_pos(pos)
+        wp[0] = 0
+        return self.local_to_world_pos(wp)
+
 
     @staticmethod
     def is_x_zero_pos( pos : Vector ) :
         dist = bpy.context.scene.tool_settings.double_threshold
         return abs(pos[0]) < dist
+
+    def is_snap( self , p1 : Vector  , p2 : Vector  ) :
+        p0 = handleutility.location_3d_to_region_2d(p0)
+        p1 = handleutility.location_3d_to_region_2d(p1)
+        dist = self.preferences.distance_to_highlight
+        return ( p0 - p1 ).length <= dist
+
+    def is_x0_snap( self , p  : Vector  ) :
+        p0 = handleutility.location_3d_to_region_2d( p )
+        p1 = handleutility.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
+        dist = self.preferences.distance_to_highlight
+        return ( p0 - p1 ).length <= dist
 
     def mirror_world_pos( self , world_pos ) :
         pos = self.obj.matrix_world.inverted() @ world_pos
@@ -111,13 +134,17 @@ class QMeshOperators :
             return False
         return True
 
+    def ensure_lookup_table( self ) :
+        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
+        self.bm.faces.ensure_lookup_table()
+        self.bm.verts.ensure_lookup_table()
+        self.bm.edges.ensure_lookup_table()      
+
     def reload_obj( self , context ) :
         self.obj = context.active_object
         self.mesh = self.obj.data
         self.bm = bmesh.from_edit_mesh(self.mesh)
-        self.bm.faces.ensure_lookup_table()
-        self.bm.verts.ensure_lookup_table()
-        self.bm.edges.ensure_lookup_table()            
+        self.ensure_lookup_table()
         self.current_matrix = None            
         if self.__btree :
             del self.__btree
@@ -127,10 +154,7 @@ class QMeshOperators :
             self.__kdtree = None
 
     def UpdateMesh( self ) :
-        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
-        self.bm.faces.ensure_lookup_table()
-        self.bm.verts.ensure_lookup_table()
-        self.bm.edges.ensure_lookup_table()
+        self.ensure_lookup_table()
         self.bm.normal_update()        
         bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
         self.__btree = None
@@ -161,6 +185,9 @@ class QMeshOperators :
 
         if self.check_mirror(is_mirror) :
             mirror = [ self.find_mirror(v,False) for v in verts[::-1] ]
+            mirror = [ m if m != None else self.bm.verts.new( self.mirror_pos(o.co) ) for o,m in zip(verts[::-1] , mirror) ]
+            self.ensure_lookup_table()
+
             if all(mirror) :
                 if set(verts) ^ set(mirror) :
                     face_mirror = self.bm.faces.new( mirror )

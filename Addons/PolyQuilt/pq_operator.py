@@ -115,6 +115,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         context.area.tag_redraw()
 
+        if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
+            self.report({'WARNING'}, "BMesh Broken..." )
+            return {'CANCELLED'}
+
         if self.preferences.is_debug :
             t = time.time()
 
@@ -153,11 +157,16 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 return {'CANCELLED'}
 
             element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)
+
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
                 return {'CANCELLED'}
 
             self.bmo = PQ_Gizmo_Preselect.instance.bo
+            if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
+                self.report({'WARNING'}, "BMesh Broken..." )
+                return {'CANCELLED'}
+
             self.currentSubTool = SubToolDefault(self , element )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
@@ -171,7 +180,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             bpy.context.window.cursor_modal_set( self.currentSubTool.GetCursor() )
             context.window_manager.modal_handler_add(self)
-            MESH_OT_poly_quilt.handle_add(self,context)
+#           MESH_OT_poly_quilt.handle_add(self,context)
             
             return {'RUNNING_MODAL'}
         else:

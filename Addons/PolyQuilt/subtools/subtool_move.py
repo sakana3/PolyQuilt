@@ -35,7 +35,7 @@ class SubToolMove(SubTool) :
         self.mouse_pos = copy.copy(startMousePos)
         self.startPos = copy.copy(startTarget.hitPosition)
         self.target_verts = [ v for v in startTarget.verts ]
-        if self.bmo.is_mirror :
+        if self.bmo.is_mirror_mode :
             self.mirror_verts = [ v for v in [ self.bmo.find_mirror(v) for v in startTarget.verts ] if v != None ]
             same = set(self.mirror_verts) & set(self.target_verts)
             self.target_verts = [ v for v in self.target_verts if (v not in same) or v.co.x >= 0.0 ]
@@ -93,7 +93,7 @@ class SubToolMove(SubTool) :
                         self.currentTarget.mirror.co = x_zero
                         self.is_snap = True
                 else :
-                    if self.bmo.is_mirror :
+                    if self.bmo.is_mirror_mode :
                         mp = self.bmo.mirror_pos( self.currentTarget.element.co )
                         if self.bmo.check_near(self.currentTarget.element.co , mp ) :
                             self.currentTarget.element.co = self.bmo.zero_pos(mp)

@@ -31,6 +31,8 @@ class SubToolMakePoly(SubTool) :
     def __init__(self,op,startElement , mouse_pos ) :
         super().__init__(op)        
         self.mekePolyList = []
+        self.mouse_pos = mouse_pos
+        self.currentTarget = startElement
 
         if self.operator.plane_pivot == 'OBJ' :
             self.pivot = self.bmo.obj.location
@@ -38,23 +40,22 @@ class SubToolMakePoly(SubTool) :
             self.pivot = bpy.context.scene.cursor.location
         elif self.operator.plane_pivot == 'Origin' :
             self.pivot = (0,0,0)
-        self.mouse_pos = mouse_pos
-        self.currentTarget = startElement
+
         if startElement.isEmpty :
             p = self.calc_planned_construction_position()
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
-            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , vert.co , 0 ); 
+            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 ); 
         elif startElement.isEdge :
             self.currentTarget = self.edge_split( startElement )
             self.bmo.UpdateMesh()
         else :
-            if self.bmo.is_mirror and startElement.isVert and self.bmo.is_x_zero_pos( startElement.element.co ) is False and startElement.mirror == None :
+            if self.bmo.is_mirror_mode and startElement.isVert and self.bmo.is_x_zero_pos( startElement.element.co ) is False and startElement.mirror == None :
                 self.bmo.AddVertex( self.bmo.mirror_pos( startElement.element.co ) , False )
                 self.bmo.UpdateMesh()             
                 startElement.setup_mirror()
-
         self.pivot = self.currentTarget.hitPosition
+
         self.mekePolyList.append( self.currentTarget.element )
         self.targetElement = None
         self.isEnd = False
@@ -87,7 +88,7 @@ class SubToolMakePoly(SubTool) :
                     self.pivot = self.calc_planned_construction_position()
                     addVert = self.bmo.AddVertexWorld(self.pivot)
                     self.bmo.UpdateMesh()
-                    self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , addVert.co , 0.0 )
+                    self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , self.pivot , 0.0 )
                 if self.currentTarget.isVert :
                     if self.currentTarget.element not in self.mekePolyList :
                         self.isEnd = self.AddVert(self.currentTarget ) == False
@@ -128,7 +129,7 @@ class SubToolMakePoly(SubTool) :
 
     def draw_lines( self ,context , v3d , color ) :
         draw_util.draw_lines3D( context , v3d , color , self.preferences.highlight_line_width )
-        if self.bmo.is_mirror :
+        if self.bmo.is_mirror_mode :
             color = (color[0] , color[1] , color[2] , color[3] * 0.5)
             draw_util.draw_lines3D( context , self.bmo.mirror_world_poss(v3d) , color , self.preferences.highlight_line_width )
 
@@ -136,7 +137,8 @@ class SubToolMakePoly(SubTool) :
         l = len(self.mekePolyList)        
         v3d = [ i.world for i in handleutility.TransformBMVerts(self.bmo.obj,self.mekePolyList) ]
         lp = self.calc_planned_construction_position()
-        v3d.append( lp )
+        if lp != None :
+            v3d.append( lp )
 
         alpha = self.preferences.highlight_face_alpha
         vertex_size = self.preferences.highlight_vertex_size        
@@ -155,7 +157,8 @@ class SubToolMakePoly(SubTool) :
                 color = self.color_split()
             self.draw_lines( context , v3d , color )
         elif l > 1:
-            v3d.append( v3d[0] )
+            if self.currentTarget.element not in self.mekePolyList :
+                v3d.append( v3d[0] )
             self.draw_lines( context , v3d , color )
 
         if self.currentTarget.isNotEmpty :
@@ -193,7 +196,7 @@ class SubToolMakePoly(SubTool) :
         ret = True
         dirty = False
         if target.element not in self.mekePolyList :
-            if self.bmo.is_mirror :
+            if self.bmo.is_mirror_mode :
                 if target.mirror == None and target.is_x_zero is False :
                     self.bmo.AddVertex( self.bmo.mirror_pos( target.element.co ) , False )
                     self.bmo.UpdateMesh()
@@ -275,7 +278,7 @@ class SubToolMakePoly(SubTool) :
         def append( lst , geom ) :
             if geom not in lst :
                 lst.append(geom)
-                if self.bmo.is_mirror :
+                if self.bmo.is_mirror_mode :
                     mirror =self.bmo.find_mirror( geom )
                     if mirror :
                         lst.append( mirror )
@@ -351,7 +354,7 @@ class SubToolMakePoly(SubTool) :
         new_edge , new_vert = self.bmo.edge_split_from_position( edgeItem.element , pos )
         self.bmo.UpdateMesh()
         newItem = ElementItem.FormVert( self.bmo , new_vert )
-        if self.bmo.is_mirror and newItem.mirror == None and newItem.is_x_zero is False :
+        if self.bmo.is_mirror_mode and newItem.mirror == None and newItem.is_x_zero is False :
             self.bmo.AddVertex( self.bmo.mirror_pos( new_vert.co ) , False )
             self.bmo.UpdateMesh()
             newItem.setup_mirror()

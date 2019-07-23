@@ -67,7 +67,7 @@ class SubToolKnife(SubTool) :
     def CalcKnife( self ,context,startPos , endPos ) :
         slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
         self.CutEdge , self.CutEdgePos3D = self.calc_slice( slice_plane , plane0 , plane1 )
-        if self.bmo.is_mirror :
+        if self.bmo.is_mirror_mode :
             slice_plane.x_mirror()
             plane0.x_mirror()
             plane1.x_mirror()   
@@ -113,7 +113,7 @@ class SubToolKnife(SubTool) :
         elements = self.CutEdge[:] + faces[:]
         bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= plane.origin ,plane_no= plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
 
-        if self.bmo.is_mirror :
+        if self.bmo.is_mirror_mode :
             slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
             slice_plane.x_mirror()
             plane0.x_mirror()

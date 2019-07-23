@@ -38,6 +38,7 @@ class SubToolVertExtrude(SubTool) :
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
         self.subTarget = ElementItem.Empty()
+        self.is_snap_center = False
         self.ignore = []
         for face in self.currentVert.element.link_faces :
             self.ignore.extend(face.verts)
@@ -60,7 +61,13 @@ class SubToolVertExtrude(SubTool) :
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS) 
             self.targetPos = self.startPos + move
-            self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] , ignore = self.ignore )      
+            self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] , ignore = self.ignore )
+            if self.subTarget.isEmpty :
+                self.is_snap_center = self.bmo.is_x0_snap( self.targetPos )
+                if self.is_snap_center :
+                    self.targetPos = self.bmo.zero_pos_w2l(self.targetPos)
+            else :
+                self.is_snap_center = False
 
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
@@ -74,9 +81,13 @@ class SubToolVertExtrude(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
+        size = self.preferences.highlight_vertex_size
         if self.subTarget.isVert :            
-            size = self.preferences.highlight_vertex_size
             pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.subTarget.element.co ) )
+            draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
+        if self.is_snap_center :            
+            p = self.bmo.zero_pos_w2l( self.targetPos )
+            pos = handleutility.location_3d_to_region_2d( p )
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
@@ -85,18 +96,23 @@ class SubToolVertExtrude(SubTool) :
 
         p0 = self.bmo.local_to_world_pos(vert.co)
         p1 = self.bmo.local_to_world_pos(edges[0].other_vert(vert).co)
+        p3 = self.bmo.local_to_world_pos(edges[1].other_vert(vert).co)
         if self.subTarget.isVert :
             p2 = self.bmo.local_to_world_pos(self.subTarget.element.co)
         else :
-            move = self.targetPos - self.startPos
-            p2 = p0 + move
-        p3 = self.bmo.local_to_world_pos(edges[1].other_vert(vert).co)
+            p2 = self.targetPos
 
         lines = (p0,p1,p2,p3,p0)
         polys = (p0,p1,p2,p3)
 
         draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.25  )        
-        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+
+        if self.bmo.is_mirror_mode :
+            lines = [ self.bmo.mirror_pos_w2l(p) for p in lines ]
+            polys = [ self.bmo.mirror_pos_w2l(p) for p in polys ]
+            draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.25  )        
+            draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
 
     def MakePoly( self ) :
         vert = self.currentVert.element        
@@ -104,9 +120,8 @@ class SubToolVertExtrude(SubTool) :
         if self.subTarget.isVert :        
             v0 = self.subTarget.element    
         else :
-            move = self.targetPos - self.startPos        
-            p0 = self.bmo.local_to_world_pos(vert.co) + move        
-            v0 = self.bmo.AddVertexWorld( p0 )       
+            v0 = self.bmo.AddVertexWorld( self.targetPos )       
+            self.bmo.UpdateMesh()            
         v1 = edges[0].other_vert(vert)
         v2 = edges[1].other_vert(vert)
 
