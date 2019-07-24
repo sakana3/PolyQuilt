@@ -70,6 +70,11 @@ class SubToolMove(SubTool) :
                 self.ignoreSnapTarget.extend( self.currentTarget.mirror.link_edges )
         elif self.currentTarget.isEdge :
             self.ignoreSnapTarget = [self.currentTarget.element ]
+            self.ignoreSnapTarget.extend( self.currentTarget.element.verts[0].link_edges )
+            self.ignoreSnapTarget.extend( self.currentTarget.element.verts[1].link_edges )
+            for face in self.currentTarget.element.link_faces :
+                self.ignoreSnapTarget.extend( face.edges )
+
             if self.currentTarget.mirror is not None :
                 self.ignoreSnapTarget.append( self.currentTarget.mirror )
 

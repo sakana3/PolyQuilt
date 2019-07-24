@@ -16,5 +16,6 @@ pq_translation_dict = {
             ("*", "SplitColor") : "分割色" ,
             ("*", "DeleteColor") : "削除色" ,
             ("*", "Setup GameEngine like Keymaps") : "ゲームエンジン風キーマップをセットアップ" ,
+            ("*", "Empty Mesh Object") : "空メッシュ" ,
         }
 }

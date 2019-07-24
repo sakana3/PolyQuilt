@@ -128,6 +128,7 @@ class SubToolMakePoly(SubTool) :
         return 'RUNNING_MODAL'
 
     def draw_lines( self ,context , v3d , color ) :
+        v3d = [v for v in v3d if v != None ]
         draw_util.draw_lines3D( context , v3d , color , self.preferences.highlight_line_width )
         if self.bmo.is_mirror_mode :
             color = (color[0] , color[1] , color[2] , color[3] * 0.5)
@@ -139,6 +140,8 @@ class SubToolMakePoly(SubTool) :
         lp = self.calc_planned_construction_position()
         if lp != None :
             v3d.append( lp )
+        else :
+            lp = mathutils.Vector( (0,0,0) )
 
         alpha = self.preferences.highlight_face_alpha
         vertex_size = self.preferences.highlight_vertex_size        

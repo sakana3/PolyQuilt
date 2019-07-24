@@ -26,6 +26,7 @@ bl_info = {
 import bpy
 from bpy.utils.toolsystem import ToolDef
 from .pq_operator import MESH_OT_poly_quilt
+from .pq_operator_add_empty_object import *
 from .pq_icon import *
 from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
 from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
@@ -72,11 +73,15 @@ def unregister_tools():
     del index
 
 
-
 def register():
     bpy.app.translations.register(__name__, pq_translation_dict)    
     register_icons()
     register_updater(bl_info)
+
+    # 空メッシュ追加
+    bpy.utils.register_class(pq_operator_add_empty_object.OBJECT_OT_add_object)
+    bpy.utils.register_manual_map(pq_operator_add_empty_object.add_object_manual_map)
+    bpy.types.VIEW3D_MT_mesh_add.append(pq_operator_add_empty_object.add_object_button)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -93,8 +98,13 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+    bpy.utils.unregister_class(pq_operator_add_empty_object.OBJECT_OT_add_object)
+    bpy.utils.unregister_manual_map(pq_operator_add_empty_object.add_object_manual_map)
+    bpy.types.VIEW3D_MT_mesh_add.remove(pq_operator_add_empty_object.add_object_button)
+
     unregister_icons()
     bpy.app.translations.unregister(__name__)
+
 
 if __name__ == "__main__":
     register()
