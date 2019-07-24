@@ -77,6 +77,12 @@ class QMeshOperators :
     def world_to_local_pos(  self ,pos : Vector ) :
         return self.obj.matrix_world.inverted() @ pos
 
+    def world_to_2d(  self ,pos : Vector ) :
+        return handleutility.location_3d_to_region_2d( pos )
+
+    def local_to_2d(  self ,pos : Vector ) :
+        return handleutility.location_3d_to_region_2d( self.obj.matrix_world @ pos )
+
     @staticmethod
     def mirror_pos( pos : Vector ) :
         return Vector( (-pos[0],pos[1],pos[2]) )
@@ -106,16 +112,19 @@ class QMeshOperators :
         dist = bpy.context.scene.tool_settings.double_threshold
         return abs(wp[0]) < dist
 
-    def is_snap( self , p1 : Vector  , p2 : Vector  ) :
-        p0 = handleutility.location_3d_to_region_2d(p0)
-        p1 = handleutility.location_3d_to_region_2d(p1)
-        dist = self.preferences.distance_to_highlight
+    def is_snap( self , p0 : Vector  , p1 : Vector  ) :
+        t0 = handleutility.location_3d_to_region_2d(p0)
+        t1 = handleutility.location_3d_to_region_2d(p1)
+        return self.is_snap2D(t0,t1)
+
+    def is_snap2D( self , p0 : Vector  , p1 : Vector  ) :
+        dist = self.preferences.distance_to_highlight * dpm()
         return ( p0 - p1 ).length <= dist
 
     def is_x0_snap( self , p  : Vector  ) :
         p0 = handleutility.location_3d_to_region_2d( p )
         p1 = handleutility.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
-        dist = self.preferences.distance_to_highlight
+        dist = self.preferences.distance_to_highlight * dpm()  
         return ( p0 - p1 ).length <= dist
 
     def mirror_world_pos( self , world_pos ) :

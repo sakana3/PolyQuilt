@@ -37,7 +37,7 @@ class SubToolVertExtrude(SubTool) :
         self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , target.hitPosition )
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
-        self.subTarget = ElementItem.Empty()
+        self.snapTarget = ElementItem.Empty()
         self.is_snap_center = False
         self.ignore = []
         for face in self.currentVert.element.link_faces :
@@ -61,8 +61,8 @@ class SubToolVertExtrude(SubTool) :
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS) 
             self.targetPos = self.startPos + move
-            self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] , ignore = self.ignore )
-            if self.subTarget.isEmpty :
+            self.snapTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] , ignore = self.ignore )
+            if self.snapTarget.isEmpty :
                 self.is_snap_center = self.bmo.is_x0_snap( self.targetPos )
                 if self.is_snap_center :
                     self.targetPos = self.bmo.zero_pos_w2l(self.targetPos)
@@ -82,8 +82,8 @@ class SubToolVertExtrude(SubTool) :
 
     def OnDraw( self , context  ) :
         size = self.preferences.highlight_vertex_size
-        if self.subTarget.isVert :            
-            pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.subTarget.element.co ) )
+        if self.snapTarget.isVert :            
+            pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.snapTarget.element.co ) )
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
         if self.is_snap_center :            
             p = self.bmo.zero_pos_w2l( self.targetPos )
@@ -97,8 +97,8 @@ class SubToolVertExtrude(SubTool) :
         p0 = self.bmo.local_to_world_pos(vert.co)
         p1 = self.bmo.local_to_world_pos(edges[0].other_vert(vert).co)
         p3 = self.bmo.local_to_world_pos(edges[1].other_vert(vert).co)
-        if self.subTarget.isVert :
-            p2 = self.bmo.local_to_world_pos(self.subTarget.element.co)
+        if self.snapTarget.isVert :
+            p2 = self.bmo.local_to_world_pos(self.snapTarget.element.co)
         else :
             p2 = self.targetPos
 
@@ -117,8 +117,8 @@ class SubToolVertExtrude(SubTool) :
     def MakePoly( self ) :
         vert = self.currentVert.element        
         edges = [ edge for edge in vert.link_edges if edge.is_boundary ]        
-        if self.subTarget.isVert :        
-            v0 = self.subTarget.element    
+        if self.snapTarget.isVert :        
+            v0 = self.snapTarget.element    
         else :
             v0 = self.bmo.AddVertexWorld( self.targetPos )       
             self.bmo.UpdateMesh()            

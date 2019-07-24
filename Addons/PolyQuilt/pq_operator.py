@@ -89,7 +89,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     fix_to_x_zero : bpy.props.BoolProperty(
               name = "fix_to_x_zero" ,
-              default = False ,
+              default = True ,
               description="Fix X=0",
             )
 

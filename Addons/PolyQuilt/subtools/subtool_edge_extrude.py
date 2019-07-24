@@ -37,7 +37,7 @@ class SubToolEdgeExtrude(SubTool) :
         self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , target.hitPosition )
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
-        self.subTarget = ElementItem.Empty()
+        self.snapTarget = ElementItem.Empty()
         self.is_center_snap = False
 
         self.ignoreVerts = []
@@ -87,17 +87,17 @@ class SubToolEdgeExtrude(SubTool) :
 
             # スナップする辺を探す
             if self.is_center_snap == False :
-                self.subTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )         
-                if self.bmo.is_mirror_mode and self.subTarget.isEdge and self.currentEdge.is_straddle_x_zero :
-                    if not self.subTarget.is_straddle_x_zero :
-                        self.subTarget = ElementItem.Empty()                        
-                if self.subTarget.isEdge :
-                    self.newEdge = self.AdsorptionEdge( p0 , p1 ,  self.subTarget.element )
+                self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )         
+                if self.bmo.is_mirror_mode and self.snapTarget.isEdge and self.currentEdge.is_straddle_x_zero :
+                    if not self.snapTarget.is_straddle_x_zero :
+                        self.snapTarget = ElementItem.Empty()                        
+                if self.snapTarget.isEdge :
+                    self.newEdge = self.AdsorptionEdge( p0 , p1 ,  self.snapTarget.element )
             else :
-                self.subTarget = ElementItem.Empty()
+                self.snapTarget = ElementItem.Empty()
 
             # 頂点のスナップ先を探す
-            if self.subTarget.isEmpty :
+            if self.snapTarget.isEmpty :
                 for i in range(2) :
                     p = self.newEdge[i]
                     # スナップする頂点を探す
@@ -178,7 +178,7 @@ class SubToolEdgeExtrude(SubTool) :
 
         draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
         draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
-        if self.subTarget.isEdge :
+        if self.snapTarget.isEdge and None not in t :
             draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
         if self.bmo.is_mirror_mode and not self.currentEdge.is_straddle_x_zero:
@@ -195,11 +195,11 @@ class SubToolEdgeExtrude(SubTool) :
         se0 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
         se1 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
         if (st0-se0).length + (st1-se1).length > (st0-se1).length + (st1-se0).length :
-            t0 = self.subTarget.element.verts[1]
-            t1 = self.subTarget.element.verts[0]
+            t0 = self.snapTarget.element.verts[1]
+            t1 = self.snapTarget.element.verts[0]
         else :
-            t0 = self.subTarget.element.verts[0]
-            t1 = self.subTarget.element.verts[1]
+            t0 = self.snapTarget.element.verts[0]
+            t1 = self.snapTarget.element.verts[1]
 
         return t0,t1
 

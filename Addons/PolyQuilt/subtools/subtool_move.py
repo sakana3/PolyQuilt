@@ -30,10 +30,10 @@ class SubToolMove(SubTool) :
     def __init__(self,op,startTarget,startMousePos) :
         super().__init__(op)
         self.currentTarget = startTarget
-        self.subTarget = ElementItem.Empty()
+        self.snapTarget = ElementItem.Empty()
         self.startMousePos = copy.copy(startTarget.coord)
-        self.mouse_pos = copy.copy(startMousePos)
-        self.startPos = copy.copy(startTarget.hitPosition)
+        self.mouse_pos = startMousePos.copy()
+        self.startPos = startTarget.hitPosition.copy()
         self.target_verts = [ v for v in startTarget.verts ]
         if self.bmo.is_mirror_mode :
             self.mirror_verts = [ v for v in [ self.bmo.find_mirror(v) for v in startTarget.verts ] if v != None ]
@@ -42,49 +42,55 @@ class SubToolMove(SubTool) :
             self.mirror_verts = [ v for v in self.mirror_verts if (v not in same) or v.co.x < 0.0 ]
         else :
             self.mirror_verts = []
-        self.target_verts = [ (v,mathutils.Vector(v.co)) for v in self.target_verts ]
-        self.mirror_verts = [ (v,mathutils.Vector(v.co)) for v in self.mirror_verts ]
+        self.target_verts = [ (v,v.co.copy()) for v in self.target_verts ]
+        self.mirror_verts = [ (v,v.co.copy()) for v in self.mirror_verts ]
 
         self.normal_ray = handleutility.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
         self.normal_ray.origin = self.startPos
         self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
         self.move_plane = self.screen_space_plane
         self.move_type = 'FREE'
-        self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )        
+        self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
         self.ChangeRay(op.move_type )
         self.repeat = False
         self.MoveTo( bpy.context , self.mouse_pos )
         self.bmo.UpdateMesh(False)
         self.is_snap = False
 
+        # ignore snap target
+        self.ignoreSnapTarget = []
+        if self.currentTarget.isVert :
+            self.ignoreSnapTarget = [self.currentTarget.element]
+#               self.ignoreSnapTarget.extend( self.currentTarget.element.link_faces )
+            self.ignoreSnapTarget.extend( self.currentTarget.element.link_edges )
+#                for face in self.currentTarget.element.link_faces :
+#                    self.ignoreSnapTarget.extend( face.verts )
+            if self.currentTarget.mirror is not None :
+                self.ignoreSnapTarget.append( self.currentTarget.mirror )
+                self.ignoreSnapTarget.extend( self.currentTarget.mirror.link_edges )
+        elif self.currentTarget.isEdge :
+            self.ignoreSnapTarget = [self.currentTarget.element ]
+            if self.currentTarget.mirror is not None :
+                self.ignoreSnapTarget.append( self.currentTarget.mirror )
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             self.MoveTo( context , self.mouse_pos )
 
             self.is_snap = False
+            dist = self.preferences.distance_to_highlight
             if self.currentTarget.isVert and self.move_ray == None :# and ( self.currentTarget.element.is_manifold is False or self.currentTarget.element.is_boundary )  :
-                tmp = self.subTarget
-                ignore = [self.currentTarget.element]
-#               ignore.extend( self.currentTarget.element.link_faces )
-                ignore.extend( self.currentTarget.element.link_edges )
-#                for face in self.currentTarget.element.link_faces :
-#                    ignore.extend( face.verts )
-                if self.currentTarget.mirror is not None :
-                    ignore.append( self.currentTarget.mirror )
-                    ignore.extend( self.currentTarget.mirror.link_edges )
+                self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , self.ignoreSnapTarget , elements = ['VERT'] )
 
-                self.subTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore )
-
-                if self.subTarget.isVert \
-                        and self.currentTarget.element != self.subTarget.element \
-                        and (self.operator.fix_to_x_zero and self.currentTarget.is_x_zero and self.subTarget.is_x_zero is False ) is False :
+                if self.snapTarget.isVert \
+                        and self.currentTarget.element != self.snapTarget.element \
+                        and (self.operator.fix_to_x_zero and self.currentTarget.is_x_zero and self.snapTarget.is_x_zero is False ) is False :
                     self.is_snap = True
-                    self.currentTarget.element.co = self.subTarget.element.co
+                    self.currentTarget.element.co = self.snapTarget.element.co
                     if self.currentTarget.mirror is not None :
                         self.currentTarget.mirror.co = self.bmo.mirror_pos(self.currentTarget.element.co)
                 else :
-                    self.subTarget = ElementItem.Empty()
+                    self.snapTarget = ElementItem.Empty()
 
                 if self.currentTarget.mirror is not None :
                     if self.bmo.check_near(self.currentTarget.element.co ,self.currentTarget.mirror.co ) :
@@ -98,14 +104,38 @@ class SubToolMove(SubTool) :
                         if self.bmo.check_near(self.currentTarget.element.co , mp ) :
                             self.currentTarget.element.co = self.bmo.zero_pos(mp)
                             self.is_snap = True
+            elif self.currentTarget.isEdge and self.move_ray == None :
+                self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreSnapTarget ) 
+                if self.snapTarget.isEdge :
+                    p0 = self.bmo.local_to_2d( self.currentTarget.element.verts[0].co )
+                    p1 = self.bmo.local_to_2d( self.currentTarget.element.verts[1].co )
+                    t0 = self.bmo.local_to_2d( self.snapTarget.element.verts[0].co )
+                    t1 = self.bmo.local_to_2d( self.snapTarget.element.verts[1].co )
+                    if (p0-t0).length + (p1-t1).length < (p0-t1).length + (p1-t0).length :
+                        self.currentTarget.element.verts[0].co = self.snapTarget.element.verts[0].co
+                        self.currentTarget.element.verts[1].co = self.snapTarget.element.verts[1].co
+                    else :
+                        self.currentTarget.element.verts[0].co = self.snapTarget.element.verts[1].co
+                        self.currentTarget.element.verts[1].co = self.snapTarget.element.verts[0].co
+                    if self.currentTarget.mirror is not None :
+                        self.currentTarget.mirror.verts[0].co = self.bmo.mirror_pos(self.currentTarget.element.verts[1].co)
+                        self.currentTarget.mirror.verts[1].co = self.bmo.mirror_pos(self.currentTarget.element.verts[0].co)
+
+                if self.currentTarget.mirror is not None :
+                    if self.bmo.is_x0_snap( self.currentTarget.hitPosition ) :
+                        self.currentTarget.element.verts[0].co = self.bmo.zero_pos(self.currentTarget.element.verts[0].co)
+                        self.currentTarget.element.verts[1].co = self.bmo.zero_pos(self.currentTarget.element.verts[1].co)
+                        self.currentTarget.mirror.verts[0].co = self.bmo.zero_pos(self.currentTarget.mirror.verts[0].co)
+                        self.currentTarget.mirror.verts[1].co = self.bmo.zero_pos(self.currentTarget.mirror.verts[1].co)
+
 
             self.bmo.UpdateMesh(False)
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
                 verts = set( [ v[0] for v in self.target_verts] ) | set( [ v[0] for v in self.mirror_verts] )
-                if self.subTarget.isVert :
-                    verts.add( self.subTarget.element )
+                if self.snapTarget.isVert :
+                    verts.add( self.snapTarget.element )
                 bmesh.ops.automerge( self.bmo.bm , verts = list(verts) , dist = threshold )
                 self.bmo.UpdateMesh()
 
@@ -132,7 +162,7 @@ class SubToolMove(SubTool) :
         elif event.value == 'RELEASE' :
             self.repeat = False
 
-        self.debugStr = str(self.subTarget.element)
+        self.debugStr = str(self.snapTarget.element)
 
         return 'RUNNING_MODAL'
 
@@ -144,8 +174,8 @@ class SubToolMove(SubTool) :
 
     def OnDraw3D( self , context  ) :
         self.currentTarget.Draw( self.bmo.obj , self.color_highlight()  , self.preferences )
-        if self.subTarget.isNotEmpty :
-            self.subTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
+        if self.snapTarget.isNotEmpty :
+            self.snapTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
 
         if self.move_ray != None :
             v1 = self.move_ray.origin + self.move_ray.vector * 10000.0 

@@ -39,7 +39,8 @@ class SubToolEdgeSlice(SubTool) :
         self.is_forcus = True
 
     def OnForcus( self , context , event  ) :
-        self.sliceRate = self.CalcSplitRate( context ,self.mouse_pos , self.currentEdge )
+        if event.type == 'MOUSEMOVE':        
+            self.sliceRate = self.CalcSplitRate( context ,self.mouse_pos , self.currentEdge )
         return self.is_forcus
 
     def OnUpdate( self , context , event ) :

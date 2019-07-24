@@ -97,6 +97,9 @@ class SubTool :
                     subTool.OnExit()
                 self.OnExitSubTool( context , subTool)
 
+        if ret == 'PASSTHROUGH' :
+            ret = 'RUNNING_MODAL'
+
         if ret == None :
             if self.OnForcus(context , event) :            
                 ret = self.OnUpdate(context,event)

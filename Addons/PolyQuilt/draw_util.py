@@ -134,7 +134,7 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
 #   shader3D.uniform_float("viewProjectionMatrix", matrix)
     shader3D.uniform_float("color", color )
 
-    batch = batch_for_shader(shader3D, primitiveType , {"pos": verts} )
+    batch = batch_for_shader(shader3D, primitiveType , {"pos": verts[:]} )
     batch.draw(shader3D)
 
     if hide_alpha < 0.99 :
@@ -156,7 +156,7 @@ def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide
     polys = mathutils.geometry.tessellate_polygon( (verts,) )
     shader3D.bind()
     shader3D.uniform_float("color", color )
-    batch = batch_for_shader(shader3D, 'TRIS', {"pos": verts } , indices=polys )
+    batch = batch_for_shader(shader3D, 'TRIS', {"pos": verts[:] } , indices=polys )
     batch.draw(shader3D) 
 
     if hide_alpha > 0.0 :
@@ -178,7 +178,7 @@ def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
         verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) , (-1*r + pos[0],-1*r + pos[1]) )
         shader2D.bind()
         shader2D.uniform_float("color", color )
-        batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts} )
+        batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts[:]} )
         batch.draw(shader2D)
 
 
@@ -190,7 +190,7 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
 
     shader3D.bind()
     shader3D.uniform_float("color", color )
-    batch = batch_for_shader(shader3D, 'POINTS', {"pos": poss} )
+    batch = batch_for_shader(shader3D, 'POINTS', {"pos": poss[:]} )
     batch.draw(shader3D)
 
     bgl.glPointSize(1 )
