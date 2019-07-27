@@ -61,6 +61,7 @@ class SubToolVertExtrude(SubTool) :
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS) 
             self.targetPos = self.startPos + move
+            self.targetPos = QSnap.view_adjust(self.targetPos)            
             self.snapTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , edgering=True , backface_culling = True , elements=['VERT'] , ignore = self.ignore )
             if self.snapTarget.isEmpty :
                 self.is_snap_center = self.bmo.is_x0_snap( self.targetPos )

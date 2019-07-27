@@ -68,6 +68,8 @@ class SubToolEdgeExtrude(SubTool) :
 
             p0 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[0].co) + move
             p1 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[1].co) + move
+            p0 = QSnap.view_adjust(p0)
+            p1 = QSnap.view_adjust(p1)
             self.newEdge = [p0,p1]
 
             # X=0でのスナップをチェック

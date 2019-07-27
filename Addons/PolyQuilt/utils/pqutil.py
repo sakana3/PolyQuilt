@@ -110,9 +110,10 @@ class Ray :
         vector = region_2d_to_vector_3d(region, rv3d, coord)
         return Ray(origin,vector)
 
+    @staticmethod
     def from_world_to_screen( context , world_pos : mathutils.Vector ) :
         coord = location_3d_to_region_2d(world_pos)
-        return Ray.from_screen(coord)
+        return Ray.from_screen( context , coord)
 
     def world_to_object( self , obj ) :
         matrix_inv = obj.matrix_world.inverted()

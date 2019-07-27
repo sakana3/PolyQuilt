@@ -34,16 +34,15 @@ class SubToolMove(SubTool) :
         self.startMousePos = copy.copy(startTarget.coord)
         self.mouse_pos = startMousePos.copy()
         self.startPos = startTarget.hitPosition.copy()
-        self.target_verts = [ v for v in startTarget.verts ]
+        self.target_orig = { v : v.co.copy()  for v in startTarget.verts }
         if self.bmo.is_mirror_mode :
-            self.mirror_verts = [ v for v in [ self.bmo.find_mirror(v) for v in startTarget.verts ] if v != None ]
-            same = set(self.mirror_verts) & set(self.target_verts)
-            self.target_verts = [ v for v in self.target_verts if (v not in same) or v.co.x >= 0.0 ]
-            self.mirror_verts = [ v for v in self.mirror_verts if (v not in same) or v.co.x < 0.0 ]
+            mirrors = [ self.bmo.find_mirror(v) for v in startTarget.verts ]
+            if self.startPos.x >= 0 :
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m == None or v.co.x >= 0.0 }
+            else :
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m == None or v.co.x <= 0.0 }
         else :
-            self.mirror_verts = []
-        self.target_verts = [ (v,v.co.copy()) for v in self.target_verts ]
-        self.mirror_verts = [ (v,v.co.copy()) for v in self.mirror_verts ]
+            self.mirror_pair = { v : None for v in startTarget.verts }
 
         self.normal_ray = pqutil.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
         self.normal_ray.origin = self.startPos
@@ -138,7 +137,7 @@ class SubToolMove(SubTool) :
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
-                verts = set( [ v[0] for v in self.target_verts] ) | set( [ v[0] for v in self.mirror_verts] )
+                verts = set( self.target_orig.keys() )
                 if self.snapTarget.isVert :
                     verts.add( self.snapTarget.element )
                 bmesh.ops.automerge( self.bmo.bm , verts = list(verts) , dist = threshold )
@@ -235,21 +234,20 @@ class SubToolMove(SubTool) :
 
         self.currentTarget.hitPosition = self.startPos + move
 
-        for vert in self.target_verts :
-            p = self.bmo.obj.matrix_world @ vert[1]
+        for vert , mirror in self.mirror_pair.items() :
+            initial_pos = self.target_orig[vert]
+            p = self.bmo.obj.matrix_world @ initial_pos
             p = p + move
             p = self.bmo.obj.matrix_world.inverted() @ p
-            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( vert[1] ) :
+            p = QSnap.view_adjust(p)
+            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
                 p.x = 0.0
 
-            self.bmo.set_positon( vert[0] , p , False )
+            self.bmo.set_positon( vert , p , False )
 
-        for vert in self.mirror_verts :
-            p = self.bmo.obj.matrix_world @ self.bmo.mirror_pos(vert[1])
-            p = p + move
-            p = self.bmo.obj.matrix_world.inverted() @ p
-            p = self.bmo.mirror_pos(p)
-            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( vert[1] ) :
-                p.x = 0.0
-            self.bmo.set_positon( vert[0] , p , False )
+            if mirror :
+                p.x = -p.x
+                self.bmo.set_positon( mirror , p , False )
+        return
+
             

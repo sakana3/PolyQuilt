@@ -68,7 +68,7 @@ class SubToolDefault(SubTool) :
             if self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :
-#               bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
+                bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
                 self.isExit = True
                 
         elif event.type == MBEventType.LongPressDrag :

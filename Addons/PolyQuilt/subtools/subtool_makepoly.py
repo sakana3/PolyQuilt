@@ -43,6 +43,7 @@ class SubToolMakePoly(SubTool) :
 
         if startElement.isEmpty :
             p = self.calc_planned_construction_position()
+            p = QSnap.view_adjust(p)
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
             self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 ); 
@@ -57,6 +58,7 @@ class SubToolMakePoly(SubTool) :
         self.pivot = self.currentTarget.hitPosition
 
         self.mekePolyList.append( self.currentTarget.element )
+        self.PlanlagtePos =  QSnap.view_adjust(self.calc_planned_construction_position())
         self.targetElement = None
         self.isEnd = False
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
@@ -86,7 +88,8 @@ class SubToolMakePoly(SubTool) :
                     self.isEnd = self.AddVert(self.currentTarget ) == False
                 elif self.currentTarget.isEmpty :
                     self.pivot = self.calc_planned_construction_position()
-                    addVert = self.bmo.AddVertexWorld(self.pivot)
+                    self.pivot = QSnap.view_adjust(self.pivot)
+                    addVert = self.bmo.AddVertexWorld( self.pivot )
                     self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , self.pivot , 0.0 )
                 if self.currentTarget.isVert :
@@ -103,6 +106,7 @@ class SubToolMakePoly(SubTool) :
             if len(self.mekePolyList) <= 1 :
                 self.mode = 'EDGE'
         elif event.type == MBEventType.Move :
+            self.PlanlagtePos =  QSnap.view_adjust(self.calc_planned_construction_position())
             tmp = self.currentTarget
             ignore = []
             if isinstance( self.targetElement , bmesh.types.BMFace ) :
@@ -137,11 +141,7 @@ class SubToolMakePoly(SubTool) :
     def OnDraw3D( self , context  ) :
         l = len(self.mekePolyList)        
         v3d = [ i.world for i in pqutil.TransformBMVerts(self.bmo.obj,self.mekePolyList) ]
-        lp = self.calc_planned_construction_position()
-        if lp != None :
-            v3d.append( lp )
-        else :
-            lp = mathutils.Vector( (0,0,0) )
+        v3d.append( self.PlanlagtePos )
 
         alpha = self.preferences.highlight_face_alpha
         vertex_size = self.preferences.highlight_vertex_size        
@@ -166,14 +166,14 @@ class SubToolMakePoly(SubTool) :
 
         if self.currentTarget.isNotEmpty :
             if self.currentTarget.element == self.mekePolyList[-1] :
-                draw_util.draw_pivots3D(  (lp,) , vertex_size * 1.5 , self.color_create() )
+                draw_util.draw_pivots3D(  (self.PlanlagtePos,) , vertex_size * 1.5 , self.color_create() )
             elif self.currentTarget.element in self.mekePolyList:
-                draw_util.draw_pivots3D(  (lp,) , vertex_size * 1.5 , self.color_delete() )
+                draw_util.draw_pivots3D(  (self.PlanlagtePos,) , vertex_size * 1.5 , self.color_delete() )
 
-            draw_util.draw_pivots3D( (lp,) , vertex_size , color )
+            draw_util.draw_pivots3D( (self.PlanlagtePos,) , vertex_size , color )
             self.currentTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
         else :
-            draw_util.draw_pivots3D( (lp,) , vertex_size , self.color_create() )
+            draw_util.draw_pivots3D( (self.PlanlagtePos,) , vertex_size , self.color_create() )
 
         draw_util.drawElementsHilight3D( self.bmo.obj , self.mekePolyList , vertex_size ,width,alpha, self.color_create() )
 

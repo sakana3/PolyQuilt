@@ -33,14 +33,14 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def init( self , context ) :
         self.bo = QMesh( context.active_object , self.preferences )
-#       QSnap.start(context)
+        QSnap.start(context)
 
     def exit( self , context, cancel) :
         if self.bo :
             del self.bo
         self.currentElement = None
         PQ_Gizmo_Preselect.instance = None
-#       QSnap.exit()
+        QSnap.exit()
 
     def test_select(self, context, location):
         PQ_Gizmo_Preselect.instance = self        
@@ -48,7 +48,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.bo = QMesh( context.active_object , self.preferences )
         self.bo.CheckValid( context )
         self.bo.UpdateView(context)
-#       QSnap.instance.update(context)
+        QSnap.update(context)
 
         element = self.bo.PickElement( location , self.preferences.distance_to_highlight )
         if self.currentElement.element != element.element :
