@@ -22,7 +22,7 @@ import mathutils
 import bpy_extras
 import collections
 from gpu_extras.batch import batch_for_shader
-from .handleutility import *
+from .pqutil import *
 from .dpi import *
 
 vertex_shader = '''

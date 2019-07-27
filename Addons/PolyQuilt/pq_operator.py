@@ -21,8 +21,8 @@ import bpy_extras
 import collections
 import time
 import copy
-from . import handleutility
-from . import draw_util
+from .utils.pqutil import *
+from .utils import draw_util
 from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
 from .subtools.subtool import SubTool
@@ -111,9 +111,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
-        MESH_OT_poly_quilt.handle_remove()
-
         context.area.tag_redraw()
+        if event.type == 'TIMER' :
+            MESH_OT_poly_quilt.handle_remove()
+            MESH_OT_poly_quilt.handle_add(self,context)    
+            return {'RUNNING_MODAL'}
+
+        MESH_OT_poly_quilt.handle_remove()
 
         if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
             self.report({'WARNING'}, "BMesh Broken..." )

@@ -13,4 +13,5 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from .QMesh import QMesh
+from .QSnap import QSnap
 from .ElementItem import ElementItem

@@ -19,7 +19,7 @@ import bmesh
 from enum import Enum , auto
 import bpy_extras
 import collections
-from .. import handleutility
+from ..utils import pqutil
 from ..QMesh.QMesh import *
 import time
 
@@ -89,7 +89,7 @@ class SubTool :
                     break
                 elif ret == 'FINISHED' :
                     break
-                elif ret == 'PASSTHROUGH' :
+                elif ret == 'PASS_THROUGH' :
                     ret = None
 
             if ret == 'FINISHED' :
@@ -97,14 +97,14 @@ class SubTool :
                     subTool.OnExit()
                 self.OnExitSubTool( context , subTool)
 
-        if ret == 'PASSTHROUGH' :
+        if ret == 'PASS_THROUGH' :
             ret = 'RUNNING_MODAL'
 
         if ret == None :
             if self.OnForcus(context , event) :            
                 ret = self.OnUpdate(context,event)
             else :
-                return 'PASSTHROUGH'
+                return 'PASS_THROUGH'
 
         if ret != 'RUNNING_MODAL'  :
             self.subTool = []

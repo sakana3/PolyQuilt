@@ -20,10 +20,10 @@ import bpy_extras
 import collections
 import mathutils
 import copy
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..dpi import *
+from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolVertExtrude(SubTool) :
@@ -34,7 +34,7 @@ class SubToolVertExtrude(SubTool) :
         self.currentVert = target
         self.startPos = target.hitPosition
         self.targetPos = target.hitPosition
-        self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , target.hitPosition )
+        self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , target.hitPosition )
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
         self.snapTarget = ElementItem.Empty()
@@ -55,8 +55,8 @@ class SubToolVertExtrude(SubTool) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            rayS = handleutility.Ray.from_screen( context , self.startMousePos )
-            rayG = handleutility.Ray.from_screen( context , self.mouse_pos )      
+            rayS = pqutil.Ray.from_screen( context , self.startMousePos )
+            rayG = pqutil.Ray.from_screen( context , self.mouse_pos )      
             vS = self.move_plane.intersect_ray( rayS )
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS) 
@@ -83,11 +83,11 @@ class SubToolVertExtrude(SubTool) :
     def OnDraw( self , context  ) :
         size = self.preferences.highlight_vertex_size
         if self.snapTarget.isVert :            
-            pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.snapTarget.element.co ) )
+            pos = pqutil.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.snapTarget.element.co ) )
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
         if self.is_snap_center :            
             p = self.bmo.zero_pos_w2l( self.targetPos )
-            pos = handleutility.location_3d_to_region_2d( p )
+            pos = pqutil.location_3d_to_region_2d( p )
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
@@ -106,13 +106,13 @@ class SubToolVertExtrude(SubTool) :
         polys = (p0,p1,p2,p3)
 
         draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.25  )        
-        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0 )        
 
         if self.bmo.is_mirror_mode :
             lines = [ self.bmo.mirror_pos_w2l(p) for p in lines ]
             polys = [ self.bmo.mirror_pos_w2l(p) for p in polys ]
             draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.25  )        
-            draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+            draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0 )        
 
     def MakePoly( self ) :
         vert = self.currentVert.element        
@@ -136,7 +136,7 @@ class SubToolVertExtrude(SubTool) :
                         verts.reverse()
                         break
         else :
-            normal = handleutility.getViewDir()
+            normal = pqutil.getViewDir()
 
         self.bmo.AddFace( verts , normal )        
         self.bmo.UpdateMesh()

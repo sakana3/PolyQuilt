@@ -18,10 +18,10 @@ import bmesh
 import bpy_extras
 import collections
 import copy
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..mouse_event_util import ButtonEventUtil, MBEventType
+from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *

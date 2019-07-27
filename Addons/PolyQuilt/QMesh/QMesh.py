@@ -20,9 +20,9 @@ import bpy_extras
 import collections
 from mathutils import *
 import numpy as np
-from .. import handleutility
-from .. import draw_util
-from ..dpi import *
+from ..utils import pqutil
+from ..utils import draw_util
+from ..utils.dpi import *
 from .ElementItem import ElementItem
 from .QMeshOperators import QMeshOperators
 from .QMeshHighlight import QMeshHighlight

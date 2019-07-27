@@ -18,8 +18,8 @@ import copy
 import mathutils
 import collections
 from mathutils import *
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 
 __all__ = ['ElementItem']
 
@@ -142,12 +142,12 @@ class ElementItem :
 
     @staticmethod
     def FormVert( qmesh , v ):
-        p = handleutility.location_3d_to_region_2d( v.co )
+        p = pqutil.location_3d_to_region_2d( v.co )
         return ElementItem( qmesh , v , p , v.co , 0.0 )
 
     @staticmethod
     def FormElement( qmesh ,e , co ):
-        p = handleutility.location_3d_to_region_2d( co )
+        p = pqutil.location_3d_to_region_2d( co )
         return ElementItem( qmesh ,e , p , co , 0.0 )
 
     def Draw( self , obj , color , preferences ) :

@@ -97,18 +97,22 @@ class Plane :
         self.vector = Vector( (-self.vector.x,self.vector.y,self.vector.z) )
 
 class Ray :
-    def __init__( self , origin , vector  ) :
-        self.origin = Vector( origin )
+    def __init__( self , origin : mathutils.Vector , vector  : mathutils.Vector ) :
+        self.origin = origin.copy()
         self.vector = vector
         self.vector.normalize()
 
     @staticmethod
-    def from_screen( context , coord ) :
+    def from_screen( context , coord : mathutils.Vector) :
         rv3d = context.space_data.region_3d    
         region = context.region
         origin = region_2d_to_origin_3d(region, rv3d, coord)
         vector = region_2d_to_vector_3d(region, rv3d, coord)
         return Ray(origin,vector)
+
+    def from_world_to_screen( context , world_pos : mathutils.Vector ) :
+        coord = location_3d_to_region_2d(world_pos)
+        return Ray.from_screen(coord)
 
     def world_to_object( self , obj ) :
         matrix_inv = obj.matrix_world.inverted()

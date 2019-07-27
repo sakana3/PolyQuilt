@@ -19,8 +19,8 @@ import bmesh
 import copy
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubTool
 
@@ -45,9 +45,9 @@ class SubToolMove(SubTool) :
         self.target_verts = [ (v,v.co.copy()) for v in self.target_verts ]
         self.mirror_verts = [ (v,v.co.copy()) for v in self.mirror_verts ]
 
-        self.normal_ray = handleutility.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
+        self.normal_ray = pqutil.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
         self.normal_ray.origin = self.startPos
-        self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , startTarget.hitPosition )
+        self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , startTarget.hitPosition )
         self.move_plane = self.screen_space_plane
         self.move_type = 'FREE'
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
@@ -174,7 +174,7 @@ class SubToolMove(SubTool) :
     def OnDraw( self , context  ) :
         if self.is_snap :
             size = self.preferences.highlight_vertex_size
-            pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.currentTarget.element.co ) )
+            pos = pqutil.location_3d_to_region_2d( self.bmo.local_to_world_pos( self.currentTarget.element.co ) )
             draw_util.draw_circle2D( pos , size + 1.5 , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
@@ -193,7 +193,7 @@ class SubToolMove(SubTool) :
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
 
         if self.operator.fix_to_x_zero and self.currentTarget.is_x_zero:
-            plane = handleutility.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
+            plane = pqutil.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
             plane.origin = self.startPos
 #           self.move_plane = plane
 
@@ -201,19 +201,19 @@ class SubToolMove(SubTool) :
             self.move_ray = None
             move_type = 'FREE'
         if move_type == 'X' :
-            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
+            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
             self.move_color = ( 1.0 , 0.0 ,0.0 ,1.0  )
         elif move_type == 'Y' :
-            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,1,0) ) )
+            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (0,1,0) ) )
             self.move_color = ( 0.0 , 1.0 ,0.0 ,1.0  )
         elif move_type == 'Z' :
-            self.move_ray = handleutility.Ray( self.startPos , mathutils.Vector( (0,0,1) ) )
+            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (0,0,1) ) )
             self.move_color = ( 0.0 , 0.0 ,1.0 ,1.0  )
         elif move_type == 'NORMAL' :
             self.move_ray = self.normal_ray
             self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
         elif move_type == 'TANGENT' :
-            self.move_plane = handleutility.Plane( self.startPos , self.normal_ray.vector )
+            self.move_plane = pqutil.Plane( self.startPos , self.normal_ray.vector )
 
         self.move_type = move_type
 
@@ -221,13 +221,13 @@ class SubToolMove(SubTool) :
         move = mathutils.Vector( (0.0,0.0,0.0) )
 
         if self.move_ray != None :
-            ray = handleutility.Ray.from_screen( context , mouse_pos )
+            ray = pqutil.Ray.from_screen( context , mouse_pos )
             p0 , p1 , d = self.move_ray.distance( ray )
 
             move = ( p0 - self.move_ray.origin )
         elif self.move_plane != None :
-            rayS = handleutility.Ray.from_screen( context , self.startMousePos )
-            rayG = handleutility.Ray.from_screen( context , mouse_pos )
+            rayS = pqutil.Ray.from_screen( context , self.startMousePos )
+            rayG = pqutil.Ray.from_screen( context , mouse_pos )
             vS = self.move_plane.intersect_ray( rayS )
             vG = self.move_plane.intersect_ray( rayG )
 

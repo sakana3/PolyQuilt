@@ -18,10 +18,10 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..dpi import *
+from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolEdgeSlice(SubTool) :
@@ -62,7 +62,7 @@ class SubToolEdgeSlice(SubTool) :
             matrix = self.bmo.obj.matrix_world
             pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
             pos = self.bmo.local_to_world_pos( pos )
-            pos = handleutility.location_3d_to_region_2d( pos )            
+            pos = pqutil.location_3d_to_region_2d( pos )            
             draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , pos , (0,2) )                    
 
     def OnDraw3D( self , context  ) :
@@ -88,10 +88,10 @@ class SubToolEdgeSlice(SubTool) :
 
 
     def CalcSplitRate( self , context ,coord , baseEdge ) :
-        ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
+        ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         dist = self.preferences.distance_to_highlight* dpm()
 
-        d = handleutility.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
+        d = pqutil.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
 
         self.is_forcus = d > 0 and d < 1
 

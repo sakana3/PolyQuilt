@@ -19,8 +19,8 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubTool
 
@@ -74,13 +74,13 @@ class SubToolKnife(SubTool) :
             self.CutEdge_mirror , self.CutEdgePos3D_mirror = self.calc_slice( slice_plane , plane0 , plane1 )
 
     def make_slice_planes( self , context,startPos , endPos ):
-        slice_plane_world = handleutility.Plane.from_screen_slice( context,startPos , endPos )
+        slice_plane_world = pqutil.Plane.from_screen_slice( context,startPos , endPos )
         slice_plane_object = slice_plane_world.world_to_object( self.bmo.obj )
 
-        ray0 = handleutility.Ray.from_screen( context , startPos ).world_to_object( self.bmo.obj )
-        plane0 = handleutility.Plane( ray0.origin , slice_plane_object.vector.cross(ray0.vector) )
-        ray1 = handleutility.Ray.from_screen( context ,endPos ).world_to_object( self.bmo.obj )
-        plane1 = handleutility.Plane( ray1.origin , slice_plane_object.vector.cross(ray1.vector) )
+        ray0 = pqutil.Ray.from_screen( context , startPos ).world_to_object( self.bmo.obj )
+        plane0 = pqutil.Plane( ray0.origin , slice_plane_object.vector.cross(ray0.vector) )
+        ray1 = pqutil.Ray.from_screen( context ,endPos ).world_to_object( self.bmo.obj )
+        plane1 = pqutil.Plane( ray1.origin , slice_plane_object.vector.cross(ray1.vector) )
 
         return slice_plane_object , plane0 , plane1
 

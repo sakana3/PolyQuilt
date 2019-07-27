@@ -20,10 +20,10 @@ import bpy_extras
 import collections
 import mathutils
 import copy
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..dpi import *
+from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolEdgeExtrude(SubTool) :
@@ -34,7 +34,7 @@ class SubToolEdgeExtrude(SubTool) :
         self.currentEdge = target
         self.startPos = target.hitPosition
         self.targetPos = target.hitPosition
-        self.screen_space_plane = handleutility.Plane.from_screen( bpy.context , target.hitPosition )
+        self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , target.hitPosition )
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
         self.snapTarget = ElementItem.Empty()
@@ -58,8 +58,8 @@ class SubToolEdgeExtrude(SubTool) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            rayS = handleutility.Ray.from_screen( context , self.startMousePos )
-            rayG = handleutility.Ray.from_screen( context , self.mouse_pos )      
+            rayS = pqutil.Ray.from_screen( context , self.startMousePos )
+            rayG = pqutil.Ray.from_screen( context , self.mouse_pos )      
             vS = self.move_plane.intersect_ray( rayS )
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS)
@@ -101,7 +101,7 @@ class SubToolEdgeExtrude(SubTool) :
                 for i in range(2) :
                     p = self.newEdge[i]
                     # スナップする頂点を探す
-                    c = handleutility.location_3d_to_region_2d(p)
+                    c = pqutil.location_3d_to_region_2d(p)
                     e = self.bmo.PickElement( c , dist , edgering=True , backface_culling = True , elements=['VERT'], ignore=self.ignoreVerts )
                     if e.isVert :
                         self.newEdge[i] = e.element
@@ -149,14 +149,14 @@ class SubToolEdgeExtrude(SubTool) :
         for vert in self.newEdge :
             if isinstance( vert , mathutils.Vector ) :
                 if not self.is_center_snap and self.bmo.is_mirror_mode and self.bmo.is_x_zero_pos_w2l( vert ) :
-                    pos = handleutility.location_3d_to_region_2d( vert )
+                    pos = pqutil.location_3d_to_region_2d( vert )
                     draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
             elif isinstance( vert , bmesh.types.BMVert ) :       
-                pos = handleutility.location_3d_to_region_2d( self.bmo.local_to_world_pos( vert.co ) )
+                pos = pqutil.location_3d_to_region_2d( self.bmo.local_to_world_pos( vert.co ) )
                 draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
         if self.is_center_snap :
-            pos = handleutility.location_3d_to_region_2d( self.bmo.zero_pos_w2l(self.targetPos) )
+            pos = pqutil.location_3d_to_region_2d( self.bmo.zero_pos_w2l(self.targetPos) )
             draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
@@ -177,23 +177,23 @@ class SubToolEdgeExtrude(SubTool) :
         polys = [ v for v in (p0,t[0],t[1],p1) if v != None ]
 
         draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
-        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+        draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 0 )        
         if self.snapTarget.isEdge and None not in t :
-            draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
+            draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 3 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
         if self.bmo.is_mirror_mode and not self.currentEdge.is_straddle_x_zero:
             lines = [ self.bmo.mirror_pos_w2l(p) for p in lines ]
             polys = [ self.bmo.mirror_pos_w2l(p) for p in polys ]
             draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.25), hide_alpha = 0.25  )        
-            draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0.25 )        
+            draw_util.draw_lines3D( context , lines , self.color_create(1.0) , 1 , primitiveType = 'LINE_STRIP' , hide_alpha = 0 )        
             if self.is_center_snap :            
                 draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 2 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
     def AdsorptionEdge( self , p0 , p1 , edge ) :
-        st0 = handleutility.location_3d_to_region_2d(p0)
-        st1 = handleutility.location_3d_to_region_2d(p1)
-        se0 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
-        se1 = handleutility.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
+        st0 = pqutil.location_3d_to_region_2d(p0)
+        st1 = pqutil.location_3d_to_region_2d(p1)
+        se0 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
+        se1 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
         if (st0-se0).length + (st1-se1).length > (st0-se1).length + (st1-se0).length :
             t0 = self.snapTarget.element.verts[1]
             t1 = self.snapTarget.element.verts[0]
@@ -227,7 +227,7 @@ class SubToolEdgeExtrude(SubTool) :
                     if loop.vert == edge.verts[0] :
                         verts.reverse()
         else :
-            normal = handleutility.getViewDir()
+            normal = pqutil.getViewDir()
 
         face = self.bmo.AddFace( verts , normal , mirror )
         self.bmo.UpdateMesh()

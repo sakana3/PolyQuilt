@@ -19,10 +19,10 @@ import bmesh
 import copy
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..dpi import *
+from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolFinSlice(SubTool) :
@@ -97,10 +97,10 @@ class SubToolFinSlice(SubTool) :
     def CalcRate( self , context , coord ):
         rate = 0.0
         dist = 0.0
-        ray = handleutility.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
+        ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         d = self.preferences.distance_to_highlight* dpm()
         for edge in self.currentTarget.element.link_edges :
-            r = handleutility.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )
+            r = pqutil.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )
             if r > rate :
                 rate = r
                 dist = d * (edge.verts[0].co - edge.verts[1].co).length

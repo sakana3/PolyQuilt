@@ -18,10 +18,10 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from ..QMesh import *
-from ..dpi import *
+from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolEdgeloopCut(SubTool) :

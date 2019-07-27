@@ -18,12 +18,12 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
+from ..utils.dpi import *
 from ..QMesh import *
-from ..mouse_event_util import ButtonEventUtil, MBEventType
+from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import SubTool
-from ..dpi import *
 
 class SubToolMakePoly(SubTool) :
     name = "MakePolyTool"
@@ -136,7 +136,7 @@ class SubToolMakePoly(SubTool) :
 
     def OnDraw3D( self , context  ) :
         l = len(self.mekePolyList)        
-        v3d = [ i.world for i in handleutility.TransformBMVerts(self.bmo.obj,self.mekePolyList) ]
+        v3d = [ i.world for i in pqutil.TransformBMVerts(self.bmo.obj,self.mekePolyList) ]
         lp = self.calc_planned_construction_position()
         if lp != None :
             v3d.append( lp )
@@ -233,7 +233,7 @@ class SubToolMakePoly(SubTool) :
                     self.targetElement = edge
                     dirty = True
             elif pts == 3 :
-                face = self.bmo.AddFace( self.mekePolyList , handleutility.getViewDir() )
+                face = self.bmo.AddFace( self.mekePolyList , pqutil.getViewDir() )
 #                face.select = True
                 dirty = True
                 self.targetElement = face
@@ -242,7 +242,7 @@ class SubToolMakePoly(SubTool) :
                 edge = self.bmo.edges.get( ( self.mekePolyList[0] , self.mekePolyList[-2] ) )
                 if edge != None :
                     self.bmo.Remove( edge )
-                self.targetElement = self.bmo.AddFace( self.mekePolyList, handleutility.getViewDir()  )
+                self.targetElement = self.bmo.AddFace( self.mekePolyList, pqutil.getViewDir()  )
                 self.bmo.UpdateMesh()
 
 
@@ -334,8 +334,8 @@ class SubToolMakePoly(SubTool) :
 
     def calc_planned_construction_position( self ) :
         if self.currentTarget.isEmpty :
-            plane = handleutility.Plane.from_screen( bpy.context , self.pivot )
-            ray = handleutility.Ray.from_screen( bpy.context , self.mouse_pos )
+            plane = pqutil.Plane.from_screen( bpy.context , self.pivot )
+            ray = pqutil.Ray.from_screen( bpy.context , self.mouse_pos )
             wp = plane.intersect_ray( ray )
         else :
             wp = self.currentTarget.hitPosition

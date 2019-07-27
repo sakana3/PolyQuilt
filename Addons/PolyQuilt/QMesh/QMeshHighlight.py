@@ -20,8 +20,8 @@ import bpy_extras
 import collections
 from mathutils import *
 import numpy as np
-from .. import handleutility
-from ..dpi import *
+from ..utils import pqutil
+from ..utils.dpi import *
 from .ElementItem import ElementItem
 
 __all__ = ['QMeshHighlight']
@@ -129,7 +129,7 @@ class QMeshHighlight :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
         if backface_culling :
-            ray = handleutility.Ray.from_screen( bpy.context , coord )
+            ray = pqutil.Ray.from_screen( bpy.context , coord )
             s = [ i for i in s if i[0].is_manifold == False or i[0].is_boundary or i[0].normal.dot( ray.vector ) < 0 ]
 
         s = [ i for i in s if i[0] not in ignore ]
@@ -142,15 +142,15 @@ class QMeshHighlight :
     def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True , edgering = False ) -> ElementItem :
         p = Vector( coord )
         viewPosEdge = self.viewPosEdges
-        ray = handleutility.Ray.from_screen( bpy.context , coord )
+        ray = pqutil.Ray.from_screen( bpy.context , coord )
         ray_distance = ray.distance
-        location_3d_to_region_2d = handleutility.location_3d_to_region_2d
+        location_3d_to_region_2d = pqutil.location_3d_to_region_2d
         matrix_world = self.pqo.obj.matrix_world      
 
         def Conv( edge ) -> ElementItem :
             v1 = matrix_world @ edge.verts[0].co
             v2 = matrix_world @ edge.verts[1].co
-            h0 , h1 , d = ray_distance( handleutility.Ray( v1 , (v1-v2) ) )
+            h0 , h1 , d = ray_distance( pqutil.Ray( v1 , (v1-v2) ) )
             c = location_3d_to_region_2d(h1)
             return ElementItem( self.pqo , edge , c , h1 , d )
 
@@ -171,7 +171,7 @@ class QMeshHighlight :
 
 
     def PickFace( self ,coord , ignore = []  , backface_culling = True ) -> ElementItem :
-        ray = handleutility.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
+        ray = pqutil.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
         pos,nrm,index,dist = self.pqo.btree.ray_cast( ray.origin , ray.vector )
         prePos = ray.origin
         while( index is not None ) :

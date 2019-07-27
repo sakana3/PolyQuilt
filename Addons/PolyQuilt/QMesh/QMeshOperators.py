@@ -19,10 +19,10 @@ import mathutils
 import bpy_extras
 import collections
 from mathutils import *
-from .. import handleutility
-from .. import draw_util
+from ..utils import pqutil
+from ..utils import draw_util
 from .ElementItem import *
-from ..dpi import *
+from ..utils.dpi import *
 
 class QMeshOperators :
     def __init__(self,obj , preferences) :
@@ -78,10 +78,10 @@ class QMeshOperators :
         return self.obj.matrix_world.inverted() @ pos
 
     def world_to_2d(  self ,pos : Vector ) :
-        return handleutility.location_3d_to_region_2d( pos )
+        return pqutil.location_3d_to_region_2d( pos )
 
     def local_to_2d(  self ,pos : Vector ) :
-        return handleutility.location_3d_to_region_2d( self.obj.matrix_world @ pos )
+        return pqutil.location_3d_to_region_2d( self.obj.matrix_world @ pos )
 
     @staticmethod
     def mirror_pos( pos : Vector ) :
@@ -113,8 +113,8 @@ class QMeshOperators :
         return abs(wp[0]) < dist
 
     def is_snap( self , p0 : Vector  , p1 : Vector  ) :
-        t0 = handleutility.location_3d_to_region_2d(p0)
-        t1 = handleutility.location_3d_to_region_2d(p1)
+        t0 = pqutil.location_3d_to_region_2d(p0)
+        t1 = pqutil.location_3d_to_region_2d(p1)
         return self.is_snap2D(t0,t1)
 
     def is_snap2D( self , p0 : Vector  , p1 : Vector  ) :
@@ -122,8 +122,8 @@ class QMeshOperators :
         return ( p0 - p1 ).length <= dist
 
     def is_x0_snap( self , p  : Vector  ) :
-        p0 = handleutility.location_3d_to_region_2d( p )
-        p1 = handleutility.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
+        p0 = pqutil.location_3d_to_region_2d( p )
+        p1 = pqutil.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
         dist = self.preferences.distance_to_highlight * dpm()  
         return ( p0 - p1 ).length <= dist
 
@@ -137,8 +137,8 @@ class QMeshOperators :
         return [ self.mirror_world_pos(pos) for pos in poss ]
 
     def check_near( self , v0 , v1 ) :
-        c0 = handleutility.location_3d_to_region_2d( self.obj.matrix_world @ v0 )
-        c1 = handleutility.location_3d_to_region_2d( self.obj.matrix_world @ v1 )        
+        c0 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v0 )
+        c1 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v1 )        
         radius = self.preferences.distance_to_highlight * dpm()      
         return (c0-c1).length <= radius 
 
