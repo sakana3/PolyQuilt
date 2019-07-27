@@ -122,6 +122,10 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     bgl.glLineWidth(width )    
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glEnable(bgl.GL_DEPTH_TEST)
+    bgl.glDepthMask(bgl.GL_FALSE)
+    bgl.glEnable(bgl.GL_POLYGON_OFFSET_LINE)
+    bgl.glEnable(bgl.GL_POLYGON_OFFSET_FILL)    
+    bgl.glPolygonOffset(1.0, 1.0)
 
     if hide_alpha < 0.99 :
         bgl.glDepthFunc( bgl.GL_LESS )
@@ -142,16 +146,19 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
         shader3D.uniform_float("color", (color[0],color[1],color[2],color[3] * hide_alpha) )
         batch.draw(shader3D)
 
-    del batch
-
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
+    bgl.glDisable(bgl.GL_POLYGON_OFFSET_LINE)
+    bgl.glDisable(bgl.GL_POLYGON_OFFSET_FILL)
 
 def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide_alpha = 0.5 ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glEnable(bgl.GL_DEPTH_TEST)
     bgl.glDepthFunc( bgl.GL_LESS )
+    bgl.glDepthMask(bgl.GL_FALSE)
+    bgl.glEnable(bgl.GL_POLYGON_OFFSET_FILL)
+    bgl.glPolygonOffset(1.0, 1.0)
 
     polys = mathutils.geometry.tessellate_polygon( (verts,) )
     shader3D.bind()
@@ -165,6 +172,7 @@ def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide
         batch.draw(shader3D)
 
     bgl.glDisable(bgl.GL_BLEND)
+    bgl.glDisable(bgl.GL_POLYGON_OFFSET_FILL)
 
 def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
     r = radius * dpm()
@@ -187,6 +195,9 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glPointSize(radius * dpm() * 2 )
     bgl.glDisable(bgl.GL_DEPTH_TEST)
+    bgl.glDepthMask(bgl.GL_FALSE)
+    bgl.glEnable(bgl.GL_POLYGON_OFFSET_POINT)
+    bgl.glPolygonOffset(1.0, 1.0)
 
     shader3D.bind()
     shader3D.uniform_float("color", color )
@@ -195,7 +206,7 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
 
     bgl.glPointSize(1 )
     bgl.glDisable(bgl.GL_BLEND)
-
+    bgl.glDisable(bgl.GL_POLYGON_OFFSET_POINT)
 
 def draw_Face2D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = True ):
     bgl.glEnable(bgl.GL_BLEND)
@@ -260,6 +271,8 @@ def draw_Edge3D( obj , edge : bmesh.types.BMEdge , color = (1,1,1,1) , width = 1
     bgl.glLineWidth(width)    
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDepthFunc(bgl.GL_ALWAYS)
+    bgl.glDepthMask(bgl.GL_FALSE)
+
     verts = ( obj.matrix_world @ edge.verts[0].co ,  obj.matrix_world @ edge.verts[1].co )
 
     shader3D.bind()
@@ -273,6 +286,7 @@ def draw_Edge3D( obj , edge : bmesh.types.BMEdge , color = (1,1,1,1) , width = 1
 def drawElementHilight( obj , element, radius , color = (1,1,1,1) ) :
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_DEPTH_TEST)
+    bgl.glDepthMask(bgl.GL_FALSE)
 
     if isinstance( element , bmesh.types.BMVert ) :
         v = obj.matrix_world @ element.co
@@ -285,6 +299,7 @@ def drawElementHilight( obj , element, radius , color = (1,1,1,1) ) :
 
     bgl.glEnable(bgl.GL_DEPTH_TEST)
     bgl.glDisable(bgl.GL_BLEND)        
+    bgl.glDepthMask(bgl.GL_FALSE)
 
 
 def drawElementsHilight3D( obj , elements, radius,width ,alpha, color = (1,1,1,1) ) :
@@ -294,6 +309,7 @@ def drawElementsHilight3D( obj , elements, radius,width ,alpha, color = (1,1,1,1
 def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_DEPTH_TEST)
+    bgl.glDepthMask(bgl.GL_FALSE)
 
     if isinstance( element , bmesh.types.BMVert ) :
         v = obj.matrix_world @ element.co
@@ -305,6 +321,7 @@ def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1
 
     bgl.glEnable(bgl.GL_DEPTH_TEST)
     bgl.glDisable(bgl.GL_BLEND)  
+    bgl.glDepthMask(bgl.GL_FALSE)
 
 
 def drawElementsHilight( obj , elements, radius , color = (1,1,1,1) ) :
