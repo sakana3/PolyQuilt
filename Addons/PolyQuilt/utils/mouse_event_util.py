@@ -33,7 +33,6 @@ class MBEventType(Enum) :
     Release = auto()
 
 class ButtonEventUtil :
-    __timer_handle = None
     def __init__( self , button : str , cls , func , preferences ) :
         self.button : str = button
         self.eventFunc = func
@@ -47,9 +46,6 @@ class ButtonEventUtil :
         self.PressPos = mathutils.Vector((0.0,0.0))
         self.presureCompOnce = False
         self.preferences = preferences
-
-    def __del__(self) :
-        self.RemoveTimerEvent(bpy.context)
 
     @property
     def presureValue(self) -> float :  
@@ -69,6 +65,11 @@ class ButtonEventUtil :
     def isPresure(self) -> bool : 
         return self.presureValue >= 0.0001 
 
+    def is_animated( self ) :
+        if self.Presure and not self.presureCompOnce :
+            return True
+        return False
+
     def Update( self , context , event  ) :
         self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))                    
         if event.type == self.button:
@@ -80,7 +81,6 @@ class ButtonEventUtil :
                     self.PressTime = time.time()
                     self.PressPos = self.mouse_pos
                     self.OnEvent( event , MBEventType.Down )
-                    self.AddTimerEvent(context)
                 else :
                     self.OnEvent( event , MBEventType.Press )
             elif event.value == 'RELEASE':
@@ -94,7 +94,6 @@ class ButtonEventUtil :
                 self.Presure = False
                 self.Press = False
                 self.OnEvent( event , MBEventType.Release )
-                self.RemoveTimerEvent(context)
                 self.PressTime  = 0.0
                 self.presureCompOnce = False
         elif event.type == 'MOUSEMOVE':
@@ -129,7 +128,6 @@ class ButtonEventUtil :
         self.Presure = False
         self.Press = False
         self.presureCompOnce = False
-        self.RemoveTimerEvent(context)
 
     def Draw( self , coord = None , text = None ) :
         if self.presureValue > 0.001 :
@@ -143,13 +141,3 @@ class ButtonEventUtil :
                     draw_util.DrawFont( text , 12 , self.PressPos , (0,4) )            
         return self.presureComplite
 
-    @staticmethod
-    def AddTimerEvent( context , time = 1.0 / 20.0 ) :
-        if ButtonEventUtil.__timer_handle is None :
-            ButtonEventUtil.__timer_handle = context.window_manager.event_timer_add( time , window = context.window)
-
-    @staticmethod
-    def RemoveTimerEvent( context ) :
-        if ButtonEventUtil.__timer_handle is not None:
-            context.window_manager.event_timer_remove(ButtonEventUtil.__timer_handle)
-            ButtonEventUtil.__timer_handle = None

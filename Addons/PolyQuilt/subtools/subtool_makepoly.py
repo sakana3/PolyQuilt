@@ -67,9 +67,11 @@ class SubToolMakePoly(SubTool) :
         if self.mode == 'VERT' :
             self.isEnd = True
 
+    def is_animated( self , context ) :
+        return self.LMBEvent.is_animated()
+
     @staticmethod
     def LMBEventCallback(self , event ):
-        print(event.type)
         if event.type == MBEventType.Down :
             pass
         elif event.type == MBEventType.Release :
@@ -97,7 +99,6 @@ class SubToolMakePoly(SubTool) :
         elif event.type == MBEventType.Click :            
             pass
         elif event.type == MBEventType.LongPress :
-            print( "!")
             if len(self.mekePolyList) <= 1 and self.currentTarget.isVert and self.mekePolyList[-1] != self.currentTarget.element :
                 edge = self.bmo.edges.get( (self.mekePolyList[0] , self.currentTarget.element) )
                 if edge != None and self.EdgeLoops == None :
@@ -306,7 +307,6 @@ class SubToolMakePoly(SubTool) :
                     faces = list(faces)
                     share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
                     if len(share_edges) != 1 :
-                        print(share_edges)                    
                         break
                     preEdge = list(share_edges)[0]
 

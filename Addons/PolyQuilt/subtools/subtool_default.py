@@ -41,6 +41,9 @@ class SubToolDefault(SubTool) :
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op.preferences  )
         self.isExit = False
 
+    def is_animated( self , context ) :
+        return self.LMBEvent.is_animated()
+
     @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)

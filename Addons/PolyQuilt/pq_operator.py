@@ -61,7 +61,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     bl_options = {'REGISTER' , 'UNDO'}
     __draw_handle2D = None
     __draw_handle3D = None
- 
+    __timer_handle = None
+
     backface : bpy.props.BoolProperty(
             name="backface",
             description="Ignore Backface",
@@ -111,6 +112,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        if event.type == 'TIMER':
+            if self.currentSubTool is not None :
+                if self.currentSubTool.check_animated(context) :
+                    context.area.tag_redraw()
+                    MESH_OT_poly_quilt.handle_remove()
+                    MESH_OT_poly_quilt.handle_add(self,context)    
+            return {'PASS_THROUGH'}
+
         context.area.tag_redraw()
 
         MESH_OT_poly_quilt.handle_remove()
@@ -142,6 +151,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if ret == 'FINISHED' :
             bpy.context.window.cursor_modal_restore()
+            self.RemoveTimerEvent(context)
         else :
             MESH_OT_poly_quilt.handle_add(self,context)    
 
@@ -181,6 +191,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             bpy.context.window.cursor_modal_set( self.currentSubTool.GetCursor() )
             context.window_manager.modal_handler_add(self)
 #           MESH_OT_poly_quilt.handle_add(self,context)
+            self.AddTimerEvent(context)
             
             return {'RUNNING_MODAL'}
         else:
@@ -189,7 +200,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def cancel( self , context):
         MESH_OT_poly_quilt.handle_remove()
-
+        self.RemoveTimerEvent(context)
+        
     @staticmethod
     def draw_callback_px(self , context):
         draw_util.begin2d()
@@ -235,4 +247,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             bpy.types.SpaceView3D.draw_handler_remove( MESH_OT_poly_quilt.__draw_handle2D, 'WINDOW')
             MESH_OT_poly_quilt.__draw_handle2D = None            
 
+    @classmethod
+    def AddTimerEvent( cls , context , time = 1.0 / 30.0 ) :
+        if cls.__timer_handle is None :
+            cls.__timer_handle = context.window_manager.event_timer_add( time , window = context.window)
 
+    @classmethod
+    def RemoveTimerEvent( cls , context ) :
+        if cls.__timer_handle is not None:
+            context.window_manager.event_timer_remove(cls.__timer_handle)
+            cls.__timer_handle = None

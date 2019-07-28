@@ -113,6 +113,16 @@ class SubTool :
         self.step += 1
         return ret
 
+    def check_animated( self , context ) :
+        if self.activeSubTool :
+            return self.activeSubTool.is_animated(context)
+        else :
+            return self.is_animated(context)
+        return False
+
+    def is_animated( self , context ) :
+        return False
+
     def Draw2D( self , context  ) :
         if self.activeSubTool :
             self.activeSubTool.Draw2D(context )
