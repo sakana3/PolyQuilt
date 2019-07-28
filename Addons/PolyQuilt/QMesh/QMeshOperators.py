@@ -156,9 +156,13 @@ class QMeshOperators :
 
     def reload_obj( self , context ) :
         self.obj = context.active_object
-        self.mesh = self.obj.data
-        self.bm = bmesh.from_edit_mesh(self.mesh)
-        self.ensure_lookup_table()
+        if self.obj != None :
+            self.mesh = self.obj.data
+            self.bm = bmesh.from_edit_mesh(self.mesh)
+            self.ensure_lookup_table()
+        else :
+            self.mesh = None
+            self.bm = None
         self.current_matrix = None            
         if self.__btree :
             del self.__btree
@@ -337,6 +341,7 @@ class QMeshOperators :
         return False
 
 
+
     def find_mirror( self , geom , check_same = True ) :
         result = None
         dist = bpy.context.scene.tool_settings.double_threshold
@@ -380,6 +385,26 @@ class QMeshOperators :
             return None
 
         return result
+
+    def find_near( self , pos : mathutils.Vector , is_mirror = None ) :
+        threshold = bpy.context.scene.tool_settings.double_threshold
+        hits = set()
+
+        ipos = self.obj.matrix_world.inverted() @ pos   
+        pts = self.kdtree.find_range( ipos , threshold )
+        if pts :
+            hits = set([ self.bm.verts[i] for p , i ,d in pts ])
+
+        if self.check_mirror(is_mirror) and self.is_x_zero_pos( pos ) is False :
+            mpos = self.obj.matrix_world.inverted() @ pos
+            mpos.x = -mpos.x
+            mpts = self.kdtree.find_range( mpos , threshold )
+            if mpts :            
+                mhits = set([ self.bm.verts[i] for p , i ,d in mpts ])
+                return mhits | hits
+
+        return hits
+
 
     @staticmethod
     def get_shading(context):

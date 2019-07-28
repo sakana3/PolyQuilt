@@ -143,11 +143,13 @@ class ButtonEventUtil :
                     draw_util.DrawFont( text , 12 , self.PressPos , (0,4) )            
         return self.presureComplite
 
-    def AddTimerEvent( self , context , time = 1.0 / 60.0 ) :
+    @staticmethod
+    def AddTimerEvent( context , time = 1.0 / 20.0 ) :
         if ButtonEventUtil.__timer_handle is None :
             ButtonEventUtil.__timer_handle = context.window_manager.event_timer_add( time , window = context.window)
 
-    def RemoveTimerEvent( self , context ) :
+    @staticmethod
+    def RemoveTimerEvent( context ) :
         if ButtonEventUtil.__timer_handle is not None:
             context.window_manager.event_timer_remove(ButtonEventUtil.__timer_handle)
             ButtonEventUtil.__timer_handle = None

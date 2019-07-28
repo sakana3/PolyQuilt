@@ -69,6 +69,7 @@ class SubToolMakePoly(SubTool) :
 
     @staticmethod
     def LMBEventCallback(self , event ):
+        print(event.type)
         if event.type == MBEventType.Down :
             pass
         elif event.type == MBEventType.Release :
@@ -96,6 +97,7 @@ class SubToolMakePoly(SubTool) :
         elif event.type == MBEventType.Click :            
             pass
         elif event.type == MBEventType.LongPress :
+            print( "!")
             if len(self.mekePolyList) <= 1 and self.currentTarget.isVert and self.mekePolyList[-1] != self.currentTarget.element :
                 edge = self.bmo.edges.get( (self.mekePolyList[0] , self.currentTarget.element) )
                 if edge != None and self.EdgeLoops == None :
@@ -164,14 +166,14 @@ class SubToolMakePoly(SubTool) :
 
         if self.currentTarget.isNotEmpty :
             if self.currentTarget.element == self.mekePolyList[-1] :
-                draw_util.draw_pivots3D(  (self.PlanlagtePos,) , vertex_size * 1.5 , self.color_create() )
+                draw_util.draw_pivots3D(  [self.PlanlagtePos,] , vertex_size * 1.5 , self.color_create() )
             elif self.currentTarget.element in self.mekePolyList:
-                draw_util.draw_pivots3D(  (self.PlanlagtePos,) , vertex_size * 1.5 , self.color_delete() )
+                draw_util.draw_pivots3D(  [self.PlanlagtePos,] , vertex_size * 1.5 , self.color_delete() )
 
-            draw_util.draw_pivots3D( (self.PlanlagtePos,) , vertex_size , color )
+            draw_util.draw_pivots3D( [self.PlanlagtePos,] , vertex_size , color )
             self.currentTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
         else :
-            draw_util.draw_pivots3D( (self.PlanlagtePos,) , vertex_size , self.color_create() )
+            draw_util.draw_pivots3D( [self.PlanlagtePos,] , vertex_size , self.color_create() )
 
         draw_util.drawElementsHilight3D( self.bmo.obj , self.mekePolyList , vertex_size ,width,alpha, self.color_create() )
 

@@ -112,10 +112,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def modal(self, context, event):
         context.area.tag_redraw()
-        if event.type == 'TIMER' :
-            MESH_OT_poly_quilt.handle_remove()
-            MESH_OT_poly_quilt.handle_add(self,context)    
-            return {'RUNNING_MODAL'}
 
         MESH_OT_poly_quilt.handle_remove()
 

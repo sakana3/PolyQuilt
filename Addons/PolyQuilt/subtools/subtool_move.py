@@ -139,7 +139,10 @@ class SubToolMove(SubTool) :
                 threshold = bpy.context.scene.tool_settings.double_threshold
                 verts = set( self.target_orig.keys() )
                 if self.snapTarget.isVert :
-                    verts.add( self.snapTarget.element )
+                    verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.co)
+                elif self.snapTarget.isEdge : 
+                    verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[0].co)
+                    verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[1].co)
                 bmesh.ops.automerge( self.bmo.bm , verts = list(verts) , dist = threshold )
                 self.bmo.UpdateMesh()
 

@@ -51,9 +51,6 @@ shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 shader3Dc = gpu.types.GPUShader(vertex_shader, fragment_shader)
 
-coords = [(1, 1, 1), (2, 0, 0), (-2, -1, 3)]
-batcht = batch_for_shader(shader3Dc, 'TRIS', {"pos": coords})
-
 def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 ):
     r = radius * dpm()
     dr = math.pi * 2 / subdivide

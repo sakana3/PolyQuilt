@@ -133,8 +133,6 @@ class QSnap :
                     ray2 = pqutil.Ray( world_pos , ray.vector )
                     location2 , normal2 , obj2 = cls.instance.__raycast_double( ray2 )
                     if obj2 == obj :
-                        print( obj2 )
-                        print( obj )
                         return True
                 return False
         return True
@@ -153,7 +151,7 @@ class QSnap :
                         matrix = obj.matrix_world
                         location = pqutil.transform_position( hit[0] , matrix )
                         normal = pqutil.transform_normal( hit[1] , matrix )
-                        index =  hit[2]
+                        index =  hit[2] + obj.pass_index * 10000000
                         min_dist = hit[3]
 
         return location , normal , index
@@ -165,17 +163,13 @@ class QSnap :
 
         if None in [obj_i,obj_r] :
             if obj_i != None :
-                print( "?" )
                 return location_i , normal_i , obj_i
             elif obj_r != None :
-                print( "??" )
                 return location_r , normal_r , obj_r
         else :
             if (location_r - ray.origin).length <= (location_i - ray.origin).length :
-                print( "???" )
                 return location_r , normal_r , obj_r
             else :
-                print( "?????" )
                 return location_i , normal_i , obj_i        
         return None , None , None
 
@@ -200,7 +194,7 @@ class QSnap :
                         if hit[3] < min_dist :
                             location = pqutil.transform_position( hit[0] , matrix )
                             normal = pqutil.transform_normal( hit[1] , matrix )
-                            index =  hit[2]
+                            index =  hit[2] + obj.pass_index * 10000000
                             min_dist = hit[3]
 
         return location , normal , index
