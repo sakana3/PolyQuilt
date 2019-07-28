@@ -91,19 +91,33 @@ class QSnap :
                 return location
         return world_pos
 
+
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
         if cls.instance != None :
+            dist = bpy.context.scene.tool_settings.double_threshold                        
             find_nearest =  cls.instance.__find_nearest
             matrix = obj.matrix_world
             for vert in verts :
-                location , norm , obj = find_nearest( matrix @ vert.co )
+                if len(vert.link_faces) == 0 :
+                        location , norm , index = find_nearest( matrix @ vert.co )
+                else :
+                    normal = vert.normal
+                    if is_fix_to_x_zero and abs(vert.co.x) < dist :
+                        ray = pqutil.Ray( vert.co , normal ).x_zero.object_to_world(obj)
+                    else :
+                        ray = pqutil.Ray( vert.co , normal ).object_to_world(obj)
+                    location , norm , index = cls.instance.__raycast_double( ray )
+
                 if location != None :
                     if is_fix_to_x_zero :
-                        dist = bpy.context.scene.tool_settings.double_threshold                        
                         if abs(vert.co.x) <= dist :
                             location.x = 0.0
-                            location , norm , obj = find_nearest( location )
+                            ray.origin = location
+                            if len(vert.link_faces) == 0 :
+                                location , norm , index = find_nearest( matrix @ vert.co )
+                            else :
+                                location , norm , index = cls.instance.__raycast_double( ray )
                             location.x = 0.0
                     vert.co = location
 
@@ -116,26 +130,12 @@ class QSnap :
                 if (location - ray.origin).length >= (world_pos - ray.origin).length :
                     return True
                 else :
-                    ray_p = pqutil.Ray( world_pos , ray.vector )
-                    inv_p = ray_p.invert
-                    # ターゲットからビュー方向にレイを飛ばす
-                    location_r , normal_r , obj_r = cls.instance.__raycast( ray_p )
-                    location_i , normal_i , obj_i = cls.instance.__raycast( inv_p )
-                    if obj_i != None and obj_r == None :
-                        if obj_i == obj :
-                            return True
-                    if obj_r != None and obj_i == None :
-                        if obj_r == obj :
-                            return True
-                    if obj_r == obj and obj_i == obj :
+                    ray2 = pqutil.Ray( world_pos , ray.vector )
+                    location2 , normal2 , obj2 = cls.instance.__raycast_double( ray2 )
+                    if obj2 == obj :
+                        print( obj2 )
+                        print( obj )
                         return True
-                    if location_r != None and location_i != None :
-                        if (location_r - world_pos).length <= (location_i - world_pos).length :
-                            if obj_r == obj :
-                                return True
-                        else :
-                            if obj_i == obj :
-                                return True
                 return False
         return True
 
@@ -158,6 +158,27 @@ class QSnap :
 
         return location , normal , index
 
+    def __raycast_double( self , ray : pqutil.Ray ) :
+        # ターゲットからビュー方向にレイを飛ばす
+        location_r , normal_r , obj_r = self.__raycast( ray )
+        location_i , normal_i , obj_i = self.__raycast( ray.invert )
+
+        if None in [obj_i,obj_r] :
+            if obj_i != None :
+                print( "?" )
+                return location_i , normal_i , obj_i
+            elif obj_r != None :
+                print( "??" )
+                return location_r , normal_r , obj_r
+        else :
+            if (location_r - ray.origin).length <= (location_i - ray.origin).length :
+                print( "???" )
+                return location_r , normal_r , obj_r
+            else :
+                print( "?????" )
+                return location_i , normal_i , obj_i        
+        return None , None , None
+
     def __find_nearest( self, pos : mathutils.Vector ) :
         min_dist = math.inf
         location = None
@@ -167,7 +188,13 @@ class QSnap :
             for obj , bvh in self.bvh_list.items():
                 matrix = obj.matrix_world
                 lp = pqutil.transform_position( pos , matrix )
-                hits = bvh.find_nearest_range(lp)
+                dst = 0.000001
+                while( dst <= 1.0 ) :
+                    hits = bvh.find_nearest_range(lp, dst )
+                    if None not in hits :
+                        break
+                    dst = dst * 10
+
                 if None not in hits :
                     for hit in hits :
                         if hit[3] < min_dist :

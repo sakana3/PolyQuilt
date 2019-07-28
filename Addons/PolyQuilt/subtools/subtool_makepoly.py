@@ -43,7 +43,6 @@ class SubToolMakePoly(SubTool) :
 
         if startElement.isEmpty :
             p = self.calc_planned_construction_position()
-            p = QSnap.view_adjust(p)
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
             self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 ); 
@@ -58,7 +57,7 @@ class SubToolMakePoly(SubTool) :
         self.pivot = self.currentTarget.hitPosition
 
         self.mekePolyList.append( self.currentTarget.element )
-        self.PlanlagtePos =  QSnap.view_adjust(self.calc_planned_construction_position())
+        self.PlanlagtePos =  self.calc_planned_construction_position()
         self.targetElement = None
         self.isEnd = False
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
@@ -88,7 +87,6 @@ class SubToolMakePoly(SubTool) :
                     self.isEnd = self.AddVert(self.currentTarget ) == False
                 elif self.currentTarget.isEmpty :
                     self.pivot = self.calc_planned_construction_position()
-                    self.pivot = QSnap.view_adjust(self.pivot)
                     addVert = self.bmo.AddVertexWorld( self.pivot )
                     self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , self.pivot , 0.0 )
@@ -339,12 +337,14 @@ class SubToolMakePoly(SubTool) :
             wp = plane.intersect_ray( ray )
         else :
             wp = self.currentTarget.hitPosition
+        wp = QSnap.view_adjust(wp)
 
-        lp = self.bmo.world_to_local_pos(wp)
-        mp = self.bmo.mirror_pos(lp)
-        if self.bmo.check_near( lp , mp ) :
-            zp = self.bmo.zero_pos(lp)
-            wp =  self.bmo.local_to_world_pos( zp )
+        if self.bmo.is_mirror_mode :
+            lp = self.bmo.world_to_local_pos(wp)
+            mp = self.bmo.mirror_pos(lp)
+            if self.bmo.check_near( lp , mp ) :
+                zp = self.bmo.zero_pos(lp)
+                wp =  self.bmo.local_to_world_pos( zp )
 
         return wp
 

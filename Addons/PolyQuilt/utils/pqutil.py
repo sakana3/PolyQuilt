@@ -125,7 +125,7 @@ class Ray :
         return Ray( ray_origin_obj , ray_direction_obj )
 
     def object_to_world( self , obj ) :
-        matrix = obj.matrix_world()
+        matrix = obj.matrix_world
         target = self.origin + self.vector
         ray_origin_obj = matrix @ self.origin
         ray_target_obj = matrix @ target
@@ -153,6 +153,11 @@ class Ray :
     @property
     def invert( self ) :
         return Ray( self.origin , -self.vector )
+
+    @property
+    def x_zero( self ) :
+        return Ray( self.origin , mathutils.Vector( (0 , self.vector.y , self.vector.z )) )
+
 
 def transform_position( vec : mathutils.Vector , matrix : mathutils.Matrix ) :
     return matrix @ vec
