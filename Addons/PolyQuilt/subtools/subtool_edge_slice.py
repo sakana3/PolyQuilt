@@ -171,7 +171,7 @@ class SubToolEdgeSlice(SubTool) :
             else :
                 _slice[ split_dege[0] ] = 1.0 - sliceRate
 
-        geom_inner , geom_split , geom = bmesh.ops.subdivide_edges(
+        ret = bmesh.ops.subdivide_edges(
              self.bmo.bm ,
              edges = edges ,
              edge_percents  = _slice ,
@@ -188,6 +188,11 @@ class SubToolEdgeSlice(SubTool) :
              seed = 0 ,
              use_sphere = False 
         )
+
+        for e in ret['geom_inner'] :
+            e.select_set(True)
+        if QSnap.is_active() :
+            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_inner'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
 
         self.bmo.UpdateMesh()
 

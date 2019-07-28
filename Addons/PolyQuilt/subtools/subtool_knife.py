@@ -111,7 +111,11 @@ class SubToolKnife(SubTool) :
         plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
         faces = [ face for face in self.bmo.faces if face.hide is False ]
         elements = self.CutEdge[:] + faces[:]
-        bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= plane.origin ,plane_no= plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
+        ret = bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= plane.origin ,plane_no= plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
+        for e in ret['geom_cut'] :
+            e.select_set(True)
+        if QSnap.is_active() :
+            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
 
         if self.bmo.is_mirror_mode :
             slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
@@ -123,6 +127,9 @@ class SubToolKnife(SubTool) :
             if cutEdgeMirror :
                 faces = [ face for face in self.bmo.faces if face.hide is False ]          
                 elements = cutEdgeMirror[:] + faces[:]
-                bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= slice_plane.origin ,plane_no= slice_plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
-
+                ret = bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= slice_plane.origin ,plane_no= slice_plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
+                for e in ret['geom_cut'] :
+                    e.select_set(True)
+                    if QSnap.is_active() :
+                        QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
 

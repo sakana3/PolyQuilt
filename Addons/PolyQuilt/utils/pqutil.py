@@ -150,6 +150,17 @@ class Ray :
 
         return Q1,Q2,(Q2 - Q1).length
 
+    @property
+    def invert( self ) :
+        return Ray( self.origin , -self.vector )
+
+def transform_position( vec : mathutils.Vector , matrix : mathutils.Matrix ) :
+    return matrix @ vec
+
+def transform_normal( vec : mathutils.Vector , matrix : mathutils.Matrix ) :
+    return matrix.transposed().to_3x3() @ vec
+
+
 def region_2d_to_vector_3d(region, rv3d, coord):
     """
     Return a direction vector from the viewport at the specific 2d region

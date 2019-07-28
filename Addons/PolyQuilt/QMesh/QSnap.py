@@ -24,20 +24,24 @@ from ..utils import pqutil
 class QSnap :
     instance = None
 
-    @staticmethod
-    def start( context ) :
-        QSnap.instance = QSnap(context)
-        QSnap.update(context)
+    @classmethod
+    def start( cls,context ) :
+        cls.instance = cls(context)
+        cls.update(context)
 
-    @staticmethod
-    def exit() :
-        if QSnap.instance :
-            del QSnap.instance
+    @classmethod
+    def exit(cls) :
+        if cls.instance :
+            del cls.instance
 
-    @staticmethod
-    def update(context) :
-        if QSnap.instance :
-            QSnap.instance.__update(context)
+    @classmethod
+    def is_active( cls ) :
+        return cls.instance != None
+
+    @classmethod
+    def update(cls,context) :
+        if cls.instance :
+            cls.instance.__update(context)
 
     def __init__( self , context, snap_objects = 'Visible'  ) :
         self.objects_array = None
@@ -45,7 +49,7 @@ class QSnap :
 
     def __update( self , context ) :
         if context.scene.tool_settings.use_snap \
-            and 'VOLUME' in context.scene.tool_settings.snap_elements :
+            and 'FACE' in context.scene.tool_settings.snap_elements :
                 if self.bvh_list == None :
                     self.create_tree(context)
                 else :
@@ -56,7 +60,8 @@ class QSnap :
             if self.bvh_list != None :
                 self.remove_tree()
 
-    def snap_objects( self , context ) :
+    @staticmethod
+    def snap_objects( context ) :
         active_obj = context.active_object        
         objects = context.visible_objects
 #           objects = context.selected_objects
@@ -81,33 +86,94 @@ class QSnap :
     def view_adjust( cls , world_pos : mathutils.Vector ) -> mathutils.Vector :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
-            hit = cls.instance.raycast_hit( ray )
-            if hit != None :
-                return hit
+            location , norm , obj = cls.instance.__raycast( ray )
+            if location != None :
+                return location
         return world_pos
 
     @classmethod
-    def adjust( cls , world_pos : mathutils.Vector ) -> mathutils.Vector :
+    def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
+        if cls.instance != None :
+            find_nearest =  cls.instance.__find_nearest
+            matrix = obj.matrix_world
+            for vert in verts :
+                location , norm , obj = find_nearest( matrix @ vert.co )
+                if location != None :
+                    if is_fix_to_x_zero :
+                        dist = bpy.context.scene.tool_settings.double_threshold                        
+                        if abs(vert.co.x) <= dist :
+                            location.x = 0.0
+                            location , norm , obj = find_nearest( location )
+                            location.x = 0.0
+                    vert.co = location
+
+    @classmethod
+    def is_target( cls , world_pos : mathutils.Vector) -> bool :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
-            hit = cls.instance.raycast_hit( ray )
-            if hit != None :
-                return hit
-        return world_pos
+            location , normal , obj = cls.instance.__raycast( ray )
+            if location != None :
+                if (location - ray.origin).length >= (world_pos - ray.origin).length :
+                    return True
+                else :
+                    ray_p = pqutil.Ray( world_pos , ray.vector )
+                    inv_p = ray_p.invert
+                    # ターゲットからビュー方向にレイを飛ばす
+                    location_r , normal_r , obj_r = cls.instance.__raycast( ray_p )
+                    location_i , normal_i , obj_i = cls.instance.__raycast( inv_p )
+                    if obj_i != None and obj_r == None :
+                        if obj_i == obj :
+                            return True
+                    if obj_r != None and obj_i == None :
+                        if obj_r == obj :
+                            return True
+                    if obj_r == obj and obj_i == obj :
+                        return True
+                    if location_r != None and location_i != None :
+                        if (location_r - world_pos).length <= (location_i - world_pos).length :
+                            if obj_r == obj :
+                                return True
+                        else :
+                            if obj_i == obj :
+                                return True
+                return False
+        return True
 
-    def raycast_hit( self , ray : pqutil.Ray ) :
+    def __raycast( self , ray : pqutil.Ray ) :
         min_dist = math.inf
         location = None
+        normal = None
+        index = None
         if self.bvh_list :
             for obj , bvh in self.bvh_list.items():
                 local_ray = ray.world_to_object( obj )
                 hit = bvh.ray_cast( local_ray.origin , local_ray.vector )
                 if None not in hit :
                     if hit[3] < min_dist :
-                        location = hit[0]
+                        matrix = obj.matrix_world
+                        location = pqutil.transform_position( hit[0] , matrix )
+                        normal = pqutil.transform_normal( hit[1] , matrix )
+                        index =  hit[2]
                         min_dist = hit[3]
 
-        return location
+        return location , normal , index
 
-    def find_near( self, pos : mathutils.Vector ) :
-        return mathutils.Vector( (0,0,0) )
+    def __find_nearest( self, pos : mathutils.Vector ) :
+        min_dist = math.inf
+        location = None
+        normal = None
+        index = None
+        if self.bvh_list :
+            for obj , bvh in self.bvh_list.items():
+                matrix = obj.matrix_world
+                lp = pqutil.transform_position( pos , matrix )
+                hits = bvh.find_nearest_range(lp)
+                if None not in hits :
+                    for hit in hits :
+                        if hit[3] < min_dist :
+                            location = pqutil.transform_position( hit[0] , matrix )
+                            normal = pqutil.transform_normal( hit[1] , matrix )
+                            index =  hit[2]
+                            min_dist = hit[3]
+
+        return location , normal , index

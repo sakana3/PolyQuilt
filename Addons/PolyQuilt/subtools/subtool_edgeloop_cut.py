@@ -25,7 +25,7 @@ from ..utils.dpi import *
 from .subtool import SubTool
 
 class SubToolEdgeloopCut(SubTool) :
-    name = "SliceTool"
+    name = "EdgeLoopCutTool"
 
     def __init__(self,op, target : ElementItem ) :
         super().__init__(op)
@@ -107,7 +107,6 @@ class SubToolEdgeloopCut(SubTool) :
                     faces = list(faces)
                     share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
                     if len(share_edges) != 1 :
-                        print(share_edges)                    
                         break
                     preEdge = list(share_edges)[0]
 

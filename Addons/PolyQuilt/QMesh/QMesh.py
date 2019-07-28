@@ -19,6 +19,7 @@ import mathutils
 import bpy_extras
 import collections
 from mathutils import *
+from .QSnap import QSnap
 import numpy as np
 from ..utils import pqutil
 from ..utils import draw_util
@@ -55,7 +56,7 @@ class QMesh(QMeshOperators) :
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = False , elements = ['FACE','EDGE','VERT'] ) -> ElementItem :
         backface_culling = self.get_shading(bpy.context).show_backface_culling
         rv3d = bpy.context.space_data.region_3d
-        matrix = self.obj.matrix_world @ rv3d.perspective_matrix
+        matrix = rv3d.perspective_matrix
         radius = radius * dpm()
 
         hitElement = ElementItem.Empty()
@@ -69,23 +70,24 @@ class QMesh(QMeshOperators) :
             candidateVerts = self.highlight.CollectVerts( coord , radius , ignoreVerts , edgering , backface_culling = backface_culling  )
             for vert in candidateVerts :
                 # 各点からRayを飛ばす
-                hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces , backface_culling = False  )
-                if hitTemp.isEmpty :
-                    # 何の面にもヒットしないなら採択
-                    hitVert = vert
-                    break
-                else :
-                    if vert.element in hitTemp.element.verts :
-                        # ヒットした面に含まれているなら採択
+                if QSnap.is_target( vert.hitPosition ) :
+                    hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces , backface_culling = False  )
+                    if hitTemp.isEmpty :
+                        # 何の面にもヒットしないなら採択
                         hitVert = vert
                         break
                     else :
-                        # ヒットしたポイントより後ろなら採択
-                        v1 = matrix @ vert.hitPosition
-                        v2 = matrix @ hitTemp.hitPosition
-                        if v1.z <= v2.z :
+                        if vert.element in hitTemp.element.verts :
+                            # ヒットした面に含まれているなら採択
                             hitVert = vert
                             break
+                        else :
+                            # ヒットしたポイントより後ろなら採択
+                            v1 = matrix @ vert.hitPosition
+                            v2 = matrix @ hitTemp.hitPosition
+                            if v1.z <= v2.z :
+                                hitVert = vert
+                                break
 
         # Todo:ヒットするエッジを探す
         hitEdge = ElementItem.Empty()
@@ -94,23 +96,24 @@ class QMesh(QMeshOperators) :
             candidateEdges = self.highlight.CollectEdge( coord , radius , ignoreEdges , backface_culling = backface_culling , edgering= edgering )
 
             for edge in candidateEdges :
-                hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces , backface_culling = False )
-            
-                if hitTemp.isEmpty :
-                    hitEdge = edge
-                    break
-                else:
-                    if edge.element in hitTemp.element.edges :
-                        # ヒットした面に含まれているなら採択
+                if QSnap.is_target( edge.hitPosition ) :                
+                    hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces , backface_culling = False )
+                
+                    if hitTemp.isEmpty :
                         hitEdge = edge
                         break
-                    else :
-                        # ヒットしたポイントより後ろなら採択
-                        v1 = matrix @ edge.hitPosition
-                        v2 = matrix @ hitTemp.hitPosition
-                        if v1.z <= v2.z :
+                    else:
+                        if edge.element in hitTemp.element.edges :
+                            # ヒットした面に含まれているなら採択
                             hitEdge = edge
                             break
+                        else :
+                            # ヒットしたポイントより後ろなら採択
+                            v1 = matrix @ edge.hitPosition
+                            v2 = matrix @ hitTemp.hitPosition
+                            if v1.z <= v2.z :
+                                hitEdge = edge
+                                break
 
 
         if hitVert.isEmpty and hitEdge.isEmpty :
@@ -119,7 +122,8 @@ class QMesh(QMeshOperators) :
                 hitFace = self.highlight.PickFace( coord , ignoreFaces , backface_culling = backface_culling  )
                 # 候補頂点/エッジがないなら面を返す
                 if hitFace.isNotEmpty :
-                    hitElement = hitFace
+                    if QSnap.is_target( hitFace.hitPosition ) :                
+                        hitElement = hitFace
         elif hitVert.isNotEmpty and hitEdge.isNotEmpty :
             v1 = matrix @ hitVert.hitPosition
             v2 = matrix @ hitEdge.hitPosition
