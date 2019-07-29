@@ -191,7 +191,6 @@ class QSnap :
                     dst = dst * 10
 
                 if hits and None not in hits :
-                    print(hits)
                     for hit in hits :
                         if hit[3] < min_dist :
                             location = pqutil.transform_position( hit[0] , matrix )
