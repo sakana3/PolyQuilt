@@ -141,15 +141,6 @@ class SubTool :
     def OnExitSubTool( self ,context,subTool ):
         return 'RUNNING_MODAL'
 
-    def AddTimerEvent( self , context , time = 1.0 / 60.0 ) :
-        if SubTool.__timer_handle is not None :
-            SubTool.__timer_handle = context.window_manager.event_timer_add( time , window = context.window)
-
-    def RemoveTimerEvent( self , context ) :
-        if SubTool.__timer_handle is not None:
-            context.window_manager.event_timer_remove(SubTool.__timer_handle)
-            SubTool.__timer_handle = None
-
     def color_highlight( self , alpha = 1.0 ) :
         col = self.preferences.highlight_color
         return (col[0],col[1],col[2],col[3] * alpha)

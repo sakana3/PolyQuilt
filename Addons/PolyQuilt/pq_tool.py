@@ -125,25 +125,15 @@ def tool_poly_quilt():
         draw_settings=draw_settings,
     )
 
-def km_mesh_snap_utilities_operators():
-    return (
-        "Mesh",
-        {"space_type": 'EMPTY', "region_type": 'WINDOW'},
-        {"items": [
-            ("mesh_tool.poly_quilt", {"type": 'Q', "value": 'PRESS'},
-             {"properties": [("wait_for_input", True)],
-              "active":False}),
-        ]},
-    )
-
-
 def km_3d_view_tool_snap_utilities_line(tool_mouse):
     return (
         km_tool_snap_utilities_line,
         {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
         {"items": [
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS'},
-             {"properties": [("wait_for_input", False)]}),
+             {"properties": [("tool_mode", 'LOWPOLY')]}),
+            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "ctrl": True},
+             {"properties": [("tool_mode", 'EXTRUDE')]}),
         ]},
     )
 
@@ -161,29 +151,11 @@ def generate_empty_snap_utilities_tools_keymaps():
         km_view3d_empty(km_tool_snap_utilities_line),
     ]
 
-def generate_snap_utilities_global_keymaps(tool_mouse = 'LEFTMOUSE'):
-    return [
-        km_mesh_snap_utilities_operators(),
-    ]
-
-def generate_snap_utilities_tools_keymaps(tool_mouse = 'LEFTMOUSE'):
-    return [
-        # Tool System.
-        km_3d_view_tool_snap_utilities_line(tool_mouse),
-    ]
-
 def generate_snap_utilities_keymaps(tool_mouse = 'LEFTMOUSE'):
     return [
-        km_mesh_snap_utilities_operators(),
-
-        # Modal maps.
-        #km_snap_utilities_modal_map(),
-
         # Tool System.
         km_3d_view_tool_snap_utilities_line(tool_mouse),
     ]
-
-
 
 def register_keymaps():
     keyconfigs = bpy.context.window_manager.keyconfigs

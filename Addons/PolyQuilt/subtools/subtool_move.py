@@ -34,7 +34,7 @@ class SubToolMove(SubTool) :
         self.startMousePos = copy.copy(startTarget.coord)
         self.mouse_pos = startMousePos.copy()
         self.startPos = startTarget.hitPosition.copy()
-        self.target_orig = { v : v.co.copy()  for v in startTarget.verts }
+        self.target_orig = { v : v.co.copy()  for v in startTarget.verts if v != None }
         if self.bmo.is_mirror_mode :
             mirrors = [ self.bmo.find_mirror(v) for v in startTarget.verts ]
             if self.startPos.x >= 0 :
@@ -242,6 +242,7 @@ class SubToolMove(SubTool) :
             p = self.bmo.obj.matrix_world @ initial_pos
             p = p + move
             p = self.bmo.obj.matrix_world.inverted() @ p
+
             p = QSnap.view_adjust(p)
             if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
                 p.x = 0.0

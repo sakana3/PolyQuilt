@@ -178,6 +178,7 @@ class QSnap :
         location = None
         normal = None
         index = None
+        hits = []
         if self.bvh_list :
             for obj , bvh in self.bvh_list.items():
                 matrix = obj.matrix_world
@@ -189,7 +190,8 @@ class QSnap :
                         break
                     dst = dst * 10
 
-                if None not in hits :
+                if hits and None not in hits :
+                    print(hits)
                     for hit in hits :
                         if hit[3] < min_dist :
                             location = pqutil.transform_position( hit[0] , matrix )

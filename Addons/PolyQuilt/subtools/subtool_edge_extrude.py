@@ -220,6 +220,9 @@ class SubToolEdgeExtrude(SubTool) :
                 else :
                     t[i] = self.newEdge[i]
 
+        if  t[0] == None and t[1] == None :
+            return
+
         verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
 
         normal = None

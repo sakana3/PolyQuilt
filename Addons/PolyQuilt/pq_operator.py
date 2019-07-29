@@ -63,10 +63,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     __draw_handle3D = None
     __timer_handle = None
 
-    backface : bpy.props.BoolProperty(
-            name="backface",
-            description="Ignore Backface",
-            default=True)
+    tool_mode : bpy.props.EnumProperty(
+        name="Tool Mode",
+        description="Tool Mode",
+        items=[('LOWPOLY' , "LowPoly", "" ),
+               ('EXTRUDE' , "Extrude", "" ) ],
+        default='LOWPOLY',
+    )
 
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
@@ -94,30 +97,27 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
               description="Fix X=0",
             )
 
-    ignore_backsurface : bpy.props.BoolProperty(
-              name = "ignore_backsurface" ,
-              default = False ,
-              description="ignore_backsurface",
-            )
-
-    radius : bpy.props.FloatProperty(
-              name = "radius" ,
-              default = 8.0 ,
-              description="radius",
-              min = 4.0 ,
-              max = 32.0 ,
-              precision = 1 )
-
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        try :
+            val = self.update( context, event)
+        except Exception as e:
+            MESH_OT_poly_quilt.handle_remove()
+            self.RemoveTimerEvent(context)
+            raise e
+            return {'CANCELLED'}
+        return val
+
+    def update(self, context, event):
         if event.type == 'TIMER':
             if self.currentSubTool is not None :
                 if self.currentSubTool.check_animated(context) :
                     context.area.tag_redraw()
                     MESH_OT_poly_quilt.handle_remove()
                     MESH_OT_poly_quilt.handle_add(self,context)    
+                    self.bmo.invalid = True
             return {'PASS_THROUGH'}
 
         context.area.tag_redraw()

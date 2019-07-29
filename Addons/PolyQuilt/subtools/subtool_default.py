@@ -67,14 +67,8 @@ class SubToolDefault(SubTool) :
             self.bmo.UpdateMesh()
             self.currentTarget = ElementItem.Empty()
 
-        elif event.type == MBEventType.Drag :
-            if self.currentTarget.isNotEmpty :
-                self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
-            else :
-                bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
-                self.isExit = True
-                
-        elif event.type == MBEventType.LongPressDrag :
+        elif event.type == MBEventType.LongPressDrag or \
+            ( self.operator.tool_mode == 'EXTRUDE' and event.type == MBEventType.Drag ) :
             if self.currentTarget.isEdge :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
@@ -92,6 +86,13 @@ class SubToolDefault(SubTool) :
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
+
+        elif event.type == MBEventType.Drag :
+            if self.currentTarget.isNotEmpty :
+                self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
+            else :
+                bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
+                self.isExit = True
 
     def OnUpdate( self , context , event ) :
         if self.isExit :
