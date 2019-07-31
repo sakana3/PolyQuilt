@@ -178,9 +178,9 @@ class PolyQuiltPreferences(AddonPreferences):
     longpress_time : FloatProperty(
         name="LongPressTime",
         description="Long press Time",
-        default=0.5,
-        min=0.3,
-        max=2.0)
+        default=0.4,
+        min=0.2,
+        max=1.0)
 
 
     extra_setting_expanded : BoolProperty(

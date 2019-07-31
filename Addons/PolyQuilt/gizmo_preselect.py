@@ -88,9 +88,6 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     def __init__(self) :
         self.widget = None
 
-    def __del__(self):
-        pass
-
     @classmethod
     def poll(cls, context):
         # 自分を使っているツールを探す。

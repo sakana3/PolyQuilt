@@ -106,8 +106,15 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         except Exception as e:
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
+            self.bmo.invalid = True
+            self.bmo = None
             raise e
             return {'CANCELLED'}
+
+        if 'CANCELLED' in val or 'FINISHED' in val :
+            bpy.context.window.cursor_modal_restore()
+            self.RemoveTimerEvent(context)            
+            self.bmo = None
         return val
 
     def update(self, context, event):
@@ -149,11 +156,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.maxTime = self.time
             self.debugStr = "eventValue = " + str(event.value) + " type = "+ str(event.type) + " - " + str(self.count) + " time = " + str(self.time) + " max = " + str(self.maxTime)
 
-        if ret == 'FINISHED' :
-            bpy.context.window.cursor_modal_restore()
-            self.RemoveTimerEvent(context)
+        if ret == 'FINISHED' or ret == 'CANCELLED' :
+            pass
         else :
-            MESH_OT_poly_quilt.handle_add(self,context)    
+            MESH_OT_poly_quilt.handle_add(self,context)
 
         return {ret}
 
