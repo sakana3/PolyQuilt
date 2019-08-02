@@ -45,6 +45,32 @@ fragment_shader = '''
     }
 '''
 
+class draw_batchs :
+    batchs = []
+    resources = []
+
+def begin_draw() :
+    draw_batchs.batchs = []
+    draw_batchs.resources = []
+
+def end_draw() :
+    pass
+
+def clear_draw() :
+    draw_batchs.batchs = []
+    
+def batch_draw( shader , primitiveType , content  , indices = None ) :
+    cnt = copy.deepcopy(content )
+    draw_batchs.resources.append(cnt)
+    if indices :
+        idx = copy.deepcopy(indices)
+        draw_batchs.resources.append(idx)
+        batch = batch_for_shader(shader, primitiveType , cnt , indices=idx )
+    else :
+        batch = batch_for_shader(shader, primitiveType , cnt )
+    batch.draw(shader)
+    draw_batchs.batchs.append(batch_draw)
+    return batch
 
 #shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
@@ -59,8 +85,7 @@ def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 
     shader2D.bind()
     shader2D.uniform_float("color", color )
     primitiveType = 'TRI_FAN' if fill else 'LINE_STRIP'
-    batch = batch_for_shader(shader2D, primitiveType , {"pos": vertices} )
-    batch.draw(shader2D)
+    batch_draw(shader2D, primitiveType , {"pos": vertices} )
 
 def draw_donuts2D( pos , radius_out , width , rate , color = (1,1,1,1) ):
     r = radius_out * dpm()
@@ -78,35 +103,7 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glEnable(bgl.GL_BLEND)
     shader2D.bind()
     shader2D.uniform_float("color", color )
-    batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts} )
-    batch.draw(shader2D)
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
-    bgl.glDisable(bgl.GL_BLEND)
-
-shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
-coords = (
-    (-1, -1, -1), (+1, -1, -1),
-    (-1, +1, -1), (+1, +1, -1),
-    (-1, -1, +1), (+1, -1, +1),
-    (-1, +1, +1), (+1, +1, +1))
-
-indices = (
-    (0, 1), (0, 2), (1, 3), (2, 3),
-    (4, 5), (4, 6), (5, 7), (6, 7),
-    (0, 4), (1, 5), (2, 6), (3, 7))
-
-
-def draw_test():
-    bgl.glEnable(bgl.GL_LINE_SMOOTH)
-    bgl.glLineWidth(2 )    
-    bgl.glEnable(bgl.GL_BLEND)
-
-    shader3D.bind()
-    batch = batch_for_shader(shader3D, 'LINES', {"pos": coords}, indices=indices)
-    shader3D.uniform_float("color", (1, 0, 0, 1))
-    batch.draw(shader3D)
-
+    batch_draw(shader2D, 'LINE_STRIP', {"pos": verts} )
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
@@ -135,8 +132,7 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
 #   shader3D.uniform_float("viewProjectionMatrix", matrix)
     shader3D.uniform_float("color", color )
 
-    batch = batch_for_shader(shader3D, primitiveType , {"pos": verts[:]} )
-    batch.draw(shader3D)
+    batch = batch_draw(shader3D, primitiveType , {"pos": verts} )
 
     if hide_alpha < 0.99 :
         bgl.glDepthFunc( bgl.GL_GREATER )
@@ -160,13 +156,12 @@ def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide
     polys = mathutils.geometry.tessellate_polygon( (verts,) )
     shader3D.bind()
     shader3D.uniform_float("color", color )
-    batch = batch_for_shader(shader3D, 'TRIS', {"pos": verts[:] } , indices=polys )
-    batch.draw(shader3D) 
+    batch = batch_draw(shader3D, 'TRIS', {"pos": verts } , indices=polys )
 
     if hide_alpha > 0.0 :
         bgl.glDepthFunc( bgl.GL_GREATER )
         shader3D.uniform_float("color", (color[0],color[1],color[2],color[3] * hide_alpha) )
-        batch.draw(shader3D)
+        batch.draw(shader3D )
 
     bgl.glDisable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_POLYGON_OFFSET_FILL)
@@ -177,15 +172,12 @@ def draw_pivot2D( pos , radius , color = (1,1,1,1) , isWire = False ):
         verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) )
         shader2D.bind()
         shader2D.uniform_float("color", color )
-        batch = batch_for_shader(shader2D, 'TRI_FAN', {"pos": verts} )
-        batch.draw(shader2D)
+        batch_draw(shader2D, 'TRI_FAN', {"pos": verts} )
     else :
         verts = ( (-1*r + pos[0],-1*r + pos[1]) ,(1*r + pos[0] ,-1*r + pos[1]),(1*r + pos[0],1*r + pos[1]),(-1*r + pos[0],1*r + pos[1]) , (-1*r + pos[0],-1*r + pos[1]) )
         shader2D.bind()
         shader2D.uniform_float("color", color )
-        batch = batch_for_shader(shader2D, 'LINE_STRIP', {"pos": verts[:]} )
-        batch.draw(shader2D)
-
+        batch_draw(shader2D, 'LINE_STRIP', {"pos": verts} )
 
 def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)        
@@ -198,8 +190,7 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
 
     shader3D.bind()
     shader3D.uniform_float("color", color )
-    batch = batch_for_shader(shader3D, 'POINTS', {"pos": poss[:]} )
-    batch.draw(shader3D)
+    batch_draw(shader3D, 'POINTS', {"pos": poss} )
 
     bgl.glPointSize(1 )
     bgl.glDisable(bgl.GL_BLEND)
@@ -212,8 +203,7 @@ def draw_Face2D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = 
         polys = mathutils.geometry.tessellate_polygon( (vs,) )
         shader2D.bind()
         shader2D.uniform_float("color", color )
-        batch = batch_for_shader(shader2D, 'TRIS', {"pos": vs } , indices=polys )
-        batch.draw(shader2D)              
+        batch_draw(shader2D, 'TRIS', {"pos": vs } , indices=polys )
     else :
         verts = []
         for edge in face.edges :
@@ -221,8 +211,7 @@ def draw_Face2D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = 
             verts.append( location_3d_to_region_2d( obj.matrix_world @ edge.verts[1].co ) )
         shader2D.bind()
         shader2D.uniform_float("color", color )
-        batch = batch_for_shader(shader2D, 'LINES', {"pos": verts} )
-        batch.draw(shader2D)
+        batch_draw(shader2D, 'LINES', {"pos": verts} )
     bgl.glDisable(bgl.GL_BLEND)
 
 def draw_Face3D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = True ):
@@ -233,8 +222,7 @@ def draw_Face3D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = 
         polys = mathutils.geometry.tessellate_polygon( (vs,) )
         shader3D.bind()
         shader3D.uniform_float("color", color )
-        batch = batch_for_shader(shader3D, 'TRIS', {"pos": vs } , indices=polys )
-        batch.draw(shader3D)  
+        batch_draw(shader3D, 'TRIS', {"pos": vs } , indices=polys )
     else :
         verts = []
         for edge in face.edges :
@@ -242,8 +230,7 @@ def draw_Face3D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = 
             verts.append( obj.matrix_world @ edge.verts[1].co )
         shader3D.bind()
         shader3D.uniform_float("color", color )
-        batch = batch_for_shader(shader3D, 'LINES', {"pos": verts} )
-        batch.draw(shader3D)
+        batch_draw(shader3D, 'LINES', {"pos": verts} )
     bgl.glDisable(bgl.GL_BLEND)
 
 
@@ -257,8 +244,7 @@ def draw_Edge2D( obj , edge : bmesh.types.BMEdge , color = (1,1,1,1) ):
 
     shader2D.bind()
     shader2D.uniform_float("color", color )
-    batch = batch_for_shader(shader2D, 'LINES', {"pos": verts} )
-    batch.draw(shader2D)
+    batch_draw(shader2D, 'LINES', {"pos": verts} )
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)

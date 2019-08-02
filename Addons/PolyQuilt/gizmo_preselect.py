@@ -61,7 +61,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def draw(self, context):
         if self.currentElement != None and self.bo != None :
+            draw_util.begin_draw()            
             self.currentElement.Draw( self.bo.obj , self.preferences.highlight_color , self.preferences )
+            draw_util.end_draw()
 
     def invoke(self, context, event):
         return {'RUNNING_MODAL'}
@@ -87,6 +89,9 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
 
     def __init__(self) :
         self.widget = None
+
+    def __del__(self) :
+        draw_util.clear_draw()     
 
     @classmethod
     def poll(cls, context):

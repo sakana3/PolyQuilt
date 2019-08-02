@@ -210,7 +210,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         
     @staticmethod
     def draw_callback_px(self , context):
-        draw_util.begin2d()
+        draw_util.begin_draw()
         if self != None :
             if self.preferences.is_debug :
                 font_id = 0  # XXX, need to find out how best to get this.
@@ -225,12 +225,15 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             if self.currentSubTool is not None :
                 self.currentSubTool.Draw2D(context)
+        draw_util.end_draw()
 
     @staticmethod
     def draw_callback_3d(self , context):
         if self != None :
             if self.currentSubTool is not None :
+                draw_util.begin_draw()
                 self.currentSubTool.Draw3D(context)
+                draw_util.end_draw()
 
     @staticmethod
     def handle_reset(self,context):
