@@ -54,7 +54,8 @@ class ButtonEventUtil :
         else :
             lpt = self.preferences.longpress_time
             cur = time.time()-self.PressTime
-            t = ( cur - 0.1 ) / (lpt - 0.1)
+            m = max( lpt / 3.0 , 0.1 )
+            t = ( cur - m ) / (lpt - m )
             return min( 1.0 , max( 0.0 , t ) )
 
     @property

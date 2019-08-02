@@ -29,16 +29,17 @@ from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
+from .subtool_autoquad import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
-class SubToolDefault(SubTool) :
-    name = "DefaultSubTool"
+class SubToolExtr(SubTool) :
+    name = "ExtrSubTool"
 
     def __init__(self,op,currentTarget) :
         super().__init__(op)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op.preferences  )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , self.LMBEventCallback , op.preferences  )
         self.isExit = False
 
     def is_animated( self , context ) :
@@ -54,8 +55,10 @@ class SubToolDefault(SubTool) :
             self.isExit = True
 
         elif event.type == MBEventType.Click :
-            if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
-                self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
+            if self.currentTarget.isVert or self.currentTarget.isEdge:
+                if SubToolAutoQuad.Check(self.currentTarget) :
+                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget))
+            self.isExit = True
 
         elif event.type == MBEventType.LongClick :
             if self.currentTarget.isVert :
@@ -67,7 +70,7 @@ class SubToolDefault(SubTool) :
             self.bmo.UpdateMesh()
             self.currentTarget = ElementItem.Empty()
 
-        elif event.type == MBEventType.LongPressDrag :
+        elif event.type == MBEventType.Drag :
             if self.currentTarget.isEdge :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
@@ -86,7 +89,7 @@ class SubToolDefault(SubTool) :
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
-        elif event.type == MBEventType.Drag :
+        elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :

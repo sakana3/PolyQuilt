@@ -25,6 +25,7 @@ from .utils.pqutil import *
 from .utils import draw_util
 from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
+from .subtools.subtool_extr import SubToolExtr
 from .subtools.subtool import SubTool
 from .QMesh import *
 
@@ -183,7 +184,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
 
-            self.currentSubTool = SubToolDefault(self , element )
+            if self.tool_mode == 'EXTRUDE' :
+                self.currentSubTool = SubToolExtr(self , element )
+            else :
+                self.currentSubTool = SubToolDefault(self , element )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
             PQ_Gizmo_Preselect.instance.use()
