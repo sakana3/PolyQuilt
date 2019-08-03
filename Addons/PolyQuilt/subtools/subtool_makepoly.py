@@ -52,9 +52,9 @@ class SubToolMakePoly(SubTool) :
         else :
             if self.bmo.is_mirror_mode and startElement.isVert and self.bmo.is_x_zero_pos( startElement.element.co ) is False and startElement.mirror == None :
                 self.bmo.AddVertex( self.bmo.mirror_pos( startElement.element.co ) , False )
-                self.bmo.UpdateMesh()             
+                self.bmo.UpdateMesh()
                 startElement.setup_mirror()
-        self.pivot = self.currentTarget.hitPosition
+        self.pivot = self.currentTarget.hitPosition.copy()
 
         self.mekePolyList.append( self.currentTarget.element )
         self.PlanlagtePos =  self.calc_planned_construction_position()
@@ -66,6 +66,7 @@ class SubToolMakePoly(SubTool) :
         self.VertLoops = None
         if self.mode == 'VERT' :
             self.isEnd = True
+        self.currentTarget = ElementItem.Empty()
 
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
@@ -96,6 +97,7 @@ class SubToolMakePoly(SubTool) :
                 if self.currentTarget.isVert :
                     if self.currentTarget.element not in self.mekePolyList :
                         self.isEnd = self.AddVert(self.currentTarget ) == False
+            self.currentTarget = ElementItem.Empty()                    
         elif event.type == MBEventType.Click :            
             pass
         elif event.type == MBEventType.LongPress :
@@ -358,6 +360,9 @@ class SubToolMakePoly(SubTool) :
 
         new_edge , new_vert = self.bmo.edge_split_from_position( edgeItem.element , pos )
         self.bmo.UpdateMesh()
+        QSnap.adjust_verts( self.bmo.obj , [new_vert] , self.operator.fix_to_x_zero )
+        self.bmo.UpdateMesh()
+
         newItem = ElementItem.FormVert( self.bmo , new_vert )
         if self.bmo.is_mirror_mode and newItem.mirror == None and newItem.is_x_zero is False :
             self.bmo.AddVertex( self.bmo.mirror_pos( new_vert.co ) , False )
