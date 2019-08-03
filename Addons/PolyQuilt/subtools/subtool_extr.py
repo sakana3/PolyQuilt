@@ -90,11 +90,21 @@ class SubToolExtr(SubTool) :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
         elif event.type == MBEventType.LongPressDrag :
-            if self.currentTarget.isNotEmpty :
-                self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
-            else :
-                bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
-                self.isExit = True
+            if self.currentTarget.isEdge :
+                tools = []
+                if len(self.currentTarget.element.link_faces) > 0 :
+                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
+                if SubToolEdgeloopCut.Check(self.currentTarget) : 
+                    tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
+                self.SetSubTool( tools )
+            elif self.currentTarget.isVert :
+                tools = []
+                tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
+                if SubToolVertExtrude.Check( self.currentTarget ) :
+                    tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
+                self.SetSubTool( tools )
+            elif self.currentTarget.isEmpty :
+                self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
     def OnUpdate( self , context , event ) :
         if self.isExit :
