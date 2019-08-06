@@ -75,7 +75,6 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
 #shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
-shader3Dc = gpu.types.GPUShader(vertex_shader, fragment_shader)
 
 def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 ):
     r = radius * dpm()
