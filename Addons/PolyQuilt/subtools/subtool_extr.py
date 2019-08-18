@@ -78,7 +78,7 @@ class SubToolExtr(SubTool) :
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
                 if SubToolEdgeExtrude.Check(self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget))
+                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
@@ -96,6 +96,8 @@ class SubToolExtr(SubTool) :
                     tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
+                if SubToolEdgeExtrude.Check(self.currentTarget) : 
+                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,True))                    
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []

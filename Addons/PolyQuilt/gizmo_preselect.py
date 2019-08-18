@@ -21,6 +21,9 @@ __all__ = ['PQ_Gizmo_Preselect','PQ_GizmoGroup_Preselect']
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
     instance = None
+    ctrl = False
+    shift = False
+    alt = False
 
     def __init__(self) :
         self.bo = None
@@ -121,3 +124,17 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
 
     def refresh( self , context ) :
         self.widget.refresh(context)
+
+class MESH_OT_poly_quilt_check_key(bpy.types.Operator):
+    """Check Modifire"""
+    bl_idname = "mesh.poly_quilt_check_key"
+    bl_label = "PolyQuiltCheckKey"
+    bl_options = {'REGISTER' , 'UNDO'}
+
+    def modal(self, context, event):
+        PQ_Gizmo_Preselect.ctrl = event.ctrl
+        return {'CANCELLED'}
+
+    def invoke(self, context, event):
+        context.window_manager.modal_handler_add(self)        
+        return {'RUNNING_MODAL'}    

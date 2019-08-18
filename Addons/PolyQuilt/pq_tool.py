@@ -130,11 +130,13 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
         km_tool_snap_utilities_line,
         {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
         {"items": [
-            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS'},
+#            ("mesh.poly_quilt_check_key", {"type": 'MOUSEMOVE' , "value": 'ANY' },
+#            {"properties": []}),
+           ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS'},
              {"properties": [("tool_mode", 'LOWPOLY')]}),
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "ctrl": True},
              {"properties": [("tool_mode", 'EXTRUDE')]}),
-        ]},
+         ]},
     )
 
 def km_view3d_empty(km_name):
@@ -146,8 +148,6 @@ def km_view3d_empty(km_name):
 
 def generate_empty_snap_utilities_tools_keymaps():
     return [
-        #km_view3d_empty(km_snap_utilities_modal_keymap),
-
         km_view3d_empty(km_tool_snap_utilities_line),
     ]
 

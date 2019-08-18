@@ -29,12 +29,13 @@ from .pq_operator import MESH_OT_poly_quilt
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
 from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
-from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
+from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect , MESH_OT_poly_quilt_check_key
 from .pq_preferences import *
 from .translation import pq_translation_dict
 
 
 classes = (
+    MESH_OT_poly_quilt_check_key ,
     PQ_Gizmo_Preselect ,
     PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,

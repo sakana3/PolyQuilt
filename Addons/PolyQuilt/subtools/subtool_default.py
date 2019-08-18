@@ -75,7 +75,7 @@ class SubToolDefault(SubTool) :
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
                 if SubToolEdgeExtrude.Check(self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget))
+                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []

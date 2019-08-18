@@ -414,3 +414,34 @@ class QMeshOperators :
             return view.shading
         else:
             return context.scene.display.shading
+
+    @staticmethod
+    def findOutSideEdgeLoop( srcEdge , srcVert ) :
+        edges = [srcEdge]
+        eoe = srcEdge
+        eov = srcEdge.verts[0]
+
+        if len( srcEdge.link_faces ) == 1 :
+            for vert in [ srcVert , srcEdge.other_vert(srcVert) ] :
+                v = vert
+                while( v != None ) :
+                    t = None
+                    if len( v.link_faces ) == 2 :
+                        link_edges = [ e for e in v.link_edges if len(e.link_faces) == 1 and e not in edges ]
+                        if len(link_edges ) == 1 :
+                            t = link_edges[0].other_vert(v)
+                            edges.append(link_edges[0])
+                            eov = t
+                    v = t
+
+        start = edges[-1]
+        sortedges = []
+        while( start != None and start not in sortedges ) :
+            sortedges.append(start)
+            eov = start.other_vert(eov)
+            t = None
+            for e in edges :
+                if e != start and eov in e.verts :
+                    t = e
+            start = t 
+        return sortedges
