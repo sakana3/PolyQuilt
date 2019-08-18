@@ -175,6 +175,7 @@ class QMeshOperators :
         self.ensure_lookup_table()
         self.bm.normal_update()        
         bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
+        self.bm = bmesh.from_edit_mesh(self.mesh)        
         self.__btree = None
         self.__kdtree = None
         self.current_matrix = None    

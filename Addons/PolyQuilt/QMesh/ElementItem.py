@@ -23,9 +23,22 @@ from ..utils import draw_util
 
 __all__ = ['ElementItem']
 
+class EmptyElement :
+    def __init__(self) :
+        pass
+
+    @property
+    def index(self) -> int :        
+        return 0
+
+    @property
+    def verts(self): 
+        return []
+
 class ElementItem :
     def __init__(self , qmesh , element : bmesh.types.BMVert , coord : Vector, hitPosition : Vector , dist = 0 ) :
-        self.__element = element
+        self.__type = type(element)
+        self.__index = element.index
         self.__hitPosition: Vector = copy.copy(hitPosition)
         self.__coord: Vector = copy.copy(coord)
         self.__dist: float = dist
@@ -38,14 +51,24 @@ class ElementItem :
         if self.__qmesh is not None :
             is_mirror_mode = self.__qmesh.is_mirror_mode
             if self.__qmesh.is_mirror_mode :
-                self.__mirror = self.__qmesh.find_mirror( self.__element )
+                self.__mirror = self.__qmesh.find_mirror( self.element )
         else :
             self.__mirror = None
 
+    @property
+    def index(self):
+        return self.__index
 
     @property
     def element(self):
-        return self.__element
+        if self.isEdge :
+            return self.__qmesh.bm.edges[ self.__index ]
+        elif self.isVert :
+            return self.__qmesh.bm.verts[ self.__index ]
+        elif self.isFace :
+            return self.__qmesh.bm.faces[ self.__index ]
+
+        return None
 
     @property
     def mirror(self):
@@ -66,11 +89,11 @@ class ElementItem :
     @property
     def normal(self) -> Vector :
         if self.isVert :
-            return self.__element.normal
+            return self.element.normal
         if self.isEdge :
-            return ( self.__element.verts[0].normal + self.__element.verts[1].normal ) * 0.5
+            return ( self.element.verts[0].normal + self.element.verts[1].normal ) * 0.5
         if self.isFace :
-            return self.__element.normal
+            return self.element.normal
 
         return Vector(1,0,0)
 
@@ -80,15 +103,15 @@ class ElementItem :
 
     @property
     def isEmpty(self) -> bool:
-        return self.__element is None
+        return self.type == EmptyElement
 
     @property
     def isNotEmpty(self) -> bool :
-        return self.__element is not None
+        return self.type != EmptyElement
 
     @property
     def is_valid(self) -> bool :
-        return self.__element != None and self.__element.is_valid
+        return self.isNotEmpty and self.element.is_valid
 
     @property
     def isVert(self) -> bool :
@@ -109,8 +132,8 @@ class ElementItem :
 
     @property
     def is_straddle_x_zero(self) -> bool :
-        if self.__qmesh.is_mirror_mode and self.__mirror == None and self.__element != None :
-            if self.__element == self.__qmesh.find_mirror( self.__element , False ) :
+        if self.__qmesh.is_mirror_mode and self.__mirror == None and self.element != None :
+            if self.element == self.__qmesh.find_mirror( self.element , False ) :
                 return True
         return False
 
@@ -134,11 +157,11 @@ class ElementItem :
 
     @property
     def type(self):
-        return type(self.__element)
+        return self.__type
 
     @staticmethod
     def Empty():
-        return ElementItem( None , None , None , None , 0.0 )
+        return ElementItem( None , EmptyElement() , None , None , 0.0 )
 
     @staticmethod
     def FormVert( qmesh , v ):

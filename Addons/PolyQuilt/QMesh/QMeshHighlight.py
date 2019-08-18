@@ -114,8 +114,8 @@ class QMeshHighlight :
 
             edges = self.pqo.bm.edges
 
-            self.__viewPosEdges = [ (e, p1 , p2 ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
-            self.__viewPosVerts = [ (v,p) for v,p in viewPos.items() if p and not v.hide ]
+            self.__viewPosEdges = [ (e.index, p1 , p2 ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
+            self.__viewPosVerts = [ (v.index,p) for v,p in viewPos.items() if p and not v.hide ]
 
             self.current_matrix = copy.copy(matrix)
 
@@ -124,7 +124,8 @@ class QMeshHighlight :
         p = Vector( coord )
         viewPos = self.viewPosVerts
         rr = Vector( (r,0) )
-        s = [ i for i in viewPos if i[1] - p <= rr ]
+        verts = self.pqo.bm.verts
+        s = [ ( verts[i[0]],i[1]) for i in viewPos if i[1] - p <= rr ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
@@ -155,10 +156,11 @@ class QMeshHighlight :
             return ElementItem( self.pqo , edge , c , h1 , d )
 
         intersect = geometry.intersect_line_sphere_2d
+        edges = self.pqo.bm.edges
         if edgering :        
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(edges[e]) for e,p1,p2 in viewPosEdge if len(edges[e].link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and edges[e] not in ignore ]
         else :
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(edges[e]) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
 
         if backface_culling :
             r = [ i for i in r
