@@ -241,9 +241,6 @@ class SubToolMakePoly(SubTool) :
                         dirty = True
                     self.mekePolyList = [ self.mekePolyList[-1] ]                        
                 else :
-                    print(self.mekePolyList)
-                    print(self.getPolyVert(-2))
-                    print(self.getPolyVert(-1))
                     edge = self.bmo.add_edge( self.getPolyVert(-2) , self.getPolyVert(-1) )
 #                    edge.select = True
                     self.targetElement = edge
