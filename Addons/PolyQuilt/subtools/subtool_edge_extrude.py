@@ -112,6 +112,7 @@ class SubToolEdgeExtrude(SubTool) :
                 return pt
 
             def calcMove( vt , mt ) :
+                return self.l2w(vt.co) + mt                
                 if len( vt.link_faces ) == 2 :
                     et = [ e for e in set( vt.link_faces[0].edges ) & set( vt.link_faces[1].edges ) if vt in e.verts ]
                     if len(et) == 1 :
