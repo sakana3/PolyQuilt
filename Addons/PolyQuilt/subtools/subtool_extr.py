@@ -101,9 +101,8 @@ class SubToolExtr(SubTool) :
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
-                if SubToolVertExtrude.Check( self.currentTarget ) :
-                    tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
+                if SubToolEdgeExtrude.Check( self.currentTarget ) :
+                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   

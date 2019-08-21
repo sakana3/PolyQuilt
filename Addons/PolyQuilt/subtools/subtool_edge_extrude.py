@@ -34,17 +34,25 @@ class SubToolEdgeExtrude(SubTool) :
         self.l2w = self.bmo.local_to_world_pos
         self.w2l = self.bmo.world_to_local_pos
 
+        self.currentVert = None
+        self.currentEdge = None
+        self.moveType = 'NORMAL'
         if target.isEdge :
             self.currentEdge = target.element
             if is_loop :
                 self.edges = self.bmo.findOutSideEdgeLoop( self.currentEdge , self.currentEdge.verts[0] )
             else :
                 self.edges = [ self.currentEdge ]
-                
-        tv = set()
-        for e in self.edges :
-            tv = tv | set( e.verts )
-        self.verts = { v : self.l2w( v.co ) for v in tv }
+
+            self.verts = set()
+            for e in self.edges :
+                self.verts = self.verts | set( e.verts )
+        elif target.isVert :
+            self.moveType = 'SPREAD'
+            self.currentVert = target.element
+            self.edges , self.verts = self.bmo.findOutSideLoop( self.currentVert )
+
+        self.verts = { v : self.l2w( v.co ) for v in self.verts }
 
         # mirror
         if self.bmo.is_mirror_mode :
@@ -82,7 +90,11 @@ class SubToolEdgeExtrude(SubTool) :
 
     @staticmethod
     def Check( target ) :
-        return target.element.is_boundary or target.element.is_manifold == False
+        if target.isVert :
+            return target.element.is_boundary 
+        elif target.isEdge :
+            return target.element.is_boundary or not target.element.is_manifold
+        return False
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -112,15 +124,15 @@ class SubToolEdgeExtrude(SubTool) :
                 return pt
 
             def calcMove( vt , mt ) :
-                return self.l2w(vt.co) + mt                
-                if len( vt.link_faces ) == 2 :
-                    et = [ e for e in set( vt.link_faces[0].edges ) & set( vt.link_faces[1].edges ) if vt in e.verts ]
-                    if len(et) == 1 :
-                        return self.l2w(vt.co) +( vt.co - et[0].other_vert(vt).co ).normalized() * mt.length
-                elif len( vt.link_faces ) == 1 :
-                    et = [ e for e in vt.link_edges if e not in self.edges ]
-                    if len(et) == 1 :
-                        return self.l2w(vt.co) +( vt.co - et[0].other_vert(vt).co ).normalized() * mt.length
+                if self.moveType == 'SPREAD' :
+                    if len( vt.link_faces ) == 2 :
+                        et = [ e for e in set( vt.link_faces[0].edges ) & set( vt.link_faces[1].edges ) if vt in e.verts ]
+                        if len(et) == 1 :
+                            return self.l2w(vt.co) +( vt.co - et[0].other_vert(vt).co ).normalized() * mt.length
+                    elif len( vt.link_faces ) == 1 :
+                        loop = [ l for l in vt.link_loops if l.vert == vt ][0]
+                        dr = loop.calc_tangent()
+                        return self.l2w(vt.co - dr * mt.length)
                 return self.l2w(vt.co) + mt
 
             # 各頂点の移動
@@ -150,7 +162,7 @@ class SubToolEdgeExtrude(SubTool) :
 
             # スナップする辺を探す
             self.snapTarget = ElementItem.Empty()
-            if self.is_center_snap == False :
+            if self.currentEdge and self.is_center_snap == False :
                 snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )       
                 if snapTarget.isEdge :
                     self.snapTarget = snapTarget
