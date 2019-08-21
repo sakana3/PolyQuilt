@@ -39,6 +39,7 @@ class ElementItem :
     def __init__(self , qmesh , element : bmesh.types.BMVert , coord : Vector, hitPosition : Vector , dist = 0 ) :
         self.__type = type(element)
         self.__index = element.index
+        self.__element = element
         self.__hitPosition: Vector = copy.copy(hitPosition)
         self.__coord: Vector = copy.copy(coord)
         self.__dist: float = dist
@@ -62,12 +63,11 @@ class ElementItem :
     @property
     def element(self):
         if self.isEdge :
-            return self.__qmesh.bm.edges[ self.__index ]
+            return self.__element if self.__element in self.__qmesh.bm.edges else self.__qmesh.bm.edges[ self.__index ]
         elif self.isVert :
-            return self.__qmesh.bm.verts[ self.__index ]
+            return self.__element if self.__element in self.__qmesh.bm.verts else self.__qmesh.bm.verts[ self.__index ]
         elif self.isFace :
-            return self.__qmesh.bm.faces[ self.__index ]
-
+            return self.__element if self.__element in self.__qmesh.bm.faces else self.__qmesh.bm.faces[ self.__index ]
         return None
 
     @property

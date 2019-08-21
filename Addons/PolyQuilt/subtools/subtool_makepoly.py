@@ -25,6 +25,33 @@ from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import SubTool
 
+class vert_array_util :
+    def __init__(self , qmesh ) :
+       self.verts_list = []
+       self.qmesh = qmesh
+
+    def get( self , index : int ) :
+        poly = self.verts_list[index]
+        return poly[0] if poly[0] in self.qmesh.bm.verts else self.qmesh.bm.verts[poly[1]]
+
+    def add( self , vert ) :
+        self.verts_list.append( (vert,vert.index) )
+
+    def clear( self ) :
+        self.verts_list = []
+
+    def reset( self ) :
+        self.verts_list = [ self.verts_list[-1] ]
+
+    @property
+    def len( self ) :
+        return len(self.verts_list)
+
+    @property
+    def verts( self ) :
+        return [ [0] if [0] in self.qmesh.bm.verts else self.qmesh.bm.verts[i[1]] for i in self.verts_list ]
+
+
 class SubToolMakePoly(SubTool) :
     name = "MakePolyTool"
 
@@ -56,7 +83,8 @@ class SubToolMakePoly(SubTool) :
                 startElement.setup_mirror()
         self.pivot = self.currentTarget.hitPosition.copy()
 
-        self.mekePolyList.append( self.currentTarget.element.index )
+        self.vert_array = vert_array_util( self.bmo )
+        self.vert_array.add( self.currentTarget.element )
         self.PlanlagtePos =  self.calc_planned_construction_position()
         self.targetElement = None
         self.isEnd = False
@@ -71,21 +99,12 @@ class SubToolMakePoly(SubTool) :
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
 
-    def getPolyVert( self , index : int ) :
-        return self.bmo.bm.verts[ self.mekePolyList[index] ]
-
-    def getPolyVerts( self ) :
-        return [ self.bmo.bm.verts[i] for i in self.mekePolyList ]
-
-    def setPolyList( self , vert ) :
-        self.mekePolyList.append( vert.index )
-
     @staticmethod
     def LMBEventCallback(self , event ):
         if event.type == MBEventType.Down :
             pass
         elif event.type == MBEventType.Release :
-            if self.currentTarget.element == self.getPolyVert(-1) :
+            if self.currentTarget.element == self.vert_array.get(-1) :
                 self.isEnd = True
             else :
                 if self.EdgeLoops != None :
@@ -104,18 +123,18 @@ class SubToolMakePoly(SubTool) :
                     self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem( self.bmo ,addVert , self.mouse_pos , self.pivot , 0.0 )
                 if self.currentTarget.isVert :
-                    if self.currentTarget.element.index not in self.mekePolyList :
+                    if self.currentTarget.element not in self.vert_array.verts :
                         self.isEnd = self.AddVert(self.currentTarget ) == False
             self.currentTarget = ElementItem.Empty()                    
         elif event.type == MBEventType.Click :            
             pass
         elif event.type == MBEventType.LongPress :
-            if len(self.mekePolyList) <= 1 and self.currentTarget.isVert and self.getPolyVert(-1) != self.currentTarget.element :
-                edge = self.bmo.edges.get( (self.getPolyVert(0) , self.currentTarget.element) )
+            if self.vert_array.len <= 1 and self.currentTarget.isVert and self.vert_array.get(-1) != self.currentTarget.element :
+                edge = self.bmo.edges.get( (self.vert_array.get(0) , self.currentTarget.element) )
                 if edge != None and self.EdgeLoops == None :
                     self.EdgeLoops , self.VertLoops = self.SelectEdgeLoops( edge )
         elif event.type == MBEventType.LongClick :
-            if len(self.mekePolyList) <= 1 :
+            if self.vert_array.len <= 1 :
                 self.mode = 'EDGE'
         elif event.type == MBEventType.Move :
             self.PlanlagtePos =  QSnap.view_adjust(self.calc_planned_construction_position())
@@ -131,6 +150,19 @@ class SubToolMakePoly(SubTool) :
                 self.VertLoops = None
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
                 self.currentTarget = ElementItem.Empty()
+
+
+    def hoge(self) :
+        import random
+        for i in range(100000000) :
+            bm = self.bmo.bm
+            v0 = bm.verts.new( mathutils.Vector( ( random.random() , random.random() , random.random() ) ) )
+            v1 = bm.verts.new( mathutils.Vector( ( random.random() , random.random() , random.random() ) ) )
+            v2 = bm.verts.new( mathutils.Vector( ( random.random() , random.random() , random.random() ) ) )
+            v3 = bm.verts.new( mathutils.Vector( ( random.random() , random.random() , random.random() ) ) )
+            bm.faces.new( [v0,v1,v2,v3] )
+            bm.verts.ensure_lookup_table()
+        bmesh.update_edit_mesh(self.bmo.mesh , loop_triangles = True,destructive = True )        
 
     def OnUpdate( self , context , event ) :
         self.LMBEvent.Update( context , event )
@@ -151,8 +183,8 @@ class SubToolMakePoly(SubTool) :
             draw_util.draw_lines3D( context , self.bmo.mirror_world_poss(v3d) , color , self.preferences.highlight_line_width )
 
     def OnDraw3D( self , context  ) :
-        polyVerts = self.getPolyVerts()
-        l = len(self.mekePolyList)        
+        polyVerts = self.vert_array.verts
+        l = self.vert_array.len        
         v3d = [ i.world for i in pqutil.TransformBMVerts( self.bmo.obj, polyVerts ) ]
         v3d.append( self.PlanlagtePos )
 
@@ -162,7 +194,7 @@ class SubToolMakePoly(SubTool) :
         color = self.color_create()
 
         if l == 1:
-            same_edges , same_faces = self.CheckSameFaceAndEdge( self.getPolyVert(0) , self.currentTarget.element )
+            same_edges , same_faces = self.CheckSameFaceAndEdge( self.vert_array.get(0) , self.currentTarget.element )
             if same_edges :
                 if len(same_faces) > 1 :
                     if self.LMBEvent.presureComplite :
@@ -178,7 +210,7 @@ class SubToolMakePoly(SubTool) :
             self.draw_lines( context , v3d , color )
 
         if self.currentTarget.isNotEmpty :
-            if self.currentTarget.element == self.getPolyVert(-1) :
+            if self.currentTarget.element == self.vert_array.get(-1) :
                 draw_util.draw_pivots3D(  [self.PlanlagtePos,] , vertex_size * 1.5 , self.color_create() )
             elif self.currentTarget.element in polyVerts:
                 draw_util.draw_pivots3D(  [self.PlanlagtePos,] , vertex_size * 1.5 , self.color_delete() )
@@ -194,10 +226,10 @@ class SubToolMakePoly(SubTool) :
             draw_util.drawElementsHilight3D( self.bmo.obj , self.EdgeLoops , vertex_size ,width,alpha, self.color_delete() )
 
     def OnDraw( self , context  ) :
-        l = len(self.mekePolyList)
+        l = self.vert_array.len
         if l == 1:
             text = None
-            same_edges , same_faces = self.CheckSameFaceAndEdge( self.getPolyVert(0) , self.currentTarget.element )
+            same_edges , same_faces = self.CheckSameFaceAndEdge( self.vert_array.get(0) , self.currentTarget.element )
             if same_edges :
                 if len(same_faces) > 1 :
                     text = "Edge Loop"
@@ -211,67 +243,63 @@ class SubToolMakePoly(SubTool) :
     def AddVert( self , target ) :
         ret = True
         dirty = False
-        if target.element.index not in self.mekePolyList :
+        if target.element not in self.vert_array.verts :
             if self.bmo.is_mirror_mode :
                 if target.mirror == None and target.is_x_zero is False :
                     self.bmo.AddVertex( self.bmo.mirror_pos( target.element.co ) , False )
                     self.bmo.UpdateMesh()
 
-            self.setPolyList( target.element )
+            self.vert_array.add( target.element )
             ret = True
-            pts = len( self.mekePolyList )
-
+            pts = self.vert_array.len
             # 既に存在する辺ならExit
             if pts > 2 :
-                edge = self.bmo.edges.get( ( self.getPolyVert(0) , self.getPolyVert(-1) ) )
+                edge = self.bmo.edges.get( ( self.vert_array.get(0) , self.vert_array.get(-1) ) )
                 if edge != None :
                     ret = False
             if pts == 2 :
-                same_edges , same_faces = self.CheckSameFaceAndEdge(self.getPolyVert(-2) , self.getPolyVert(-1))
-
+                same_edges , same_faces = self.CheckSameFaceAndEdge(self.vert_array.get(-2) , self.vert_array.get(-1))
                 if same_edges :
                     if len(same_faces) > 1 :
 #                       bmesh.utils.vert_separate( vert , same_edges )
                         self.bmo.dissolve_edges( edges = same_edges , use_verts = False , use_face_split = False )
                         dirty = True
-                        self.mekePolyList = [ self.mekePolyList[-1] ] 
+                        self.vert_array.reset()
                 elif same_faces:
                     for face in same_faces :
-                        self.bmo.face_split( face , self.getPolyVert(-2) , self.getPolyVert(-1) )
+                        self.bmo.face_split( face , self.vert_array.get(-2) , self.vert_array.get(-1) )
                         dirty = True
-                    self.mekePolyList = [ self.mekePolyList[-1] ]                        
+                    self.vert_array.reset()
                 else :
-                    edge = self.bmo.add_edge( self.getPolyVert(-2) , self.getPolyVert(-1) )
+                    edge = self.bmo.add_edge( self.vert_array.get(-2) , self.vert_array.get(-1) )
 #                    edge.select = True
                     self.targetElement = edge
                     dirty = True
             elif pts == 3 :
-                face = self.bmo.AddFace( self.getPolyVerts() , pqutil.getViewDir() )
+                face = self.bmo.AddFace( self.vert_array.verts , pqutil.getViewDir() )
 #                face.select = True
                 dirty = True
                 self.targetElement = face
             elif pts > 3:
 #               self.bmo.Remove( self.targetElement )
-                edge = self.bmo.edges.get( ( self.getPolyVert(0) , self.getPolyVert(-2) ) )
+                edge = self.bmo.edges.get( ( self.vert_array.get(0) , self.vert_array.get(-2) ) )
                 if edge != None :
                     self.bmo.Remove( edge )
-                self.targetElement = self.bmo.AddFace( self.getPolyVerts() , pqutil.getViewDir()  )
+                self.targetElement = self.bmo.AddFace( self.vert_array.verts , pqutil.getViewDir()  )
                 self.bmo.UpdateMesh()
 
+            if self.mode == 'TRI' and pts == 3 :
+                ret = False
 
-        if self.mode == 'TRI' and pts == 3 :
-            ret = False
+            if self.mode == 'QUAD' and pts == 4 :
+                ret = False
 
-        if self.mode == 'QUAD' and pts == 4 :
-            ret = False
-
-        if self.mode == 'EDGE' :
-            self.mekePolyList = [ self.mekePolyList[-1] ]
+            if self.mode == 'EDGE' :
+                self.vert_array.reset()
 
         if dirty :
             self.bmo.UpdateMesh()             
             target.setup_mirror()
-
 
         return ret
 
