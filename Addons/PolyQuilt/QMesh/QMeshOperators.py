@@ -172,8 +172,20 @@ class QMeshOperators :
             self.__kdtree = None
 
     def UpdateMesh( self ) :
+        self.bm.normal_update()
+
+        self.obj.data.update_gpu_tag()
+        self.obj.data.update_tag()
+        self.obj.update_from_editmode()
+        self.obj.update_tag()
+        bmesh.update_edit_mesh(self.obj.data)
+        self.__btree = None
+        self.__kdtree = None
+        self.current_matrix = None    
+
+    def UpdateMesh2( self ) :
         self.ensure_lookup_table()
-        self.bm.normal_update()        
+        self.bm.normal_update()
         bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
         self.bm = bmesh.from_edit_mesh(self.mesh)        
         self.__btree = None
