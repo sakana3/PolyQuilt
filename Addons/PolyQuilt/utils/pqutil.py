@@ -186,9 +186,11 @@ def region_2d_to_vector_3d(region, rv3d, coord):
     viewinv = rv3d.view_matrix.inverted()
     if rv3d.is_perspective:
         persinv = rv3d.perspective_matrix.inverted()
+        width = region.width
+        height = region.height
 
-        out = Vector(((2.0 * coord[0] / region.width) - 1.0,
-                      (2.0 * coord[1] / region.height) - 1.0,
+        out = Vector(((2.0 * coord[0] / width) - 1.0,
+                      (2.0 * coord[1] / height) - 1.0,
                       -0.5
                       ))
 
