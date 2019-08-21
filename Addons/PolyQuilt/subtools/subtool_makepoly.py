@@ -80,7 +80,7 @@ class SubToolMakePoly(SubTool) :
             if self.bmo.is_mirror_mode and startElement.isVert and self.bmo.is_x_zero_pos( startElement.element.co ) is False and startElement.mirror == None :
                 self.bmo.AddVertex( self.bmo.mirror_pos( startElement.element.co ) , False )
                 self.bmo.UpdateMesh()
-                startElement.setup_mirror()
+                self.currentTarget.setup_mirror()
         self.pivot = self.currentTarget.hitPosition.copy()
 
         self.vert_array = vert_array_util( self.bmo )
