@@ -133,6 +133,19 @@ class SubToolEdgeExtrude(SubTool) :
                         loop = [ l for l in vt.link_loops if l.vert == vt ][0]
                         dr = loop.calc_tangent()
                         return self.l2w(vt.co - dr * mt.length)
+                    else :
+                        edges = [ e for e in vt.link_edges if len(e.link_faces) == 1 ]
+                        if len( edges ) == 2 :
+                            e0 = (edges[0].other_vert(vt).co - vt.co).normalized()
+                            e1 = (edges[1].other_vert(vt).co - vt.co).normalized()
+                            dr = ((e0 + e1) / 2).normalized()
+
+                            others = [ e for e in vt.link_edges if len(e.link_faces) != 1 ]
+                            if (edges[0].other_vert(vt).co - vt.co).normalized().dot(dr) > 0 :
+                                return self.l2w(vt.co + dr * mt.length)
+                            else :
+                                return self.l2w(vt.co - dr * mt.length)
+
                 return self.l2w(vt.co) + mt
 
             # 各頂点の移動
