@@ -14,7 +14,7 @@
 bl_info = {
     "name" : "PolyQuilt",
     "author" : "Sakana3",
-    "version": (1, 0, 7),
+    "version": (1, 0, 8),
     "blender" : (2, 80, 0),
     "location": "View3D > Mesh > PolyQuilt",
     "description": "Lowpoly Tool",
