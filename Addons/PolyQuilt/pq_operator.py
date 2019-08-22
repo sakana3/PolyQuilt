@@ -119,13 +119,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def update(self, context, event):
         if event.type == 'TIMER':
-            if self.currentSubTool is not None :
-                if self.currentSubTool.check_animated(context) :
-                    context.area.tag_redraw()
-                    MESH_OT_poly_quilt.handle_remove()
-                    MESH_OT_poly_quilt.handle_add(self,context)    
-                    self.bmo.invalid = True
-            return {'PASS_THROUGH'}
+            if self.currentSubTool is None or not self.currentSubTool.check_animated(context) :
+                return {'PASS_THROUGH'}
 
         context.area.tag_redraw()
 
@@ -170,6 +165,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
+                return {'CANCELLED'}
+
+            if not PQ_Gizmo_Preselect.instance.currentElement.is_valid :
+                self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
             element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)

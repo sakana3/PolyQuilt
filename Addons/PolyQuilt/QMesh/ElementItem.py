@@ -63,11 +63,11 @@ class ElementItem :
     @property
     def element(self):
         if self.isEdge :
-            return self.__element if self.__element in self.__qmesh.bm.edges else self.__qmesh.bm.edges[ self.__index ]
+            return self.__element if self.is_valid else None
         elif self.isVert :
-            return self.__element if self.__element in self.__qmesh.bm.verts else self.__qmesh.bm.verts[ self.__index ]
+            return self.__element if self.is_valid else None
         elif self.isFace :
-            return self.__element if self.__element in self.__qmesh.bm.faces else self.__qmesh.bm.faces[ self.__index ]
+            return self.__element if self.is_valid else None
         return None
 
     @property
@@ -111,7 +111,14 @@ class ElementItem :
 
     @property
     def is_valid(self) -> bool :
-        return self.isNotEmpty and self.element.is_valid
+        if self.isEdge :
+            return self.__element.is_valid and self.__element in self.__qmesh.bm.edges
+        elif self.isVert :
+            return self.__element.is_valid and self.__element in self.__qmesh.bm.verts
+        elif self.isFace :
+            return self.__element.is_valid and self.__element in self.__qmesh.bm.faces
+
+        return True
 
     @property
     def isVert(self) -> bool :
