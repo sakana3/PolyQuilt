@@ -14,7 +14,7 @@
 bl_info = {
     "name" : "PolyQuilt",
     "author" : "Sakana3",
-    "version": (1, 0, 7),
+    "version": (1, 0, 9),
     "blender" : (2, 80, 0),
     "location": "View3D > Mesh > PolyQuilt",
     "description": "Lowpoly Tool",
@@ -25,7 +25,7 @@ bl_info = {
 
 import bpy
 from bpy.utils.toolsystem import ToolDef
-from .pq_operator import MESH_OT_poly_quilt
+from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
 from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
@@ -38,6 +38,7 @@ classes = (
     PQ_Gizmo_Preselect ,
     PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,
+    MESH_OT_poly_quilt_hold_lock ,
     PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
     PQ_OT_CheckAddonUpdate ,

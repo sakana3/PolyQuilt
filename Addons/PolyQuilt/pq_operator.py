@@ -72,6 +72,12 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='LOWPOLY',
     )
 
+    lock_hold : bpy.props.BoolProperty(
+              name = "Lock Hold" ,
+              default = False ,
+              description="Lock HOLD",
+            )
+
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
         description="Geometry Type.",
@@ -98,6 +104,21 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
               description="Fix X=0",
             )
 
+    loopcut_mode : bpy.props.EnumProperty(
+        name="LoopCut Mode",
+        description="LoopCut Mode",
+        items=[('EQUAL' , "Equal", "" ),
+               ('EVEN' , "Even", "" ) ],
+        default='EQUAL',
+    )
+    loopcut_division : bpy.props.IntProperty(
+        name="LoopCut DIVISON",
+        description="LoopCut Division",
+        min = 0,
+        max = 16,
+        default=1,
+    )
+
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
 
@@ -120,13 +141,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def update(self, context, event):
         if event.type == 'TIMER':
-            if self.currentSubTool is not None :
-                if self.currentSubTool.check_animated(context) :
-                    context.area.tag_redraw()
-                    MESH_OT_poly_quilt.handle_remove()
-                    MESH_OT_poly_quilt.handle_add(self,context)    
-                    self.bmo.invalid = True
-            return {'PASS_THROUGH'}
+            if self.currentSubTool is None or not self.currentSubTool.check_animated(context) :
+                return {'PASS_THROUGH'}
 
         context.area.tag_redraw()
 
@@ -171,6 +187,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
+                return {'CANCELLED'}
+
+            if not PQ_Gizmo_Preselect.instance.currentElement.is_valid :
+                self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
             element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)
@@ -270,3 +290,27 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if cls.__timer_handle is not None:
             context.window_manager.event_timer_remove(cls.__timer_handle)
             cls.__timer_handle = None
+
+    is_lock_hold = False
+    def is_hold(self , hold : bool ) -> bool :
+        if self.is_lock_hold :
+            return True
+        if self.lock_hold :
+            return True
+        return hold
+
+class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
+    """PolyQuilt hold lock"""
+    bl_idname = "mesh.poly_quilt_hold_lock"
+    bl_label = "PolyQuiltHoldLock"
+    bl_options = {'REGISTER' }
+
+    def invoke(self, context, event):
+        if MESH_OT_poly_quilt.is_lock_hold :
+            MESH_OT_poly_quilt.is_lock_hold = False
+            self.report({'INFO'}, "Unlock Hold" )            
+        else :
+            MESH_OT_poly_quilt.is_lock_hold = True
+            self.report({'INFO'}, "Lock Hold" )            
+        print (MESH_OT_poly_quilt.is_lock_hold)
+        return {'FINISHED'}

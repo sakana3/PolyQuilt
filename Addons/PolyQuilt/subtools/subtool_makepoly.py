@@ -29,18 +29,23 @@ class vert_array_util :
     def __init__(self , qmesh ) :
        self.verts_list = []
        self.qmesh = qmesh
+       self.qmesh.bm.select_flush(False)
+       self.qmesh.bm.select_history.clear()
+
+    @property
+    def is_valid(self) :
+        all( v[0] in self.qmesh.bmo.verts for v in self.verts_list )
 
     def get( self , index : int ) :
-        poly = self.verts_list[index]
-        return poly[0]
+        return self.verts[index]
 
     def add( self , vert ) :
         world = self.qmesh.obj.matrix_world @ vert.co
         screen = pqutil.location_3d_to_region_2d( vert.co )
         self.verts_list.append( [vert,vert.index,vert.co,world,screen] )
-
-    def clear( self ) :
-        self.verts_list = []
+        self.qmesh.bm.select_history.discard(vert)
+        self.qmesh.bm.select_history.add(vert)
+        vert.select_set(True)
 
     def reset( self ) :
         self.verts_list = [ self.verts_list[-1] ]
@@ -51,7 +56,7 @@ class vert_array_util :
 
     @property
     def verts( self ) :
-        return [ i[0] for i in self.verts_list ]
+        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMVert) ][-len(self.verts_list):]
 
     @property
     def cos( self ) :
@@ -102,7 +107,7 @@ class SubToolMakePoly(SubTool) :
         self.PlanlagtePos =  self.calc_planned_construction_position()
         self.targetElement = None
         self.isEnd = False
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op )
         self.mode = op.geometry_type
         self.EdgeLoops = None
         self.VertLoops = None
@@ -245,8 +250,6 @@ class SubToolMakePoly(SubTool) :
         ret = True
         dirty = False
 
-        print("---")
-
         if target.element not in self.vert_array.verts :
             if self.bmo.is_mirror_mode :
                 if target.mirror == None and target.is_x_zero is False :
@@ -257,45 +260,49 @@ class SubToolMakePoly(SubTool) :
             ret = True
             pts = self.vert_array.len
             # 既に存在する辺ならExit
-            print(self.vert_array.verts)
             if pts > 2 :
                 edge = self.bmo.edges.get( ( self.vert_array.get(0) , self.vert_array.get(-1) ) )
                 if edge != None :
                     ret = False
-
-            print(pts)
             if pts == 2 :
                 same_edges , same_faces = self.CheckSameFaceAndEdge(self.vert_array.get(-2) , self.vert_array.get(-1))
-                print( (same_edges , same_faces) )
                 if same_edges :
                     if len(same_faces) > 1 :
 #                       bmesh.utils.vert_separate( vert , same_edges )
                         self.bmo.dissolve_edges( edges = same_edges , use_verts = False , use_face_split = False )
                         dirty = True
+                        self.targetElement = None
                         self.vert_array.reset()
                 elif same_faces:
                     for face in same_faces :
                         self.bmo.face_split( face , self.vert_array.get(-2) , self.vert_array.get(-1) )
                         dirty = True
+                        edge = self.bmo.edges.get( ( self.vert_array.get(-2) , self.vert_array.get(-1) ) )
+                        edge.select_set(True)                        
+                        self.targetElement = None
                     self.vert_array.reset()
                 else :
                     edge = self.bmo.add_edge( self.vert_array.get(-2) , self.vert_array.get(-1) )
 #                    edge.select = True
                     self.targetElement = edge
+                    self.targetElement.select_set(True)
+                    self.bmo.bm.select_history.add(self.targetElement)                
                     dirty = True
             elif pts == 3 :
-                print(self.vert_array.verts)
                 face = self.bmo.AddFace( self.vert_array.verts , pqutil.getViewDir() )
-#                face.select = True
-                dirty = True
                 self.targetElement = face
+                self.targetElement.select_set(True)
+                self.bmo.bm.select_history.add(self.targetElement)                
+                dirty = True
             elif pts > 3:
-#               self.bmo.Remove( self.targetElement )
+                self.bmo.bm.select_history.discard(self.targetElement)                
                 edge = self.bmo.edges.get( ( self.vert_array.get(0) , self.vert_array.get(-2) ) )
                 if edge != None :
                     self.bmo.Remove( edge )
                 self.targetElement = self.bmo.AddFace( self.vert_array.verts , pqutil.getViewDir()  )
-                self.bmo.UpdateMesh()
+                self.targetElement.select_set(True)
+                self.bmo.bm.select_history.add(self.targetElement)                
+                dirty = True
 
             if self.mode == 'TRI' and pts == 3 :
                 ret = False

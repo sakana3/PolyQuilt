@@ -45,31 +45,25 @@ fragment_shader = '''
     }
 '''
 
-class draw_batchs :
-    batchs = []
-    resources = []
+
 
 def begin_draw() :
-    draw_batchs.batchs = []
-    draw_batchs.resources = []
+    pass
 
 def end_draw() :
     pass
 
 def clear_draw() :
-    draw_batchs.batchs = []
+    pass
     
 def batch_draw( shader , primitiveType , content  , indices = None ) :
     cnt = copy.deepcopy(content )
-    draw_batchs.resources.append(cnt)
     if indices :
         idx = copy.deepcopy(indices)
-        draw_batchs.resources.append(idx)
         batch = batch_for_shader(shader, primitiveType , cnt , indices=idx )
     else :
         batch = batch_for_shader(shader, primitiveType , cnt )
     batch.draw(shader)
-    draw_batchs.batchs.append(batch_draw)
     return batch
 
 #shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
