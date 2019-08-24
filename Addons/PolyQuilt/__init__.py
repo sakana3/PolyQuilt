@@ -33,7 +33,6 @@ from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect , MESH
 from .pq_preferences import *
 from .translation import pq_translation_dict
 
-
 classes = (
     MESH_OT_poly_quilt_check_key ,
     PQ_Gizmo_Preselect ,
