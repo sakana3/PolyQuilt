@@ -107,7 +107,7 @@ class SubToolMakePoly(SubTool) :
         self.PlanlagtePos =  self.calc_planned_construction_position()
         self.targetElement = None
         self.isEnd = False
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op.preferences )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op )
         self.mode = op.geometry_type
         self.EdgeLoops = None
         self.VertLoops = None
