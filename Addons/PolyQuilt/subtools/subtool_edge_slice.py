@@ -212,8 +212,12 @@ class SubToolEdgeSlice(SubTool) :
 
         for e in ret['geom_inner'] :
             e.select_set(True)
+
         if QSnap.is_active() :
             QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_inner'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
+
+        if  bpy.context.scene.tool_settings.use_mesh_automerge :
+            bmesh.ops.automerge( self.bmo.bm , verts = [ e for e in ret['geom_inner'] if isinstance( e, bmesh.types.BMVert ) ] , dist = bpy.context.scene.tool_settings.double_threshold )
 
         self.bmo.UpdateMesh()
 
