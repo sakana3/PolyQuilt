@@ -38,7 +38,7 @@ class SubToolDefault(SubTool) :
     def __init__(self,op,currentTarget) :
         super().__init__(op)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op.preferences  )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op , True )
         self.isExit = False
 
     def is_animated( self , context ) :
@@ -47,10 +47,8 @@ class SubToolDefault(SubTool) :
     @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
-        if event.type == MBEventType.Down :
-            pass
 
-        elif event.type == MBEventType.Release :
+        if event.type == MBEventType.Release :
             self.isExit = True
 
         elif event.type == MBEventType.Click :
@@ -72,7 +70,7 @@ class SubToolDefault(SubTool) :
             if self.currentTarget.isEdge :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
+                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
                 if SubToolEdgeExtrude.Check(self.currentTarget) : 
@@ -115,7 +113,7 @@ class SubToolDefault(SubTool) :
     def OnDraw3D( self , context  ) :
         if self.currentTarget.isNotEmpty :
             color = self.color_highlight()
-            if self.LMBEvent.presureComplite :
+            if self.LMBEvent.is_hold :
                 color = self.color_delete()
             self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
 

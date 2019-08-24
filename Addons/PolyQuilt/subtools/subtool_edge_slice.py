@@ -29,7 +29,10 @@ class SubToolEdgeSlice(SubTool) :
 
     def __init__(self,op, target ) :
         super().__init__(op)
-        self.currentEdge = target
+        self.currentEdge = target.element
+        l0 = (self.bmo.local_to_world_pos(target.element.verts[0].co) - target.hitPosition).length
+        l1 = (self.bmo.local_to_world_pos(target.element.verts[1].co) - target.hitPosition).length
+        self.reference_point = 0 if l0 > l1 else 1
         self.draw_deges = []
         self.split_deges = []         
         self.endTriangles = {}    
@@ -78,19 +81,40 @@ class SubToolEdgeSlice(SubTool) :
             if self.draw_deges :
                 lines = []
                 for cuts in self.draw_deges :
-                    v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , self.sliceRate if cuts[2] == 0 else 1.0 - self.sliceRate )
-                    v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , self.sliceRate if cuts[3] == 0 else 1.0 - self.sliceRate )
+                    v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , self.calc_slice_rate( cuts[0] , cuts[2] , self.sliceRate ) )
+                    v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , self.calc_slice_rate( cuts[1] , cuts[3] , self.sliceRate ) )
                     v0 = self.bmo.local_to_world_pos( v0 )
                     v1 = self.bmo.local_to_world_pos( v1 )
                     lines.append(v0)
                     lines.append(v1)
                 draw_util.draw_lines3D( context , lines , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
+            for i in range(self.operator.loopcut_division ) :
+                r = (i+1.0) / (self.operator.loopcut_division + 1.0)
+                v = self.bmo.local_to_world_pos( self.currentEdge.verts[0].co.lerp( self.currentEdge.verts[1].co , r) )
+                draw_util.draw_pivots3D( (v,) , self.preferences.highlight_vertex_size / 2 , self.color_split(0.5) )
+
+    def calc_slice_rate( self , edge , refarence , rate ) :
+        if self.operator.loopcut_mode == 'EVEN' :
+            len0 = self.currentEdge.calc_length()
+            len1 = edge.calc_length()
+            if self.reference_point == 0 :
+                rate = 1 - max( min( ( (len0 / len1) * (1-rate) ) , 1.0 ) , 0.0 )
+            else :
+                rate = max( min( ( len0 / len1 * rate ) , 1.0 ) , 0.0 )
+        return rate if refarence == 0 else 1.0 - rate
 
     def CalcSplitRate( self , context ,coord , baseEdge ) :
+        p0 = baseEdge.verts[0].co
+        p1 = baseEdge.verts[1].co
+        for i in range(self.operator.loopcut_division ) :
+            r = (i+1.0) / (self.operator.loopcut_division + 1.0)
+            v = self.bmo.local_to_2d( p0 + ( p1 - p0 ) * r)
+            if ( coord - v ).length <= self.preferences.distance_to_highlight* dpm() :
+                return r
+
         ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         dist = self.preferences.distance_to_highlight* dpm()
-
         d = pqutil.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
 
         self.is_forcus = d > 0 and d < 1
@@ -166,10 +190,7 @@ class SubToolEdgeSlice(SubTool) :
         _slice = {}
         for split_dege in self.split_deges :
             edges.append( split_dege[0] )
-            if( split_dege[1] == 0 ) :
-                _slice[ split_dege[0] ] = sliceRate
-            else :
-                _slice[ split_dege[0] ] = 1.0 - sliceRate
+            _slice[ split_dege[0] ] = self.calc_slice_rate( split_dege[0] , split_dege[1] , sliceRate )
 
         ret = bmesh.ops.subdivide_edges(
              self.bmo.bm ,

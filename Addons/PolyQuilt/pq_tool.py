@@ -100,6 +100,11 @@ def tool_poly_quilt():
         layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False , icon = "MOD_MIRROR" )
         layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
+        row = layout.row(align=True)
+        row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
+        row.prop(props, "loopcut_division" , text = "Div" , expand = True )
+
+
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
 #            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))
@@ -134,6 +139,9 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
              {"properties": [("tool_mode", 'LOWPOLY')]}),
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "ctrl": True},
              {"properties": [("tool_mode", 'EXTRUDE')]}),
+            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "alt": True},
+             {"properties": [("lock_hold", True)]}),
+            ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
         ]},
     )
 

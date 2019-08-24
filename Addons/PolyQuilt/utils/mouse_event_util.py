@@ -33,7 +33,8 @@ class MBEventType(Enum) :
     Release = auto()
 
 class ButtonEventUtil :
-    def __init__( self , button : str , cls , func , preferences ) :
+    def __init__( self , button : str , cls , func , op , use_hold_lock = False ) :
+        self.op = op
         self.button : str = button
         self.eventFunc = func
         self.eventClass = cls
@@ -45,11 +46,13 @@ class ButtonEventUtil :
         self.event = None
         self.PressPos = mathutils.Vector((0.0,0.0))
         self.presureCompOnce = False
-        self.preferences = preferences
-
+        self.preferences = op.preferences
+        self.use_hold_lock = use_hold_lock
     @property
     def presureValue(self) -> float :  
-        if self.Presure == False :
+        if self.use_hold_lock and self.op.lock_hold :
+            return 0.0
+        elif self.Presure == False :
             return 0.0
         else :
             lpt = self.preferences.longpress_time
@@ -65,6 +68,13 @@ class ButtonEventUtil :
     @property
     def isPresure(self) -> bool : 
         return self.presureValue >= 0.0001 
+
+    @property
+    def is_hold(self) -> bool :
+        hold = self.presureCompOnce
+        if self.use_hold_lock :
+            hold = self.op.is_hold(hold)
+        return hold
 
     def is_animated( self ) :
         if self.Presure and not self.presureCompOnce :
@@ -88,7 +98,7 @@ class ButtonEventUtil :
                 if self.presureComplite :
                     self.presureCompOnce = True
                 if self.Presure :
-                    if self.presureComplite :
+                    if self.is_hold :
                         self.OnEvent( event , MBEventType.LongClick )
                     else :
                         self.OnEvent( event , MBEventType.Click )
@@ -107,7 +117,7 @@ class ButtonEventUtil :
                 if (time.time()-self.PressTime ) > 0.15 and (self.mouse_pos-self.PressPos ).length > drag_threshold:
                    self.Presure = False
                 if self.Presure is False :
-                    if self.presureCompOnce :
+                    if self.is_hold :
                        self.OnEvent( event , MBEventType.LongPressDrag )
                     else :
                        self.OnEvent( event , MBEventType.Drag )
