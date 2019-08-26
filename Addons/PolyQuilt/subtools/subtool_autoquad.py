@@ -92,14 +92,15 @@ class SubToolAutoQuad(SubTool) :
             v0 = edge.verts[1]
             v1 = edge.verts[0]
 
+        # 境界エッジを探す
         e0 = self.FindBoundaryEdge( edge , v0 )
         e1 = self.FindBoundaryEdge( edge , v1 )
 
         if e0 == None and e1 != None :
-            self.MakePolyByVert( v1 )
+            self.Make_Isosceles_Trapezoid( edge ,e1, v1 )
             return
         if e0 != None and e1 == None :
-            self.MakePolyByVert(  v0 )
+            self.Make_Isosceles_Trapezoid( edge ,e0, v0 )
             return
 
         nrm1 = self.CalaTangent(edge,v0)        
@@ -126,8 +127,10 @@ class SubToolAutoQuad(SubTool) :
 
         self.bmo.UpdateMesh()
 
-    def MakePolyByVert( self , vert ) :
+    def MakePolyByVert( self , vert , isosceles_trapezoid = False ) :
         edges = [ edge for edge in vert.link_edges if edge.is_boundary ]        
+        if len(edges) != 2 :
+            return 
         v1 = edges[0].other_vert(vert)
         v2 = edges[1].other_vert(vert)
         c = (v1.co + v2.co) / 2.0
@@ -152,3 +155,34 @@ class SubToolAutoQuad(SubTool) :
         self.bmo.AddFace( verts , normal )        
         QSnap.adjust_verts( self.bmo.obj , [v0] , self.operator.fix_to_x_zero )  
         self.bmo.UpdateMesh()
+
+    def Make_Isosceles_Trapezoid( self , edge , boundary_edge , vert ) :
+        edge_other_vert = edge.other_vert(vert)
+        boundary_other_vert = boundary_edge.other_vert(vert)
+
+        edge_nrm = self.CalaTangent(edge , edge_other_vert)
+        edge_ray = pqutil.Ray( edge_other_vert.co , edge_nrm )
+        boundary_nrm = edge_other_vert.co - vert.co
+        boundary_ray = pqutil.Ray( boundary_other_vert.co , boundary_nrm.normalized() )
+
+        Q0 , Q1 , len = edge_ray.distance( boundary_ray )
+        v = self.bmo.AddVertex( Q1 )
+        self.bmo.UpdateMesh()
+        QSnap.adjust_verts( self.bmo.obj , [v] , self.operator.fix_to_x_zero )  
+
+        verts = [ edge_other_vert , v , boundary_other_vert , vert ]
+
+        normal = None
+        if edge.link_faces :
+            for loop in edge.link_faces[0].loops :
+                if edge == loop.edge :
+                    if loop.vert == vert :
+                        verts.reverse()
+                        break
+        else :
+            normal = pqutil.getViewDir()
+
+        self.bmo.AddFace( verts , normal )
+        self.bmo.UpdateMesh()
+
+

@@ -40,7 +40,7 @@ class SubToolEdgeExtrude(SubTool) :
         if target.isEdge :
             self.currentEdge = target.element
             if is_loop :
-                self.edges = self.bmo.findOutSideEdgeLoop( self.currentEdge , self.currentEdge.verts[0] )
+                self.edges , __ = self.bmo.findEdgeLoop( self.currentEdge  )
             else :
                 self.edges = [ self.currentEdge ]
 

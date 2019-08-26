@@ -150,6 +150,20 @@ class Ray :
 
         return Q1,Q2,(Q2 - Q1).length
 
+    def hit_to_line( self , v0 , v1 ) :
+
+        h0 , h1 , d = self.distance( Ray( v0 , (v1-v0) ) )
+
+        dt =  (v0-v1).length
+        d0 = (v0-h1).length
+        d1 = (v1-h1).length
+        if d0 > d1 and d0 >= dt :
+            return 1.0
+        elif d1 >= dt :
+            return 0.0
+
+        return max( 0 , min( 1 , d0 / dt ))        
+
     @property
     def invert( self ) :
         return Ray( self.origin , -self.vector )

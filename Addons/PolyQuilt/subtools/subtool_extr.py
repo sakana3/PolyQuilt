@@ -26,6 +26,7 @@ from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
+from .subtool_edge_slide import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
@@ -39,7 +40,7 @@ class SubToolExtr(SubTool) :
     def __init__(self,op,currentTarget) :
         super().__init__(op)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , self.LMBEventCallback , op.preferences  )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , self.LMBEventCallback , op , True )
         self.isExit = False
 
     def is_animated( self , context ) :
@@ -73,12 +74,7 @@ class SubToolExtr(SubTool) :
         elif event.type == MBEventType.Drag :
             if self.currentTarget.isEdge :
                 tools = []
-                if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
-                if SubToolEdgeloopCut.Check(self.currentTarget) : 
-                    tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrude.Check(self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
+                tools.append(SubToolEdgeSlide(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
@@ -93,7 +89,7 @@ class SubToolExtr(SubTool) :
             if self.currentTarget.isEdge :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget.element))
+                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
                 if SubToolEdgeExtrude.Check(self.currentTarget) : 

@@ -447,32 +447,44 @@ class QMeshOperators :
         return edges , verts
 
     @staticmethod
-    def findOutSideEdgeLoop( srcEdge , srcVert ) :
+    def findEdgeLoop( srcEdge ) :
         edges = [srcEdge]
-        eoe = srcEdge
-        eov = srcEdge.verts[0]
+        verts_tbl = {}
 
-        if len( srcEdge.link_faces ) == 1 :
-            for vert in [ srcVert , srcEdge.other_vert(srcVert) ] :
-                v = vert
-                while( v != None ) :
-                    t = None
-                    if len( v.link_faces ) == 2 :
-                        link_edges = [ e for e in v.link_edges if len(e.link_faces) == 1 and e not in edges ]
-                        if len(link_edges ) == 1 :
-                            t = link_edges[0].other_vert(v)
-                            edges.append(link_edges[0])
-                            eov = t
-                    v = t
+        def find_each_other_edge( face , vert , edge ) :
+            edges = [ e for e in vert.link_edges if e != edge and e in face.edges ]
+            if len(edges) == 1 :
+                return edges[0]
+            return None
 
-        start = edges[-1]
-        sortedges = []
-        while( start != None and start not in sortedges ) :
-            sortedges.append(start)
-            eov = start.other_vert(eov)
-            t = None
-            for e in edges :
-                if e != start and eov in e.verts :
-                    t = e
-            start = t 
-        return sortedges
+        def find_share_edge( faces , vert , edge , edges ) :
+            if len(faces) == 1 :
+                tmp = [ e for e in faces[0].edges if vert in e.verts and e != edge and e not in edges ]
+                if len(tmp) == 1 :
+                    return tmp[0]
+            elif len(edges) == 2 :
+                se = set( e for e in faces[0].edges ) & set( e for e in faces[1].edges )
+                if len(se) == 1 :
+                    return list(se)[0]
+            return None
+
+        for vert in [ srcEdge.verts[0] , srcEdge.other_vert(srcEdge.verts[0]) ] :
+            current_edge = srcEdge            
+            links_faces = current_edge.link_faces
+            v = vert
+            while( v != None ) :
+                t = None
+                target_edges = [ find_each_other_edge(f,v,current_edge) for f in links_faces ]
+                verts_tbl[v] = target_edges[:]
+                target_faces = [ [ f for f in e.link_faces if v in f.verts and f not in links_faces ] for e in target_edges ]
+                target_faces = [ None if len(f) != 1 else f[0] for f in target_faces ]
+                if None not in target_faces :
+                    share_edge = find_share_edge(target_faces,v,current_edge,target_edges)
+                    if share_edge != None :
+                        current_edge = share_edge
+                        if current_edge not in edges and len(current_edge.link_faces) == len(srcEdge.link_faces) :
+                            edges.append(current_edge)
+                            links_faces = target_faces[:]
+                            t = current_edge.other_vert(v)
+                v = t
+        return edges , verts_tbl
