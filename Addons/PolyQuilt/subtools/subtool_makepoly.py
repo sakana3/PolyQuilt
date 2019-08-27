@@ -40,9 +40,9 @@ class vert_array_util :
         return self.verts[index]
 
     def add( self , vert ) :
-        world = self.qmesh.obj.matrix_world @ vert.co
-        screen = pqutil.location_3d_to_region_2d( vert.co )
-        self.verts_list.append( [vert,vert.index,vert.co,world,screen] )
+        world = self.qmesh.local_to_world_pos( vert.co )
+        screen = pqutil.location_3d_to_region_2d( world )
+        self.verts_list.append( [vert,vert.index,vert.co.copy(),world,screen] )
         self.qmesh.bm.select_history.discard(vert)
         self.qmesh.bm.select_history.add(vert)
         vert.select_set(True)
@@ -64,11 +64,11 @@ class vert_array_util :
 
     @property
     def world_positions( self ) :
-        return [ i[2] for i in self.verts_list ]
+        return [ i[3] for i in self.verts_list ]
 
     @property
     def screen_positions( self ) :
-        return [ i[3] for i in self.verts_list ]
+        return [ i[4] for i in self.verts_list ]
 
 
 class SubToolMakePoly(SubTool) :

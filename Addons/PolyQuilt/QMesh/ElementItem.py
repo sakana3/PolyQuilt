@@ -77,7 +77,8 @@ class ElementItem :
                             dst = l
                             val = p
                 if val :
-                    self.__hitPosition = val
+                    self.__hitPosition = self.__qmesh.local_to_world_pos(val)
+                    self.__coord = self.__qmesh.world_to_2d( self.__hitPosition )
 
     @property
     def index(self):

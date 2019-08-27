@@ -101,13 +101,14 @@ class QSnap :
 
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
-        if cls.instance != None :
+        if cls.instance != None and cls.instance.bvh_list :
             dist = bpy.context.scene.tool_settings.double_threshold                        
             find_nearest =  cls.instance.__find_nearest
             matrix = obj.matrix_world
             for vert in verts :
                 location , norm , index = find_nearest( matrix @ vert.co )
-                vert.co = obj.matrix_world.inverted() @ location
+                if location != None :
+                    vert.co = obj.matrix_world.inverted() @ location
 
     @classmethod
     def is_target( cls , world_pos : mathutils.Vector) -> bool :
