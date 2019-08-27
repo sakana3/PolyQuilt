@@ -102,7 +102,8 @@ def tool_poly_quilt():
 
         row = layout.row(align=True)
         row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
-        row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Div" , expand = True )
+        row = layout.row(align=True)
+        row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
 
 #        shading = get_shading()
