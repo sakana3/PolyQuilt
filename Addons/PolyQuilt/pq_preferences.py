@@ -72,7 +72,7 @@ def register_updater(bl_info):
     config.owner = "sakana3"
     config.repository = "PolyQuilt"
     config.current_addon_path = os.path.dirname(os.path.realpath(__file__))
-    config.branches = ["master", "develop"]
+    config.branches = ["master", "develop","Future" ]
     config.addon_directory = \
         config.current_addon_path[
             :config.current_addon_path.rfind(get_separator())]
