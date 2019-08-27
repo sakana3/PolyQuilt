@@ -207,7 +207,7 @@ class PolyQuiltPreferences(AddonPreferences):
         description="LoopCut Division",
         min = 0,
         max = 16,
-        default=1,
+        default=0,
     )
 
     def draw(self, context):
