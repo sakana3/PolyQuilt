@@ -51,6 +51,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         QSnap.update(context)
 
         element = self.bo.PickElement( location , self.preferences.distance_to_highlight )
+
+        element.set_snap_div( self.preferences.loopcut_division )
         if self.currentElement.element != element.element :
             context.area.tag_redraw()
         elif self.currentElement.isEdge :

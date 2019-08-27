@@ -20,6 +20,7 @@ import collections
 from mathutils import *
 from ..utils import pqutil
 from ..utils import draw_util
+from ..utils.dpi import *
 
 __all__ = ['ElementItem']
 
@@ -46,6 +47,7 @@ class ElementItem :
         self.__mirror = None
         self.__qmesh = qmesh
         self.__mirror = None
+        self.__div = 0
         self.setup_mirror()
 
     def setup_mirror( self ) :
@@ -55,6 +57,27 @@ class ElementItem :
                 self.__mirror = self.__qmesh.find_mirror( self.element )
         else :
             self.__mirror = None
+
+    def set_snap_div( self , div : int ) :
+        self.__div = div
+        if self.isEdge :
+            p0 = self.__element.verts[0].co
+            p1 = self.__element.verts[1].co
+            dic = [ ( self.__coord - self.__qmesh.local_to_2d( p0.lerp( p1 , (i+1.0) / (div + 1.0) ) ) ).length for i in range(div ) ]
+            if div > 0 :
+                val = None
+                dst = 1000000
+                for i in range(div ) :
+                    r = (i+1.0) / (div + 1.0)
+                    p = p0.lerp( p1 , r )
+                    v = self.__qmesh.local_to_2d( p )
+                    l = ( self.__coord - v ).length
+                    if l <= self.__qmesh.preferences.distance_to_highlight* dpm() :
+                        if dst > l :
+                            dst = l
+                            val = p
+                if val :
+                    self.__hitPosition = val
 
     @property
     def index(self):
@@ -185,9 +208,15 @@ class ElementItem :
             size = preferences.highlight_vertex_size
             width = preferences.highlight_line_width
             alpha = preferences.highlight_face_alpha
-            draw_util.drawElementHilight3D( obj , self.element , size , width ,alpha, color )
+            element = self.element
+            draw_util.drawElementHilight3D( obj , element , size , width ,alpha, color )
             if self.isEdge :
-                draw_util.draw_pivots3D( (self.hitPosition,) , 0.75 , color )
+                div_col = ( color[0] , color[1] , color[2] , color[3] * 0.5 )
+                for i in range(self.__div) :
+                    r = (i+1.0) / (self.__div + 1.0)
+                    v = self.__qmesh.local_to_world_pos( element.verts[0].co.lerp( element.verts[1].co , r) )
+                    draw_util.draw_pivots3D( (v,) , 0.75 , div_col )                
+                draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
 
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )

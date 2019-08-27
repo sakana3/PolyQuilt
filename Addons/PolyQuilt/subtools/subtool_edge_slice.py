@@ -89,8 +89,8 @@ class SubToolEdgeSlice(SubTool) :
                     lines.append(v1)
                 draw_util.draw_lines3D( context , lines , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
 
-            for i in range(self.operator.loopcut_division ) :
-                r = (i+1.0) / (self.operator.loopcut_division + 1.0)
+            for i in range(self.preferences.loopcut_division ) :
+                r = (i+1.0) / (self.preferences.loopcut_division + 1.0)
                 v = self.bmo.local_to_world_pos( self.currentEdge.verts[0].co.lerp( self.currentEdge.verts[1].co , r) )
                 draw_util.draw_pivots3D( (v,) , self.preferences.highlight_vertex_size / 2 , self.color_split(0.5) )
 
@@ -107,11 +107,18 @@ class SubToolEdgeSlice(SubTool) :
     def CalcSplitRate( self , context ,coord , baseEdge ) :
         p0 = baseEdge.verts[0].co
         p1 = baseEdge.verts[1].co
-        for i in range(self.operator.loopcut_division ) :
-            r = (i+1.0) / (self.operator.loopcut_division + 1.0)
-            v = self.bmo.local_to_2d( p0 + ( p1 - p0 ) * r)
-            if ( coord - v ).length <= self.preferences.distance_to_highlight* dpm() :
-                return r
+        val = None
+        dst = 10000000
+        for i in range(self.preferences.loopcut_division ) :
+            r = (i+1.0) / (self.preferences.loopcut_division + 1.0)
+            v = self.bmo.local_to_2d( p0.lerp( p1 , r ) )
+            l = ( coord - v ).length
+            if l <= self.preferences.distance_to_highlight* dpm() :
+                if dst > l :
+                    dst = l
+                    val = r
+        if val :
+            return val
 
         ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         dist = self.preferences.distance_to_highlight* dpm()

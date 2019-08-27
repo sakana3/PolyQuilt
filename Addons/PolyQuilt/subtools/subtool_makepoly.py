@@ -164,6 +164,8 @@ class SubToolMakePoly(SubTool) :
             elif isinstance( self.targetElement , bmesh.types.BMEdge ):
                 ignore =  [ self.targetElement ]
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , ignore=ignore )
+            self.currentTarget.set_snap_div( self.preferences.loopcut_division )
+
             if tmp != self.currentTarget :
                 self.EdgeLoops = None
                 self.VertLoops = None
