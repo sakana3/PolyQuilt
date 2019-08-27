@@ -91,6 +91,13 @@ class QSnap :
                 return location
         return world_pos
 
+    @classmethod
+    def adjust_point( cls , world_pos : mathutils.Vector  ) :
+        if cls.instance != None :
+            location , norm , index = cls.instance.__find_nearest( world_pos )
+            return location
+        return world_pos
+
 
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
@@ -156,6 +163,19 @@ class QSnap :
 
         return location , normal , index
 
+    def __smart_find( self , ray : pqutil.Ray ) :
+        location_i , normal_i , obj_i = self.__raycast_double( ray )
+        if location_i == None :
+            a,b,c = self.__find_nearest( ray.origin )
+            return a,b,c
+        location_r , normal_r , obj_r = self.__find_nearest( ray.origin )
+        if location_r == None :
+            return location_i , normal_i , obj_i
+        if (location_r - ray.origin).length <= (location_i - ray.origin).length :
+            return location_r , normal_r , obj_r
+        else :
+            return location_i , normal_i , obj_i        
+
     def __raycast_double( self , ray : pqutil.Ray ) :
         # ターゲットからビュー方向にレイを飛ばす
         location_r , normal_r , obj_r = self.__raycast( ray )
@@ -181,21 +201,15 @@ class QSnap :
         hits = []
         if self.bvh_list :
             for obj , bvh in self.bvh_list.items():
-                matrix = obj.matrix_world
-                lp = pqutil.transform_position( pos , matrix )
-                dst = 0.000001
-                while( dst <= 1.0 ) :
-                    hits = bvh.find_nearest_range(lp, dst )
-                    if None not in hits :
-                        break
-                    dst = dst * 10
-
-                if hits and None not in hits :
-                    for hit in hits :
-                        if hit[3] < min_dist :
-                            location = pqutil.transform_position( hit[0] , matrix )
-                            normal = pqutil.transform_normal( hit[1] , matrix )
-                            index =  hit[2] + obj.pass_index * 10000000
-                            min_dist = hit[3]
+                lp = obj.matrix_world.inverted() @ pos
+                hit = bvh.find_nearest( lp )
+                if None not in hit :
+                    wp = pqutil.transform_position( hit[0] , obj.matrix_world )
+                    dist = ( pos - wp ).length
+                    if min_dist > dist :
+                        min_dist = dist
+                        location = wp
+                        normal = pqutil.transform_normal( hit[1] , obj.matrix_world )
+                        index =  hit[2] + obj.pass_index * 10000000
 
         return location , normal , index
