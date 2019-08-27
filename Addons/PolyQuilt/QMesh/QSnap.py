@@ -91,6 +91,13 @@ class QSnap :
                 return location
         return world_pos
 
+    @classmethod
+    def adjust_point( cls , world_pos : mathutils.Vector  ) :
+        if cls.instance != None :
+            location , norm , index = cls.instance.__find_nearest( world_pos )
+            return location
+        return world_pos
+
 
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
@@ -194,20 +201,15 @@ class QSnap :
         hits = []
         if self.bvh_list :
             for obj , bvh in self.bvh_list.items():
-                matrix = obj.matrix_world
-                lp = pqutil.transform_position( pos , matrix )
-                dst = 0.00001
-                while( dst <= 100.0 ) :
-                    hits = bvh.find_nearest_range(lp, dst )
-                    if hits and None not in hits :
-                        break
-                    dst = dst * 2
-                if hits and None not in hits :
-                    for hit in hits :
-                        if hit[3] < min_dist :
-                            location = pqutil.transform_position( hit[0] , matrix )
-                            normal = pqutil.transform_normal( hit[1] , matrix )
-                            index =  hit[2] + obj.pass_index * 10000000
-                            min_dist = hit[3]
+                lp = obj.matrix_world.inverted() @ pos
+                hit = bvh.find_nearest( lp )
+                if None not in hit :
+                    wp = pqutil.transform_position( hit[0] , obj.matrix_world )
+                    dist = ( pos - wp ).length
+                    if min_dist > dist :
+                        min_dist = dist
+                        location = wp
+                        normal = pqutil.transform_normal( hit[1] , obj.matrix_world )
+                        index =  hit[2] + obj.pass_index * 10000000
 
         return location , normal , index

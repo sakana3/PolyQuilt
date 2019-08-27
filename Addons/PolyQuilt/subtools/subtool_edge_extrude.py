@@ -114,7 +114,7 @@ class SubToolEdgeExtrude(SubTool) :
                 if self.is_center_snap :
                     vt.x = 0
 
-                pt = QSnap.view_adjust(vt)
+                pt = QSnap.adjust_point( vt )
                 ct = pqutil.location_3d_to_region_2d(pt)
                 elm = self.bmo.PickElement( ct , dist , edgering=True , backface_culling = True , elements=['VERT'], ignore=self.ignoreVerts )
                 if elm.isVert :
