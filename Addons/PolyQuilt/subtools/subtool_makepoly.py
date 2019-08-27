@@ -91,7 +91,7 @@ class SubToolMakePoly(SubTool) :
             p = self.calc_planned_construction_position()
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
-            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 ); 
+            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 )
         elif startElement.isEdge :
             self.currentTarget = self.edge_split( startElement )
             self.bmo.UpdateMesh()
@@ -135,6 +135,7 @@ class SubToolMakePoly(SubTool) :
                     self.currentTarget = ElementItem.Empty()
                 elif self.currentTarget.isEdge :
                     self.currentTarget = self.edge_split( self.currentTarget )
+                    self.bmo.UpdateMesh()                    
                     self.isEnd = self.AddVert(self.currentTarget ) == False
                 elif self.currentTarget.isEmpty :
                     self.pivot = self.calc_planned_construction_position()
@@ -171,6 +172,8 @@ class SubToolMakePoly(SubTool) :
                 self.VertLoops = None
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
                 self.currentTarget = ElementItem.Empty()
+            else :
+                self.PlanlagtePos = self.currentTarget.hitPosition
 
     def OnUpdate( self , context , event ) :
         self.LMBEvent.Update( context , event )

@@ -124,6 +124,8 @@ class QMeshOperators :
     def is_x0_snap( self , p  : Vector  ) :
         p0 = pqutil.location_3d_to_region_2d( p )
         p1 = pqutil.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
+        if p0 == None or p1 == None :
+            return False
         dist = self.preferences.distance_to_highlight * dpm()  
         return ( p0 - p1 ).length <= dist
 
@@ -137,9 +139,13 @@ class QMeshOperators :
         return [ self.mirror_world_pos(pos) for pos in poss ]
 
     def check_near( self , v0 , v1 ) :
+        if v0 == None or v1 == None :
+            return False
         c0 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v0 )
         c1 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v1 )        
-        radius = self.preferences.distance_to_highlight * dpm()      
+        if c0 == None or c1 == None :
+            return False
+        radius = self.preferences.distance_to_highlight * dpm()
         return (c0-c1).length <= radius 
 
 

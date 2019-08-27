@@ -86,6 +86,8 @@ class QSnap :
     def view_adjust( cls , world_pos : mathutils.Vector ) -> mathutils.Vector :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
+            if ray == None :
+                return world_pos
             location , norm , obj = cls.instance.__raycast( ray )
             if location != None :
                 return location
@@ -114,6 +116,8 @@ class QSnap :
     def is_target( cls , world_pos : mathutils.Vector) -> bool :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
+            if ray == None :
+                return False
             location , normal , obj = cls.instance.__raycast( ray )
             if location != None :
                 if (location - ray.origin).length >= (world_pos - ray.origin).length :

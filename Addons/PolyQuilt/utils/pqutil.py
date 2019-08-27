@@ -113,6 +113,8 @@ class Ray :
     @staticmethod
     def from_world_to_screen( context , world_pos : mathutils.Vector ) :
         coord = location_3d_to_region_2d(world_pos)
+        if coord == None :
+            return None
         return Ray.from_screen( context , coord)
 
     def world_to_object( self , obj ) :
