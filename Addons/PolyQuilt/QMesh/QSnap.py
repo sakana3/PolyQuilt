@@ -106,27 +106,8 @@ class QSnap :
             find_nearest =  cls.instance.__find_nearest
             matrix = obj.matrix_world
             for vert in verts :
-                if len(vert.link_faces) == 0 :
-                        location , norm , index = find_nearest( matrix @ vert.co )
-                else :
-                    normal = vert.normal
-                    if is_fix_to_x_zero and abs(vert.co.x) < dist :
-                        ray = pqutil.Ray( vert.co , normal ).x_zero.object_to_world(obj)
-                    else :
-                        ray = pqutil.Ray( vert.co , normal ).object_to_world(obj)
-                    location , norm , index = cls.instance.__raycast_double( ray )
-
-                if location != None :
-                    if is_fix_to_x_zero :
-                        if abs(vert.co.x) <= dist :
-                            location.x = 0.0
-                            ray.origin = location
-                            if len(vert.link_faces) == 0 :
-                                location , norm , index = find_nearest( matrix @ vert.co )
-                            else :
-                                location , norm , index = cls.instance.__raycast_double( ray )
-                            location.x = 0.0
-                    vert.co = location
+                location , norm , index = find_nearest( matrix @ vert.co )
+                vert.co = obj.matrix_world.inverted() @ location
 
     @classmethod
     def is_target( cls , world_pos : mathutils.Vector) -> bool :
