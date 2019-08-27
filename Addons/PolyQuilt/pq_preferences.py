@@ -202,6 +202,14 @@ class PolyQuiltPreferences(AddonPreferences):
         items=get_update_candidate_branches
     )
 
+    loopcut_division : bpy.props.IntProperty(
+        name="LoopCut DIVISON",
+        description="LoopCut Division",
+        min = 0,
+        max = 16,
+        default=1,
+    )
+
     def draw(self, context):
         layout = self.layout
 
