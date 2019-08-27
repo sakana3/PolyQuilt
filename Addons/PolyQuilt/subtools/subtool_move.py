@@ -30,6 +30,7 @@ class SubToolMove(SubTool) :
     def __init__(self,op,startTarget,startMousePos) :
         super().__init__(op)
         self.currentTarget = startTarget
+        self.currentTarget.set_snap_div( 0 )        
         self.snapTarget = ElementItem.Empty()
         self.startMousePos = copy.copy(startTarget.coord)
         self.mouse_pos = startMousePos.copy()
