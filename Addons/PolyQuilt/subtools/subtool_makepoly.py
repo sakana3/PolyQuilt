@@ -29,7 +29,7 @@ class vert_array_util :
     def __init__(self , qmesh ) :
        self.verts_list = []
        self.qmesh = qmesh
-       self.qmesh.bm.select_flush(False)
+       self.qmesh.bm.select_flush(True)
        self.qmesh.bm.select_history.clear()
 
     @property

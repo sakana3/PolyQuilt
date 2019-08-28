@@ -178,6 +178,7 @@ class QMeshOperators :
             self.__kdtree = None
 
     def UpdateMesh( self ) :
+        self.ensure_lookup_table()
         self.bm.normal_update()
 
         self.obj.data.update_gpu_tag()
