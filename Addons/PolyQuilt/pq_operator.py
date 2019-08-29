@@ -116,6 +116,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        if context.region == None :
+            self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
+            return {'CANCELLED'}            
+
         try :
             val = self.update( context, event)
         except Exception as e:
@@ -176,7 +180,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     def invoke(self, context, event):
         self.preferences = context.preferences.addons[__package__].preferences
         from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
-        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None:
+        if context.region == None :
+            self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
+            return {'CANCELLED'}            
+        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None :
 
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
