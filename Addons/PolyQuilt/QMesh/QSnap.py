@@ -181,7 +181,7 @@ class QSnap :
 
     def __find_nearest( self, pos : mathutils.Vector ) :
         min_dist = math.inf
-        location = None
+        location = pos
         normal = None
         index = None
         hits = []

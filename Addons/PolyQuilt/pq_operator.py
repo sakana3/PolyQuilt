@@ -111,6 +111,15 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='EQUAL',
     )
 
+    extrude_mode : bpy.props.EnumProperty(
+        name="Extrude Mode",
+        description="Extrude Mode",
+        items=[('PARALLEL' , "Parallel", "" ),
+               ('BEND' , "Bend", "" ) ,
+               ('FLEXIBLE' , "Flex", "" ) ],
+        default='PARALLEL',
+    )
+
 
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()

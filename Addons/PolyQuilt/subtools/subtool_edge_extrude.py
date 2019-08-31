@@ -32,8 +32,8 @@ class SubToolEdgeExtrude(SubTool) :
     def __init__(self,op, target : ElementItem ) :
         super().__init__(op)
         self.currentEdge = target
-        self.startPos = target.hitPosition
-        self.targetPos = target.hitPosition
+        self.startPos = target.hitPosition.copy()
+        self.targetPos = target.hitPosition.copy()
         self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , target.hitPosition )
         self.move_plane = self.screen_space_plane
         self.startMousePos = copy.copy(target.coord)
@@ -52,9 +52,51 @@ class SubToolEdgeExtrude(SubTool) :
 
         self.newEdge = [ self.bmo.local_to_world_pos( self.currentEdge.element.verts[0].co ) , self.bmo.local_to_world_pos( self.currentEdge.element.verts[1].co ) ]
 
+        # calc perpendicular
+        view_matrix = bpy.context.region_data.view_matrix
+        view_vector = bpy.context.region_data.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))                 
+        vp0 = view_matrix @ self.newEdge[0]
+        vp1 = view_matrix @ self.newEdge[1]
+        vs0 = mathutils.Vector(( vp0.x , vp0.y , 0.0))
+        vs1 = mathutils.Vector(( vp1.x , vp1.y , 0.0))
+        n = (vs1 - vs0).normalized()     
+        self.perpendicular = view_vector.cross( n.xyz ).normalized()
+
     @staticmethod
     def Check( target ) :
         return target.element.is_boundary or target.element.is_manifold == False
+
+    def CalcFin( self , context , v0 , v1 , move ) :
+            region = context.region
+            rv3d = context.region_data
+            view_matrix = rv3d.view_matrix
+            view_vector = rv3d.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))            
+
+            n = ( view_matrix.to_3x3() @ move ).xy.normalized()
+            r0 = math.atan2( n.y , n.x )
+            r1 = math.atan2( self.perpendicular.y , self.perpendicular.x )
+
+            q0 = mathutils.Quaternion( view_vector , r0 )
+            q1 = mathutils.Quaternion( view_vector , r1 )
+
+            q = q0.rotation_difference(q1)
+
+            f0 = self.bmo.local_to_world_pos(v0.co) - self.startPos
+            f1 = self.bmo.local_to_world_pos(v1.co) - self.startPos
+
+            if self.operator.extrude_mode != 'PARALLEL' :
+                if self.operator.extrude_mode == 'BEND' :
+                    f0 = q.to_matrix() @ f0
+                    f1 = q.to_matrix() @ f1
+                else :
+                    f0 = q.to_matrix() @ q.to_matrix() @ f0
+                    f1 = q.to_matrix() @ q.to_matrix() @ f1
+
+            p0 = self.targetPos + f0
+            p1 = self.targetPos + f1
+            p0 = QSnap.adjust_point(p0)
+            p1 = QSnap.adjust_point(p1)
+            return [p0,p1]
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -64,13 +106,12 @@ class SubToolEdgeExtrude(SubTool) :
             vG = self.move_plane.intersect_ray( rayG )
             move = (vG - vS)
             self.targetPos = self.startPos + move
+#           self.targetPos = QSnap.view_adjust(self.targetPos)
+#           move = self.targetPos - self.startPos
+
             dist = self.preferences.distance_to_highlight
 
-            p0 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[0].co) + move
-            p1 = self.bmo.local_to_world_pos(self.currentEdge.element.verts[1].co) + move
-            p0 = QSnap.view_adjust(p0)
-            p1 = QSnap.view_adjust(p1)
-            self.newEdge = [p0,p1]
+            self.newEdge = self.CalcFin( context , self.currentEdge.element.verts[0] , self.currentEdge.element.verts[1] , move )
 
             # X=0でのスナップをチェック
             self.is_center_snap = False
@@ -94,7 +135,7 @@ class SubToolEdgeExtrude(SubTool) :
                     if not self.snapTarget.is_straddle_x_zero :
                         self.snapTarget = ElementItem.Empty()                        
                 if self.snapTarget.isEdge :
-                    self.newEdge = self.AdsorptionEdge( p0 , p1 ,  self.snapTarget.element )
+                    self.newEdge = self.AdsorptionEdge( self.newEdge[0] , self.newEdge[1] ,  self.snapTarget.element )
             else :
                 self.snapTarget = ElementItem.Empty()
 
