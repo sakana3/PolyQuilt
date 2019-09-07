@@ -143,6 +143,8 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
              {"properties": [("tool_mode", 'EXTRUDE')]}),
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "alt": True},
              {"properties": [("lock_hold", True)]}),
+            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "shift": True},
+             {"properties": [("tool_mode", 'BRUSH')]}),
             ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
         ]},
     )
@@ -191,3 +193,31 @@ def unregister_keymaps():
     for keyconfig_data in generate_empty_snap_utilities_tools_keymaps():
         km_name, km_args, km_content = keyconfig_data
         defaultmap.remove(defaultmap.find(km_name, **km_args))
+
+def get_tool_list(space_type, context_mode):
+    from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
+    cls = ToolSelectPanelHelper._tool_class_from_space_type(space_type)
+    return cls._tools[context_mode]
+
+
+def register_tools():
+    tools = get_tool_list('VIEW_3D', 'EDIT_MESH')
+
+    for index, tool in enumerate(tools, 1):
+        if isinstance(tool, ToolDef) and tool.label == "Poly Build":
+            break
+
+    tools[:index] += None, tool_poly_quilt
+
+    del tools
+
+
+def unregister_tools():
+    tools = get_tool_list('VIEW_3D', 'EDIT_MESH')
+
+    index = tools.index(tool_poly_quilt) - 1 #None
+    tools.pop(index)
+    tools.remove(tool_poly_quilt)
+
+    del tools
+    del index

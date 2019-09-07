@@ -26,6 +26,7 @@ from .utils import draw_util
 from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
 from .subtools.subtool_extr import SubToolExtr
+from .subtools.subtool_brush import SubToolBrush
 from .subtools.subtool import SubTool
 from .QMesh import *
 
@@ -68,7 +69,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         name="Tool Mode",
         description="Tool Mode",
         items=[('LOWPOLY' , "LowPoly", "" ),
-               ('EXTRUDE' , "Extrude", "" ) ],
+               ('EXTRUDE' , "Extrude", "" ),
+               ('BRUSH' , "Brush", "" ) ],
         default='LOWPOLY',
     )
 
@@ -200,6 +202,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
             if self.tool_mode == 'EXTRUDE' :
                 self.currentSubTool = SubToolExtr(self , element )
+            elif self.tool_mode == 'BRUSH' :
+                self.currentSubTool = SubToolBrush(self , element )
             else :
                 self.currentSubTool = SubToolDefault(self , element )
             self.currentSubTool.OnInit(context )
