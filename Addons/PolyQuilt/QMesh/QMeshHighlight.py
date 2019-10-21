@@ -132,7 +132,7 @@ class QMeshHighlight :
         s = [ i for i in s if i[0] not in ignore ]
 
         r = sorted( s , key=lambda i:(i[1] - p).length_squared )
-        matrix_world = self.pqo.obj.matrix_world        
+        matrix_world = self.pqo.obj.matrix_world
         return [ ElementItem( self.pqo ,i[0] , i[1] , matrix_world @ i[0].co ) for i in r ] 
 
 

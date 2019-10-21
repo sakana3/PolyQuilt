@@ -92,7 +92,8 @@ class SubToolRelax(SubTool) :
         region = context.region
         halfW = region.width / 2.0
         halfH = region.height / 2.0
-        matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
+        matrix_world = self.bmo.obj.matrix_world
+        matrix = rv3d.perspective_matrix @ matrix_world
         half = mathutils.Vector( (halfW,halfH) )
         radius = self.radius
         bm = self.bmo.bm
@@ -117,10 +118,12 @@ class SubToolRelax(SubTool) :
             if r > radius :
                 return None
 
-            if vt not in self.occlusion_tbl :
-                self.occlusion_tbl[vt] = is_target(wp)
+            is_occlusion = self.occlusion_tbl.get(vt)
+            if is_occlusion == None :
+                is_occlusion = is_target(matrix_world @ vt.co)
+                self.occlusion_tbl[vt] = is_occlusion
 
-            if not self.occlusion_tbl[vt] :
+            if not is_occlusion :
                 return None
 
             x = (radius - r) / radius
