@@ -53,8 +53,9 @@ class QMesh(QMeshOperators) :
     def UpdateView( self ,context , forced = False ):
         self.highlight.UpdateView(context)
 
-    def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = False , elements = ['FACE','EDGE','VERT'] ) -> ElementItem :
-        backface_culling = self.get_shading(bpy.context).show_backface_culling
+    def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = None , elements = ['FACE','EDGE','VERT'] ) -> ElementItem :
+        if backface_culling == None :
+            backface_culling = self.get_shading(bpy.context).show_backface_culling
         rv3d = bpy.context.space_data.region_3d
         matrix = rv3d.perspective_matrix
         radius = radius * dpm()
