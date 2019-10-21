@@ -130,7 +130,7 @@ class QMeshHighlight :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
         if backface_culling :
-            ray = pqutil.Ray.from_screen( bpy.context , coord )
+            ray = pqutil.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
             s = [ i for i in s if i[0].is_manifold == False or i[0].is_boundary or i[0].normal.dot( ray.vector ) < 0 ]
 
         s = [ i for i in s if i[0] not in ignore ]
@@ -163,9 +163,10 @@ class QMeshHighlight :
             r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
 
         if backface_culling :
+            ray2 = ray.world_to_object( self.pqo.obj )
             r = [ i for i in r
                 if not i.element.is_manifold or i.element.is_boundary or
-                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray.vector ) < 0 ]
+                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray2.vector ) < 0 ]
         
         s = sorted( r , key=lambda i:(i.coord - p).length_squared )
 
