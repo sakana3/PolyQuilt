@@ -101,8 +101,12 @@ def tool_poly_quilt():
         layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
         row = layout.row(align=True)
+        row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
+
+        row = layout.row(align=True)
         row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
-        row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Div" , expand = True )
+        row = layout.row(align=True)
+        row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
 
 #        shading = get_shading()

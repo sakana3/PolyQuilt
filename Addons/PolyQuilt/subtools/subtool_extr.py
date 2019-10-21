@@ -29,6 +29,7 @@ from .subtool_edge_slice import *
 from .subtool_edge_slide import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
+from .subtool_edge_extrude_multi import *
 from .subtool_vert_extrude import *
 from .subtool_autoquad import *
 from .subtool_move import *
@@ -92,13 +93,13 @@ class SubToolExtr(SubTool) :
                     tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
                 if SubToolEdgeloopCut.Check(self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrude.Check(self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,True))                    
+                if SubToolEdgeExtrudeMulti.Check(self.currentTarget) : 
+                    tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget,True))                    
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                if SubToolEdgeExtrude.Check( self.currentTarget ) :
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget))
+                if SubToolEdgeExtrudeMulti.Check( self.currentTarget ) :
+                    tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   

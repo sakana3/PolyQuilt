@@ -70,8 +70,11 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
-def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 ):
-    r = radius * dpm()
+def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True ):
+    if dpi :
+        r = radius * dpm()
+    else :
+        r = radius
     dr = math.pi * 2 / subdivide
     vertices = [( pos[0] + r * math.cos(i*dr), pos[1] + r * math.sin(i*dr)) for i in range(subdivide+1)]
 

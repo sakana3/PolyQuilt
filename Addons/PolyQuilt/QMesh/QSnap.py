@@ -86,6 +86,8 @@ class QSnap :
     def view_adjust( cls , world_pos : mathutils.Vector ) -> mathutils.Vector :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
+            if ray == None :
+                return world_pos
             location , norm , obj = cls.instance.__raycast( ray )
             if location != None :
                 return location
@@ -101,18 +103,21 @@ class QSnap :
 
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
-        if cls.instance != None :
+        if cls.instance != None and cls.instance.bvh_list :
             dist = bpy.context.scene.tool_settings.double_threshold                        
             find_nearest =  cls.instance.__find_nearest
             matrix = obj.matrix_world
             for vert in verts :
                 location , norm , index = find_nearest( matrix @ vert.co )
-                vert.co = obj.matrix_world.inverted() @ location
+                if location != None :
+                    vert.co = obj.matrix_world.inverted() @ location
 
     @classmethod
     def is_target( cls , world_pos : mathutils.Vector) -> bool :
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
+            if ray == None :
+                return False
             location , normal , obj = cls.instance.__raycast( ray )
             if location != None :
                 if (location - ray.origin).length >= (world_pos - ray.origin).length :
@@ -176,7 +181,7 @@ class QSnap :
 
     def __find_nearest( self, pos : mathutils.Vector ) :
         min_dist = math.inf
-        location = None
+        location = pos
         normal = None
         index = None
         hits = []

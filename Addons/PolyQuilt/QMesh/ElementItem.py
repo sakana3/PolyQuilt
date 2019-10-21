@@ -77,7 +77,8 @@ class ElementItem :
                             dst = l
                             val = p
                 if val :
-                    self.__hitPosition = val
+                    self.__hitPosition = self.__qmesh.local_to_world_pos(val)
+                    self.__coord = self.__qmesh.world_to_2d( self.__hitPosition )
 
     @property
     def index(self):
@@ -196,7 +197,7 @@ class ElementItem :
     @staticmethod
     def FormVert( qmesh , v ):
         p = pqutil.location_3d_to_region_2d( v.co )
-        return ElementItem( qmesh , v , p , v.co , 0.0 )
+        return ElementItem( qmesh , v , p , qmesh.local_to_world_pos(v.co) , 0.0 )
 
     @staticmethod
     def FormElement( qmesh ,e , co ):

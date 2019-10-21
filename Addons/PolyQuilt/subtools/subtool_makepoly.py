@@ -29,7 +29,7 @@ class vert_array_util :
     def __init__(self , qmesh ) :
        self.verts_list = []
        self.qmesh = qmesh
-       self.qmesh.bm.select_flush(False)
+       self.qmesh.bm.select_flush(True)
        self.qmesh.bm.select_history.clear()
 
     @property
@@ -40,9 +40,9 @@ class vert_array_util :
         return self.verts[index]
 
     def add( self , vert ) :
-        world = self.qmesh.obj.matrix_world @ vert.co
-        screen = pqutil.location_3d_to_region_2d( vert.co )
-        self.verts_list.append( [vert,vert.index,vert.co,world,screen] )
+        world = self.qmesh.local_to_world_pos( vert.co )
+        screen = pqutil.location_3d_to_region_2d( world )
+        self.verts_list.append( [vert,vert.index,vert.co.copy(),world,screen] )
         self.qmesh.bm.select_history.discard(vert)
         self.qmesh.bm.select_history.add(vert)
         vert.select_set(True)
@@ -64,11 +64,11 @@ class vert_array_util :
 
     @property
     def world_positions( self ) :
-        return [ i[2] for i in self.verts_list ]
+        return [ i[3] for i in self.verts_list ]
 
     @property
     def screen_positions( self ) :
-        return [ i[3] for i in self.verts_list ]
+        return [ i[4] for i in self.verts_list ]
 
 
 class SubToolMakePoly(SubTool) :
@@ -91,7 +91,7 @@ class SubToolMakePoly(SubTool) :
             p = self.calc_planned_construction_position()
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
-            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 ); 
+            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 )
         elif startElement.isEdge :
             self.currentTarget = self.edge_split( startElement )
             self.bmo.UpdateMesh()
@@ -135,6 +135,7 @@ class SubToolMakePoly(SubTool) :
                     self.currentTarget = ElementItem.Empty()
                 elif self.currentTarget.isEdge :
                     self.currentTarget = self.edge_split( self.currentTarget )
+                    self.bmo.UpdateMesh()                    
                     self.isEnd = self.AddVert(self.currentTarget ) == False
                 elif self.currentTarget.isEmpty :
                     self.pivot = self.calc_planned_construction_position()
@@ -171,6 +172,8 @@ class SubToolMakePoly(SubTool) :
                 self.VertLoops = None
             if (self.currentTarget.isVert or self.currentTarget.isEdge ) is False :
                 self.currentTarget = ElementItem.Empty()
+            else :
+                self.PlanlagtePos = self.currentTarget.hitPosition
 
     def OnUpdate( self , context , event ) :
         self.LMBEvent.Update( context , event )

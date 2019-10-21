@@ -97,18 +97,14 @@ class QMeshHighlight :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            matrix_world = self.pqo.obj.matrix_world
-            perspective_matrix = rv3d.perspective_matrix
-            matrix = matrix_world @ perspective_matrix
-            half = Vector( (halfW,halfH) )
+            matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
 
             verts = self.pqo.bm.verts
 
             def ProjVert( vt ) :
-                wp = matrix_world @ vt.co
-                pv = perspective_matrix @ wp.to_4d()
-                w = pv.w
-                return Vector( (pv.x * halfW , pv.y * halfH ) ) / w + half if w > 0.0 else None
+                pv = matrix @ vt.co.to_4d()
+                w = pv[3]
+                return Vector( (pv.x * halfW / w + halfW , pv.y * halfH / w + halfH ) )  if w > 0.0 else None
 
             viewPos = { p : ProjVert(p) for p in verts }
 

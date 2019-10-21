@@ -23,6 +23,39 @@ from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubTool
+from ..utils.dpi import *
+
+class SelectStack :
+    def __init__(self, context , bm) :
+        self.context = context
+        self.bm = bm
+
+    def push( self ) :
+        self.mesh_select_mode = self.context.tool_settings.mesh_select_mode[0:3]
+        self.vert_selection = [ v.select for v in self.bm.verts ]
+        self.face_selection = [ f.select for f in self.bm.faces ]
+        self.edge_selection = [ e.select for e in self.bm.edges ]
+        self.select_history = self.bm.select_history[:]
+
+    def select_mode( self , vert , face , edge ) :
+        self.context.tool_settings.mesh_select_mode = (vert , face , edge)
+
+
+    def pop( self ) :
+        self.context.tool_settings.mesh_select_mode = self.mesh_select_mode
+
+        for select , v in zip( self.vert_selection , self.bm.verts ) :
+            v.select = select
+        for select , f in zip( self.face_selection , self.bm.faces ) :
+            f.select = select
+        for select , e in zip( self.edge_selection , self.bm.edges ) :
+            e.select = select
+
+        self.bm.select_history = self.select_history
+
+        del self.vert_selection
+        del self.face_selection
+        del self.edge_selection
 
 class SubToolRelax(SubTool) :
     name = "RelaxTool"
@@ -31,9 +64,11 @@ class SubToolRelax(SubTool) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.startMousePos = copy.copy(startTarget.coord)
+        self.radius = self.preferences.brush_size * dpm()
+        self.occlusion_tbl = {}
+        self.mirror_tbl = {}
 
     def OnUpdate( self , context , event ) :
-        self.radius = context.tool_settings.proportional_size * 25.4
         if event.type == 'MOUSEMOVE':
             self.DoRelax( context ,self.mouse_pos )
         elif event.type == 'LEFTMOUSE' : 
@@ -46,56 +81,73 @@ class SubToolRelax(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        draw_util.draw_circle2D( self.mouse_pos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 )
+        draw_util.draw_circle2D( self.mouse_pos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
         pass
 
     def OnDraw3D( self , context  ) :
         pass
 
-    def DoRelax( self , context , coord ) :
+    def CollectVerts( self , context , coord ) :
         rv3d = context.space_data.region_3d
         region = context.region
         halfW = region.width / 2.0
         halfH = region.height / 2.0
-        matrix_world = self.bmo.obj.matrix_world
-        perspective_matrix = rv3d.perspective_matrix
+        matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
         half = mathutils.Vector( (halfW,halfH) )
         radius = self.radius
+        bm = self.bmo.bm
+        verts = bm.verts
+        is_target = QSnap.is_target
+        new_vec = mathutils.Vector
+
+        select_stack = SelectStack( context , bm )
+
+        select_stack.push()
+        select_stack.select_mode(True,False,False)
+        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET')
+#        bm.select_flush(False)
 
         def ProjVert( vt ) :
-            if vt.is_boundary :
-                return None
-
-            wp = matrix_world @ vt.co
-            pv = perspective_matrix @ wp.to_4d()
+            pv = matrix @ vt.co.to_4d()
             w = pv.w
             if w < 0.0 :
                 return None
-            p = mathutils.Vector( (pv.x * halfW , pv.y * halfH ) ) / w + half
+            p = new_vec( (pv.x * halfW , pv.y * halfH ) ) / w + half
             r = (coord - p).length
             if r > radius :
                 return None
-            r = (radius - r) / radius
-            return (p , r , vt.co.copy())
 
-        verts = self.bmo.bm.verts
-        coords = { vert : ProjVert(vert) for vert in verts }
-        hits = [ v for v , c in coords.items() if c != None ]
+            if vt not in self.occlusion_tbl :
+                self.occlusion_tbl[vt] = is_target(wp)
 
-        if True :
-            bmesh.ops.smooth_vert( self.bmo.bm , verts = hits , factor = 0.25,
-                mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
-                use_axis_x = True, use_axis_y = True, use_axis_z = True)
-        else :
-            bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = verts, lambda_factor = 1.0 , lambda_border = 0.0 , use_x = True, use_y = True, use_z = True, preserve_volume = False )
+            if not self.occlusion_tbl[vt] :
+                return None
 
-        for v in hits :
-            c = coords[v]
-            v.co = c[2].lerp( v.co , c[1] )
+            x = (radius - r) / radius
+            return [ x * x , vt.co.copy()]
 
-        QSnap.adjust_verts( self.bmo.obj , hits , False )
+        coords = { vert : ProjVert(vert) for vert in verts if vert.select and not vert.is_boundary }
 
-        self.bmo.bm.normal_update()
+        select_stack.pop()
+
+        return { v:c for v , c in coords.items() if c != None } 
+
+    def DoRelax( self , context , coord ) :
+        coords = self.CollectVerts( context, coord  )
+
+        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = 1 ,
+            mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
+            use_axis_x = True, use_axis_y = True, use_axis_z = True)
+#        bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = hits , lambda_factor = 1.0 , lambda_border = 0.0 ,
+#            use_x = True, use_y = True, use_z = True, preserve_volume = False )
+
+        matrix_world = self.bmo.obj.matrix_world
+        matrix_world_inv = matrix_world.inverted()
+        for v , (f,o) in coords.items() :
+            p = matrix_world_inv @ QSnap.adjust_point( matrix_world @ v.co )
+            v.co = o.lerp( p , f )
+
+#        self.bmo.bm.normal_update()
 #        self.bmo.obj.data.update_gpu_tag()
 #        self.bmo.obj.data.update_tag()
 #        self.bmo.obj.update_from_editmode()

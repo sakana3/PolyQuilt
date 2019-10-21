@@ -15,7 +15,9 @@ pq_translation_dict = {
             ("*", "MakePolyColor") : "面作成色" ,
             ("*", "SplitColor") : "分割色" ,
             ("*", "DeleteColor") : "削除色" ,
+            ("*", "Edge Snap Div") : "辺スナップ分割数" ,
             ("*", "Setup GameEngine like Keymaps") : "ゲームエンジン風キーマップをセットアップ" ,
             ("*", "Empty Mesh Object") : "空メッシュ" ,
+            ("*", "Flex") : "自由" ,
         }
 }

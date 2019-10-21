@@ -30,6 +30,7 @@ class SubToolMove(SubTool) :
     def __init__(self,op,startTarget,startMousePos) :
         super().__init__(op)
         self.currentTarget = startTarget
+        self.currentTarget.set_snap_div( 0 )        
         self.snapTarget = ElementItem.Empty()
         self.startMousePos = copy.copy(startTarget.coord)
         self.mouse_pos = startMousePos.copy()
@@ -241,9 +242,9 @@ class SubToolMove(SubTool) :
             initial_pos = self.target_orig[vert]
             p = self.bmo.obj.matrix_world @ initial_pos
             p = p + move
+            p = QSnap.view_adjust(p)
             p = self.bmo.obj.matrix_world.inverted() @ p
 
-            p = QSnap.view_adjust(p)
             if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
                 p.x = 0.0
 

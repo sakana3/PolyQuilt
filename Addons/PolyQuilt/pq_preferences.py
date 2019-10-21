@@ -72,7 +72,7 @@ def register_updater(bl_info):
     config.owner = "sakana3"
     config.repository = "PolyQuilt"
     config.current_addon_path = os.path.dirname(os.path.realpath(__file__))
-    config.branches = ["master", "develop"]
+    config.branches = ["master", "develop","Future" ]
     config.addon_directory = \
         config.current_addon_path[
             :config.current_addon_path.rfind(get_separator())]
@@ -207,8 +207,15 @@ class PolyQuiltPreferences(AddonPreferences):
         description="LoopCut Division",
         min = 0,
         max = 16,
-        default=1,
+        default=0,
     )
+
+    brush_size : bpy.props.FloatProperty(
+        name="Brush Size",
+        description="Brush Size",
+        default=50.0,
+        min=10.0,
+        max=1000.0)    
 
     def draw(self, context):
         layout = self.layout

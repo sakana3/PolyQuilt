@@ -46,6 +46,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         QSnap.exit()
 
     def test_select(self, context, location):
+        if context.region == None :
+            return -1
         PQ_Gizmo_Preselect.instance = self        
         if self.bo == None :
             self.bo = QMesh( context.active_object , self.preferences )

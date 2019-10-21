@@ -29,6 +29,7 @@ from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
 from .subtool_relax import *
+from .subtool_brush_size import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
@@ -56,7 +57,7 @@ class SubToolBrush(SubTool) :
         elif event.type == MBEventType.LongClick :
             self.isExit = True
         elif event.type == MBEventType.LongPressDrag :
-            pass
+            self.SetSubTool( SubToolBrushSize(self.operator,self.currentTarget , self.mouse_pos ) )
         elif event.type == MBEventType.Drag :
             self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
 
