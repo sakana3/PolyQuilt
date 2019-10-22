@@ -192,7 +192,7 @@ class PolyQuiltPreferences(AddonPreferences):
     is_debug : BoolProperty(
         name="is Debug",
         description="is Debug",
-        default=False
+        default=True
     )
 
     # for add-on updater

@@ -155,6 +155,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         return val
 
     def update(self, context, event):
+        if self.preferences.is_debug :
+            t = time.time()
+                    
         if event.type == 'TIMER':
             if self.currentSubTool is None or not self.currentSubTool.check_animated(context) :
                 return {'PASS_THROUGH'}
@@ -166,9 +169,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
             self.report({'WARNING'}, "BMesh Broken..." )
             return {'CANCELLED'}
-
-        if self.preferences.is_debug :
-            t = time.time()
 
         self.bmo.CheckValid( context )
         ret = 'FINISHED'

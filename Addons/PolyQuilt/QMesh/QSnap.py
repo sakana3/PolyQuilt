@@ -19,6 +19,7 @@ import mathutils
 import bpy_extras
 import collections
 from mathutils import *
+from .QMeshOperators import *
 from ..utils import pqutil
 
 class QSnap :
@@ -94,12 +95,21 @@ class QSnap :
         return world_pos
 
     @classmethod
-    def adjust_point( cls , world_pos : mathutils.Vector  ) :
+    def adjust_point( cls , world_pos : mathutils.Vector ) :
         if cls.instance != None :
             location , norm , index = cls.instance.__find_nearest( world_pos )
             return location
         return world_pos
 
+    @classmethod
+    def adjust_local( cls , matrix_world : mathutils.Matrix , local_pos : mathutils.Vector , is_fix_to_x_zero ) :
+        if cls.instance != None :
+            location , norm , index = cls.instance.__find_nearest( matrix_world @ local_pos )
+            lp = matrix_world.inverted() @ location
+            if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(local_pos) :
+                lp.x = 0
+            return lp
+        return local_pos
 
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
@@ -110,7 +120,10 @@ class QSnap :
             for vert in verts :
                 location , norm , index = find_nearest( matrix @ vert.co )
                 if location != None :
-                    vert.co = obj.matrix_world.inverted() @ location
+                    lp = obj.matrix_world.inverted() @ location
+                    if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(local_pos) :
+                        lp.x = 0
+                    vert.co = lp
 
     @classmethod
     def is_target( cls , world_pos : mathutils.Vector) -> bool :

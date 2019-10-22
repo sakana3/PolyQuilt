@@ -94,12 +94,9 @@ class SubToolRelax(SubTool) :
         halfH = region.height / 2.0
         matrix_world = self.bmo.obj.matrix_world
         matrix = rv3d.perspective_matrix @ matrix_world
-        half = mathutils.Vector( (halfW,halfH) )
         radius = self.radius
         bm = self.bmo.bm
         verts = bm.verts
-        is_target = QSnap.is_target
-        new_vec = mathutils.Vector
 
         select_stack = SelectStack( context , bm )
 
@@ -108,47 +105,94 @@ class SubToolRelax(SubTool) :
         bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET')
 #        bm.select_flush(False)
 
+        occlusion_tbl_get = self.occlusion_tbl.get
+        is_target = QSnap.is_target
+        new_vec = mathutils.Vector
         def ProjVert( vt ) :
-            pv = matrix @ vt.co.to_4d()
-            w = pv.w
-            if w < 0.0 :
-                return None
-            p = new_vec( (pv.x * halfW , pv.y * halfH ) ) / w + half
-            r = (coord - p).length
-            if r > radius :
-                return None
-
-            is_occlusion = self.occlusion_tbl.get(vt)
+            co = vt.co
+            is_occlusion = occlusion_tbl_get(vt)
             if is_occlusion == None :
-                is_occlusion = is_target(matrix_world @ vt.co)
+                is_occlusion = is_target(matrix_world @ co)
                 self.occlusion_tbl[vt] = is_occlusion
 
             if not is_occlusion :
                 return None
 
-            x = (radius - r) / radius
-            return [ x * x , vt.co.copy()]
+            pv = matrix @ co.to_4d()
+            w = pv.w
+            if w < 0.0 :
+                return None
+            p = new_vec( (pv.x * halfW / w + halfW , pv.y * halfH / w + halfH ) )
+            r = (coord - p).length
+            if r > radius :
+                return None
 
-        coords = { vert : ProjVert(vert) for vert in verts if vert.select and not vert.is_boundary }
+            x = (radius - r) / radius
+            return ( vt , x * x , co.copy())
+
+        coords = [ ProjVert(vert) for vert in verts if vert.select ]
 
         select_stack.pop()
 
-        return { v:c for v , c in coords.items() if c != None } 
+        return { c[0]: [c[1],c[2]] for c in coords if c != None } 
+
+    def MirrorVert( self , context , coords ) :
+        # ミラー頂点を検出
+        find_mirror = self.bmo.find_mirror
+        mirrors = { vert : find_mirror( vert ) for vert , coord in coords.items() }
+
+        # 重複する場合は
+        for (vert , coord) , mirror in zip( coords.items() , mirrors.values() ) :
+            if mirror != None :
+                cur = coord[0]
+                dst = coords[mirror][0]
+                coord[0] = cur if dst <= cur else dst
+
+        # 重複しないものを列挙
+        mirrors = { vert : [coords[vert][0] , mirror.co.copy() ] for vert , mirror in mirrors.items() if mirror != None and mirror not in coords }
+
+        coords.update(mirrors)
+        return coords
 
     def DoRelax( self , context , coord ) :
+        is_fix_zero = self.operator.fix_to_x_zero or self.bmo.is_mirror_mode
         coords = self.CollectVerts( context, coord  )
+        if self.bmo.is_mirror_mode :
+            mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }
 
-        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = 1 ,
-            mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
+        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = 0.5 ,
+            mirror_clip_x = is_fix_zero, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
             use_axis_x = True, use_axis_y = True, use_axis_z = True)
 #        bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = hits , lambda_factor = 1.0 , lambda_border = 0.0 ,
 #            use_x = True, use_y = True, use_z = True, preserve_volume = False )
 
         matrix_world = self.bmo.obj.matrix_world
-        matrix_world_inv = matrix_world.inverted()
+        is_x_zero_pos = self.bmo.is_x_zero_pos
+        zero_pos = self.bmo.zero_pos
+        mirror_pos = self.bmo.mirror_pos
+#       matrix_world_inv = matrix_world.inverted()
         for v , (f,o) in coords.items() :
-            p = matrix_world_inv @ QSnap.adjust_point( matrix_world @ v.co )
-            v.co = o.lerp( p , f )
+            if not v.is_boundary :
+                p = QSnap.adjust_local( matrix_world , v.co , True )
+            else :
+                p = QSnap.adjust_local( matrix_world , o , True )
+            s = o.lerp( p , f )
+            if is_fix_zero and is_x_zero_pos(s) :
+                s = zero_pos(s)
+            v.co = s
+
+        if self.bmo.is_mirror_mode :
+            for vert , mirror in mirrors.items() :
+                if mirror != None :
+                    if mirror in coords :
+                        ms = coords[mirror][0]
+                        vs = coords[vert][0]
+                        if vs >= ms :
+                            mirror.co = mirror_pos(vert.co)
+                        else :
+                            vert.co = mirror_pos(mirror.co)
+                    else :
+                        mirror.co = mirror_pos(vert.co)
 
 #        self.bmo.bm.normal_update()
 #        self.bmo.obj.data.update_gpu_tag()
