@@ -121,7 +121,7 @@ class QSnap :
                 location , norm , index = find_nearest( matrix @ vert.co )
                 if location != None :
                     lp = obj.matrix_world.inverted() @ location
-                    if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(local_pos) :
+                    if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(vert.co) :
                         lp.x = 0
                     vert.co = lp
 
