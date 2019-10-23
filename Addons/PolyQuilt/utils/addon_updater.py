@@ -80,8 +80,9 @@ def _make_workspace_path(addon_dir):
 
 def _make_workspace(addon_dir):
     dir_path = _make_workspace_path(addon_dir)
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)    
     os.mkdir(dir_path)
-
 
 def _make_temp_addon_path(addon_dir, url):
     filename = url.split("/")[-1]
