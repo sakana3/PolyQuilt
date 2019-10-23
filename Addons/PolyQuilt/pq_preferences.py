@@ -80,7 +80,8 @@ def register_updater(bl_info):
     config.default_target_addon_path = "PolyQuilt"
     config.target_addon_path = {
         "master": "Addons{}PolyQuilt".format(get_separator()),
-        "develop": "Addons{}PolyQuilt".format(get_separator())
+        "develop": "Addons{}PolyQuilt".format(get_separator()),
+        "Future": "Addons{}PolyQuilt".format(get_separator()),
     }
     updater = AddonUpdaterManager.get_instance()
     updater.init(bl_info, config)
