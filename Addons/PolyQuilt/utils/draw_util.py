@@ -70,7 +70,7 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
-def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True ):
+def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True, width : float = 1.0  ):
     if dpi :
         r = radius * dpm()
     else :
@@ -78,10 +78,15 @@ def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 
     dr = math.pi * 2 / subdivide
     vertices = [( pos[0] + r * math.cos(i*dr), pos[1] + r * math.sin(i*dr)) for i in range(subdivide+1)]
 
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glLineWidth(width )   
+    bgl.glEnable(bgl.GL_BLEND)    
     shader2D.bind()
     shader2D.uniform_float("color", color )
     primitiveType = 'TRI_FAN' if fill else 'LINE_STRIP'
     batch_draw(shader2D, primitiveType , {"pos": vertices} )
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
 
 def draw_donuts2D( pos , radius_out , width , rate , color = (1,1,1,1) ):
     r = radius_out * dpm()

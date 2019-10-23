@@ -67,6 +67,10 @@ class SubToolRelax(SubTool) :
         self.radius = self.preferences.brush_size * dpm()
         self.occlusion_tbl = {}
         self.mirror_tbl = {}
+        if startTarget.isEmpty or ( startTarget.isEdge and startTarget.element.is_boundary ) :
+            self.effective_boundary = True
+        else :
+            self.effective_boundary = False
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -81,7 +85,8 @@ class SubToolRelax(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        draw_util.draw_circle2D( self.mouse_pos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
+        width = 2.0 if self.effective_boundary else 1.0
+        draw_util.draw_circle2D( self.mouse_pos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False , width = width )
         pass
 
     def OnDraw3D( self , context  ) :
@@ -102,7 +107,7 @@ class SubToolRelax(SubTool) :
 
         select_stack.push()
         select_stack.select_mode(True,False,False)
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET')
+        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
         occlusion_tbl_get = self.occlusion_tbl.get
@@ -128,7 +133,7 @@ class SubToolRelax(SubTool) :
                 return None
 
             x = (radius - r) / radius
-            return ( vt , x * x , co.copy())
+            return ( vt , x ** 2 , co.copy())
 
         coords = [ ProjVert(vert) for vert in verts if vert.select ]
 
@@ -172,7 +177,7 @@ class SubToolRelax(SubTool) :
         mirror_pos = self.bmo.mirror_pos
 #       matrix_world_inv = matrix_world.inverted()
         for v , (f,o) in coords.items() :
-            if not v.is_boundary :
+            if self.effective_boundary or not v.is_boundary :
                 p = QSnap.adjust_local( matrix_world , v.co , True )
             else :
                 p = QSnap.adjust_local( matrix_world , o , True )
