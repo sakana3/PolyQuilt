@@ -218,6 +218,14 @@ class PolyQuiltPreferences(AddonPreferences):
         min=10.0,
         max=1000.0)    
 
+    brush_strength : bpy.props.FloatProperty(
+        name="Brush Strength",
+        description="Brush Strength",
+        default=0.5,
+        min=0.0,
+        max=1.0)    
+
+
     def draw(self, context):
         layout = self.layout
 

@@ -165,7 +165,7 @@ class SubToolRelax(SubTool) :
         if self.bmo.is_mirror_mode :
             mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }
 
-        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = 0.5 ,
+        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = self.preferences.brush_strength  ,
             mirror_clip_x = is_fix_zero, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
             use_axis_x = True, use_axis_y = True, use_axis_z = True)
 #        bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = hits , lambda_factor = 1.0 , lambda_border = 0.0 ,

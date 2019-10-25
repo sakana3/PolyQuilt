@@ -32,15 +32,28 @@ class SubToolBrushSize(SubTool) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.startMousePos = startMousePos
+        self.preMousePos = startMousePos
         self.start_radius = self.preferences.brush_size * dpm()
         self.radius = self.start_radius
+        self.strength = self.preferences.brush_strength
+        self.start_strength = self.strength
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            dist = (self.startMousePos - self.mouse_pos ).length
-            self.radius = self.start_radius + self.mouse_pos.x - self.startMousePos.x
-            self.radius = min( max( 50 , self.radius ) , 500 )
-            self.preferences.brush_size = self.radius / dpm()
+            vec = self.mouse_pos - self.preMousePos
+            self.preMousePos = self.mouse_pos
+            nrm = vec.normalized()
+            ang = 0.8
+            if nrm.x > ang or nrm.x < -ang :
+                self.radius = self.radius + vec.x
+                self.radius = min( max( 50 , self.radius ) , 500 )
+                self.preferences.brush_size = self.radius / dpm()
+
+            if nrm.y > ang or nrm.y < -ang :
+                self.strength = self.strength + vec.y / self.radius
+                self.strength = min( max( 0 , self.strength ) , 1 )
+                self.preferences.brush_strength = self.strength
+
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 return 'FINISHED'
@@ -48,8 +61,10 @@ class SubToolBrushSize(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
+        draw_util.draw_circle2D( self.startMousePos , self.radius * self.strength , color = (1,0.7,0.7,0.25), fill = False , subdivide = 64 , dpi= False )
         draw_util.draw_circle2D( self.startMousePos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
-        pass
+        draw_util.DrawFont( "Strenght = " + '{:.0f}'.format(self.strength * 100) , 10 , self.startMousePos , (0,0) )
+        draw_util.DrawFont( "Radius = " + '{:.0f}'.format(self.radius ) , 10 , self.startMousePos , (0,-8) )
 
     def OnDraw3D( self , context  ) :
         pass
