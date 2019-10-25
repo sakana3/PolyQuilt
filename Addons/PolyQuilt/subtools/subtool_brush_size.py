@@ -61,7 +61,7 @@ class SubToolBrushSize(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        draw_util.draw_circle2D( self.startMousePos , self.radius * self.strength , color = (1,0.7,0.7,0.25), fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.startMousePos , self.radius * self.strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
         draw_util.draw_circle2D( self.startMousePos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
         draw_util.DrawFont( "Strenght = " + '{:.0f}'.format(self.strength * 100) , 10 , self.startMousePos , (0,0) )
         draw_util.DrawFont( "Radius = " + '{:.0f}'.format(self.radius ) , 10 , self.startMousePos , (0,-8) )
