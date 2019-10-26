@@ -32,6 +32,7 @@ from .subtool_relax import *
 from .subtool_brush_size import *
 from .subtool_move import *
 from .subtool_fin_slice import *
+from .subtool_autoquad import *
 
 class SubToolBrush(SubTool) :
     name = "BrushSubTool"
@@ -53,6 +54,9 @@ class SubToolBrush(SubTool) :
             self.isExit = True
 
         elif event.type == MBEventType.Click :
+            if self.currentTarget.isVert or self.currentTarget.isEdge or self.currentTarget.isEmpty:
+                if SubToolAutoQuad.Check(self.currentTarget) :
+                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget,self.mouse_pos))
             self.isExit = True
         elif event.type == MBEventType.LongClick :
             self.isExit = True
