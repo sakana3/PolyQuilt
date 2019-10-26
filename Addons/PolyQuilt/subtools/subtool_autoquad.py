@@ -18,7 +18,6 @@ import mathutils
 import bmesh
 import bpy_extras
 import collections
-import mathutils
 import copy
 from ..utils import pqutil
 from ..utils import draw_util
@@ -29,12 +28,14 @@ from .subtool import SubTool
 class SubToolAutoQuad(SubTool) :
     name = "AutoQuadTool"
 
-    def __init__(self,op, target ) :
+    def __init__(self,op, target , startPos ) :
         super().__init__(op)
         if target.isVert :
             self.MakePolyByVert(target.element)
         elif target.isEdge :
             self.MakePolyByEdge(target.element)
+        elif target.isEmpty :
+            self.MakePolyByEmpty( startPos )
 
     @staticmethod
     def Check( target ) :
@@ -47,6 +48,8 @@ class SubToolAutoQuad(SubTool) :
         elif target.isEdge :
             if target.element.is_boundary and len(target.element.link_faces) == 1 :
                 return True
+        elif target.isEmpty :                
+            return True            
         return False
 
     @classmethod
@@ -184,5 +187,64 @@ class SubToolAutoQuad(SubTool) :
 
         self.bmo.AddFace( verts , normal )
         self.bmo.UpdateMesh()
+
+    def MakePolyByEmpty( self , startPos ) :
+        intersect = mathutils.geometry.intersect_line_line_2d
+        src_edges = self.bmo.highlight.viewPosEdges
+        src_verts = self.bmo.highlight.viewPosVerts
+        boundary_edges = { e : p for e , p in self.bmo.highlight.viewPosEdges.items() if e.is_boundary or e.is_wire }
+        verts = [ [(startPos-p).length , v , p ] for v,p in src_verts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]
+        verts.sort(key=lambda x:x[0] , reverse=True)
+        matrix = self.bmo.obj.matrix_world
+        context =  bpy.context
+
+        def HitWPos( edge , hitPos ) :
+            v1 = matrix @ edge.verts[0].co
+            v2 = matrix @ edge.verts[1].co
+            hit = pqutil.Ray.from_screen( context , hitPos ).hit_to_line_pos( v1 , v2 )
+            return hit
+
+        def Chk( p1 , vt ) :
+            v = vt[1]
+            p2 = vt[2]
+            if not QSnap.is_target( matrix @ v.co ) :
+                return False
+            for edge , (e1,e2) in boundary_edges.items() : 
+                if v not in edge.verts :
+                    hit = intersect( e1 , e2 , p1 , p2 )
+                    if hit != None :
+                        wp = HitWPos( edge , hit )
+                        if QSnap.is_target( wp ) :
+                            return False
+            return True
+
+#        print( [ i[1].index for i in verts] )
+        def convex_hull( points ) :
+            idxs = mathutils.geometry.convex_hull_2d( points )
+            if len(idxs) != len(points) :
+                angles = [ [ math.atan2( point.y - startPos.y , point.x - startPos.x ) , index ] for index , point in enumerate(points) ]
+                angles.sort(key=lambda x:x[0] , reverse=False)
+                return [ i for r,i in angles ]
+            return idxs
+
+        if len(verts) >= 4 :
+            quad = []
+
+            while len(quad) < 4 and len(verts) > 0 :
+                for i in range( 0 , len(verts) ) :
+                    vt = verts.pop()
+                    if Chk( startPos , vt) :
+                        quad.append( vt )
+                        break
+                if len(quad) >= 4 :
+                    idxs = convex_hull( [ q[2] for q in quad ] )
+                    quad = [ quad[i] for i in idxs ]
+                    if len(quad) >= 4 :
+                        if mathutils.geometry.intersect_point_quad_2d( startPos , quad[0][2] , quad[1][2] , quad[2][2] , quad[3][2] ) == 0 :
+                            quad.pop()
+
+            if len(quad) >= 4 :
+                self.bmo.AddFace( [ q[1] for q in quad ] )
+                self.bmo.UpdateMesh()
 
 

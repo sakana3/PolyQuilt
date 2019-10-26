@@ -57,9 +57,9 @@ class SubToolExtr(SubTool) :
             self.isExit = True
 
         elif event.type == MBEventType.Click :
-            if self.currentTarget.isVert or self.currentTarget.isEdge:
+            if self.currentTarget.isVert or self.currentTarget.isEdge or self.currentTarget.isEmpty:
                 if SubToolAutoQuad.Check(self.currentTarget) :
-                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget))
+                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget,self.mouse_pos))
             self.isExit = True
 
         elif event.type == MBEventType.LongClick :

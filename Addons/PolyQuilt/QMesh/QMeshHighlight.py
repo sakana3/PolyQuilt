@@ -85,7 +85,7 @@ class QMeshHighlight :
 #           edges_verts = [ (e.verts[0].index,e.verts[1].index) for e in edges ]
 #           self.__viewPosEdges = [ (e , verts_xyz[e[0]] , verts_xyz[e[1]] ) for e in edges_verts ]
 
-            self.__viewPosEdges = [ (e, p1[1] , p2[1] ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
+            self.__viewPosEdges = { e : [ p1[1] , p2[1] ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
             self.__viewPosVerts = [ p for p in viewPos.values() if p and not p[0].hide ]
 
             self.current_matrix = matrix        
@@ -110,8 +110,8 @@ class QMeshHighlight :
 
             edges = self.pqo.bm.edges
 
-            self.__viewPosEdges = [ (e, p1 , p2 ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
-            self.__viewPosVerts = [ (v,p) for v,p in viewPos.items() if p and not v.hide ]
+            self.__viewPosEdges = { e : [ p1 , p2 ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
+            self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
 
             self.current_matrix = copy.copy(matrix)
 
@@ -121,7 +121,7 @@ class QMeshHighlight :
         viewPos = self.viewPosVerts
         rr = Vector( (r,0) )
         verts = self.pqo.bm.verts
-        s = [ i for i in viewPos if i[1] - p <= rr and i[0] in verts ]
+        s = [ [v,s] for v,s in viewPos.items() if s - p <= rr and v in verts ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
@@ -154,9 +154,9 @@ class QMeshHighlight :
         intersect = geometry.intersect_line_sphere_2d
         edges = self.pqo.bm.edges
         if edgering :        
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
         else :
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
 
         if backface_culling :
             ray2 = ray.world_to_object( self.pqo.obj )
