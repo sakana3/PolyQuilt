@@ -30,6 +30,7 @@ from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
 from .subtool_relax import *
 from .subtool_brush_size import *
+from .subtool_brush_move import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 from .subtool_autoquad import *
@@ -63,7 +64,11 @@ class SubToolBrush(SubTool) :
         elif event.type == MBEventType.LongPressDrag :
             self.SetSubTool( SubToolBrushSize(self.operator,self.currentTarget , self.mouse_pos ) )
         elif event.type == MBEventType.Drag :
-            self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
+            if self.preferences.brush_type == 'SMOOTH' :
+                self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
+            else :
+                self.SetSubTool( SubToolBrushMove(self.operator,self.currentTarget , self.mouse_pos ) )
+#            self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
 
     def OnUpdate( self , context , event ) :
         if self.isExit :

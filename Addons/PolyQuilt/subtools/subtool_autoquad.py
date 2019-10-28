@@ -189,20 +189,16 @@ class SubToolAutoQuad(SubTool) :
         self.bmo.UpdateMesh()
 
     def MakePolyByEmpty( self , startPos ) :
-        intersect = mathutils.geometry.intersect_line_line_2d
-        src_edges = self.bmo.highlight.viewPosEdges
-        src_verts = self.bmo.highlight.viewPosVerts
-        boundary_edges = { e : p for e , p in self.bmo.highlight.viewPosEdges.items() if e.is_boundary or e.is_wire }
-        verts = [ [(startPos-p).length , v , p ] for v,p in src_verts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]
-        verts.sort(key=lambda x:x[0] , reverse=True)
+        highlight = self.bmo.highlight
+        boundary_edges = { e : p for e , p in highlight.viewPosEdges.items() if e.is_boundary or e.is_wire }
+        verts = [ [(startPos-p).length , v , p ] for v,p in highlight.viewPosVerts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]
+        verts.sort(key=lambda x:x[0] , reverse=False)
         matrix = self.bmo.obj.matrix_world
         context =  bpy.context
-
-        def HitWPos( edge , hitPos ) :
-            v1 = matrix @ edge.verts[0].co
-            v2 = matrix @ edge.verts[1].co
-            hit = pqutil.Ray.from_screen( context , hitPos ).hit_to_line_pos( v1 , v2 )
-            return hit
+        intersect_point_quad_2d = mathutils.geometry.intersect_point_quad_2d
+        intersect_line_line_2d = mathutils.geometry.intersect_line_line_2d
+        convex_hull_2d = mathutils.geometry.convex_hull_2d
+        atan2 =  math.atan2
 
         def Chk( p1 , vt ) :
             v = vt[1]
@@ -211,37 +207,35 @@ class SubToolAutoQuad(SubTool) :
                 return False
             for edge , (e1,e2) in boundary_edges.items() : 
                 if v not in edge.verts :
-                    hit = intersect( e1 , e2 , p1 , p2 )
+                    hit = intersect_line_line_2d( e1 , e2 , p1 , p2 )
                     if hit != None :
-                        wp = HitWPos( edge , hit )
+                        v1 = matrix @ edge.verts[0].co
+                        v2 = matrix @ edge.verts[1].co        
+                        wp = pqutil.Ray.from_screen( context , hit ).hit_to_line_pos( v1 , v2 )                                        
                         if QSnap.is_target( wp ) :
                             return False
             return True
 
-#        print( [ i[1].index for i in verts] )
         def convex_hull( points ) :
-            idxs = mathutils.geometry.convex_hull_2d( points )
+            idxs = convex_hull_2d( points )
             if len(idxs) != len(points) :
-                angles = [ [ math.atan2( point.y - startPos.y , point.x - startPos.x ) , index ] for index , point in enumerate(points) ]
+                angles = [ [ atan2( point.y - startPos.y , point.x - startPos.x ) , index ] for index , point in enumerate(points) ]
                 angles.sort(key=lambda x:x[0] , reverse=False)
                 return [ i for r,i in angles ]
             return idxs
 
         if len(verts) >= 4 :
             quad = []
-
-            while len(quad) < 4 and len(verts) > 0 :
-                for i in range( 0 , len(verts) ) :
-                    vt = verts.pop()
-                    if Chk( startPos , vt) :
-                        quad.append( vt )
-                        break
-                if len(quad) >= 4 :
-                    idxs = convex_hull( [ q[2] for q in quad ] )
-                    quad = [ quad[i] for i in idxs ]
+            for vt in verts:
+                if Chk( startPos , vt) :
+                    quad.append( vt )
                     if len(quad) >= 4 :
-                        if mathutils.geometry.intersect_point_quad_2d( startPos , quad[0][2] , quad[1][2] , quad[2][2] , quad[3][2] ) == 0 :
-                            quad.pop()
+                        idxs = convex_hull( [ q[2] for q in quad ] )
+                        quad = [ quad[i] for i in idxs ]
+                        if intersect_point_quad_2d( startPos , quad[0][2] , quad[1][2] , quad[2][2] , quad[3][2] ) == 0 :
+                            quad.remove(vt)
+                        else :
+                            break
 
             if len(quad) >= 4 :
                 self.bmo.AddFace( [ q[1] for q in quad ] )

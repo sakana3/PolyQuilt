@@ -94,6 +94,7 @@ def get_update_candidate_branches(_, __):
     return [(name, name, "") for name in manager.get_candidate_branch_names()]
 
 
+
 class PolyQuiltPreferences(AddonPreferences):
     """Preferences class: Preferences for this add-on"""
     bl_idname = __package__
@@ -210,6 +211,14 @@ class PolyQuiltPreferences(AddonPreferences):
         max = 16,
         default=0,
     )
+
+    brush_type : bpy.props.EnumProperty(
+        name="Brush Type",
+        description="Brush Type",
+        items=[('SMOOTH' , "Smooth", "" , "BRUSH_SMOOTH" , 0),
+               ('MOVE' , "Move", "" , "BRUSH_GRAB" , 1 ) ],
+        default='SMOOTH',
+    )    
 
     brush_size : bpy.props.FloatProperty(
         name="Brush Size",

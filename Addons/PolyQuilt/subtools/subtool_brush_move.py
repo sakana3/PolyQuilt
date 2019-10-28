@@ -57,24 +57,27 @@ class SelectStack :
         del self.face_selection
         del self.edge_selection
 
-class SubToolRelax(SubTool) :
-    name = "RelaxTool"
+class SubToolBrushMove(SubTool) :
+    name = "MoveBrushTool"
 
     def __init__(self,op,startTarget,startMousePos) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.startMousePos = startMousePos.copy()
         self.radius = self.preferences.brush_size * dpm()
-        self.occlusion_tbl = {}
         self.mirror_tbl = {}
-        if startTarget.isEmpty or ( startTarget.isEdge and startTarget.element.is_boundary ) :
-            self.effective_boundary = True
+        matrix = self.bmo.obj.matrix_world        
+        self.occlusion_tbl = {}
+        self.verts = self.CollectVerts( bpy.context , startMousePos )
+
+        if self.bmo.is_mirror_mode :
+            self.mirrors = { vert : self.bmo.find_mirror( vert ) for vert in self.verts }
         else :
-            self.effective_boundary = False
+            self.mirrors = {}
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            self.DoRelax( context ,self.mouse_pos )
+            self.UpdateVerts(context)
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 self.bmo.UpdateMesh()
@@ -85,12 +88,11 @@ class SubToolRelax(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        width = 2.0 if self.effective_boundary else 1.0
-        draw_util.draw_circle2D( self.mouse_pos , self.radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False , width = width )
-        pass
+        draw_util.draw_circle2D( self.startMousePos , self.radius , color = (0.75,0.75,1,1), fill = False , subdivide = 64 , dpi= False , width = 1.0 )
 
     def OnDraw3D( self , context  ) :
         pass
+
 
     def CollectVerts( self , context , coord ) :
         rv3d = context.space_data.region_3d
@@ -133,75 +135,48 @@ class SubToolRelax(SubTool) :
                 return None
 
             x = (radius - r) / radius
-            return ( vt , x ** 2 , co.copy())
+            return ( p , (1-x) ** 2 , matrix_world @ co )
 
-        coords = [ ProjVert(vert) for vert in verts if vert.select ]
+        coords = { vert : ProjVert(vert) for vert in verts if vert.select }
 
         select_stack.pop()
 
-        return { c[0]: [c[1],c[2]] for c in coords if c != None } 
+        return { v : x for v,x in coords.items() if x }
 
-    def MirrorVert( self , context , coords ) :
-        # ミラー頂点を検出
-        find_mirror = self.bmo.find_mirror
-        mirrors = { vert : find_mirror( vert ) for vert , coord in coords.items() }
-
-        # 重複する場合は
-        for (vert , coord) , mirror in zip( coords.items() , mirrors.values() ) :
-            if mirror != None :
-                cur = coord[0]
-                dst = coords[mirror][0]
-                coord[0] = cur if dst <= cur else dst
-
-        # 重複しないものを列挙
-        mirrors = { vert : [coords[vert][0] , mirror.co.copy() ] for vert , mirror in mirrors.items() if mirror != None and mirror not in coords }
-
-        coords.update(mirrors)
-        return coords
-
-    def DoRelax( self , context , coord ) :
-        is_fix_zero = self.operator.fix_to_x_zero or self.bmo.is_mirror_mode
-        coords = self.CollectVerts( context, coord  )
-        if self.bmo.is_mirror_mode :
-            mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }
-
-        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = self.preferences.brush_strength  ,
-            mirror_clip_x = is_fix_zero, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
-            use_axis_x = True, use_axis_y = True, use_axis_z = True)
-#        bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = hits , lambda_factor = 1.0 , lambda_border = 0.0 ,
-#            use_x = True, use_y = True, use_z = True, preserve_volume = False )
-
-        matrix_world = self.bmo.obj.matrix_world
+    def UpdateVerts( self , context ) :
+        is_fix_zero = self.operator.fix_to_x_zero or self.bmo.is_mirror_mode        
+        region = context.region
+        rv3d = context.space_data.region_3d
+        move = self.mouse_pos - self.startMousePos
+        matrix = self.bmo.obj.matrix_world         
+        matrix_inv = self.bmo.obj.matrix_world.inverted()         
+        region_2d_to_location_3d = bpy_extras.view3d_utils.region_2d_to_location_3d
         is_x_zero_pos = self.bmo.is_x_zero_pos
         zero_pos = self.bmo.zero_pos
         mirror_pos = self.bmo.mirror_pos
-#       matrix_world_inv = matrix_world.inverted()
-        for v , (f,o) in coords.items() :
-            if self.effective_boundary or not v.is_boundary :
-                p = QSnap.adjust_local( matrix_world , v.co , is_fix_zero )
-            else :
-                p = QSnap.adjust_local( matrix_world , o , is_fix_zero )
-            s = o.lerp( p , f )
-            if is_fix_zero and is_x_zero_pos(s) :
-                s = zero_pos(s)
-            v.co = s
+
+        for v,(p,r,co) in self.verts.items() :
+            coord = p + move
+            x = region_2d_to_location_3d( region = region , rv3d = rv3d , coord = coord , depth_location = co)
+            x = co.lerp( x , 1 - r )
+            x = QSnap.adjust_point( x )
+            x = matrix_inv @ x
+            if is_fix_zero and is_x_zero_pos(co) :
+                x = zero_pos(x)
+            v.co = x
 
         if self.bmo.is_mirror_mode :
-            for vert , mirror in mirrors.items() :
+            for vert , mirror in self.mirrors.items() :
                 if mirror != None :
-                    if mirror in coords :
-                        ms = coords[mirror][0]
-                        vs = coords[vert][0]
-                        if vs >= ms :
+                    if mirror in self.verts.keys() :
+                        ms = self.verts[mirror][1]
+                        vs = self.verts[vert][1]
+                        if vs <= ms :
                             mirror.co = mirror_pos(vert.co)
                         else :
                             vert.co = mirror_pos(mirror.co)
                     else :
                         mirror.co = mirror_pos(vert.co)
 
-#        self.bmo.bm.normal_update()
-#        self.bmo.obj.data.update_gpu_tag()
-#        self.bmo.obj.data.update_tag()
-#        self.bmo.obj.update_from_editmode()
-#        self.bmo.obj.update_tag()
-        bmesh.update_edit_mesh(self.bmo.obj.data , loop_triangles = False,destructive = False )
+        self.bmo.UpdateMesh()        
+

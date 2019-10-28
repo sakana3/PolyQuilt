@@ -108,6 +108,8 @@ def tool_poly_quilt():
         row = layout.row(align=True)
         row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
+        row = layout.row(align=True)
+        row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = toggle , expand = True, icon_only = False )
 
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
