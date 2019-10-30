@@ -20,6 +20,7 @@ import collections
 import copy
 from ..utils import pqutil
 from ..utils import draw_util
+from ..utils.dpi import *
 from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
@@ -38,8 +39,8 @@ from .subtool_autoquad import *
 class SubToolBrush(SubTool) :
     name = "BrushSubTool"
 
-    def __init__(self,op,currentTarget) :
-        super().__init__(op)        
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op, button)        
         self.currentTarget = currentTarget
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolBrush.LMBEventCallback , op , True )
         self.isExit = False
@@ -78,6 +79,10 @@ class SubToolBrush(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
+        radius = self.preferences.brush_size * dpm()
+        strength = self.preferences.brush_strength        
+        draw_util.draw_circle2D( self.LMBEvent.PressPos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.LMBEvent.PressPos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
         if self.LMBEvent.isPresure :
             if self.currentTarget.isNotEmpty :
                 self.LMBEvent.Draw( self.currentTarget.coord )
@@ -85,11 +90,7 @@ class SubToolBrush(SubTool) :
                 self.LMBEvent.Draw( None )
 
     def OnDraw3D( self , context  ) :
-        if self.currentTarget.isNotEmpty :
-            color = self.color_highlight()
-            if self.LMBEvent.is_hold :
-                color = self.color_delete()
-            self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
+        pass
 
     def OnEnterSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty()

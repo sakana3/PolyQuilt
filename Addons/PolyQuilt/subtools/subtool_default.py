@@ -35,8 +35,8 @@ from .subtool_fin_slice import *
 class SubToolDefault(SubTool) :
     name = "DefaultSubTool"
 
-    def __init__(self,op,currentTarget) :
-        super().__init__(op)        
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op, button)        
         self.currentTarget = currentTarget
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op , True )
         self.isExit = False

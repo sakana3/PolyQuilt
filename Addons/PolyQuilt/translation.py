@@ -1,8 +1,8 @@
 pq_translation_dict = {
     "ja_JP" :
         {
-            ("*", "Quad") : "四角" ,
             ("*", "Vert") : "点" ,
+            ("*", "Quad") : "四角" ,
             ("*", "Fix X=0") : "X=0を固定" ,
             ("*", "Tool settings:") : "ツールセッティング" ,            
             ("*", "Long Press Time") : "長押し判定の時間" ,

@@ -70,5 +70,5 @@ class SubToolBrushSize(SubTool) :
         pass
 
     def resetMouse(self, context, event):
-            context.window.cursor_warp(context.region.x + context.region.width // 2 - 0.5*(event.mouse_x - event.mouse_prev_x), \
-                context.region.y + context.region.height // 2 - 0.5*(event.mouse_y - event.mouse_prev_y))
+        context.window.cursor_warp(context.region.x + context.region.width / 2 - 0.5*(event.mouse_x - event.mouse_prev_x), \
+            context.region.y + context.region.height / 2 - 0.5*(event.mouse_y - event.mouse_prev_y))

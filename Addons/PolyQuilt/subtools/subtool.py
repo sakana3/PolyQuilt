@@ -28,7 +28,7 @@ class SubTool :
     name = "None"
     __timer_handle = None
    
-    def __init__(self,op) :
+    def __init__(self,op, button = None) :
         self.operator = op
         self.bmo : QMesh = op.bmo
         self.debugStr = ""
@@ -38,6 +38,7 @@ class SubTool :
         self.mouse_pos = mathutils.Vector((0,0))
         self.preferences = op.preferences
         self.activeSubTool = None
+        self.buttonType = button
 
     def Active(self) :
         return self if self.activeSubTool == None else self.activeSubTool

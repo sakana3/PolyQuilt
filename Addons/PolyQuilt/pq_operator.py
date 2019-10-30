@@ -223,11 +223,11 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 return {'CANCELLED'}
 
             if self.tool_mode == 'EXTRUDE' :
-                self.currentSubTool = SubToolExtr(self , element )
+                self.currentSubTool = SubToolExtr(self , element, event.type )
             elif self.tool_mode == 'BRUSH' :
-                self.currentSubTool = SubToolBrush(self , element )
+                self.currentSubTool = SubToolBrush(self , element, event.type )
             else :
-                self.currentSubTool = SubToolDefault(self , element )
+                self.currentSubTool = SubToolDefault(self , element, event )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
             PQ_Gizmo_Preselect.instance.use()

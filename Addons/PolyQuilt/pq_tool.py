@@ -13,7 +13,7 @@
 
 import os
 import bpy
-from bpy.types import WorkSpaceTool
+from bpy.types import WorkSpaceTool , Panel
 from bpy.utils.toolsystem import ToolDef
 from .pq_icon import *
 
@@ -43,62 +43,76 @@ class ToolPolyQuilt(WorkSpaceTool):
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
 
+class VIEW3D_PT_tools_polyquilt_options( Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    bl_category = "Tool"
+    bl_context = ".poly_quilt_option"  # dot on purpose (access from topbar)
+    bl_label = "Options"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_ui_units_x = 8
+    @classmethod
+    def poll(cls, context):
+        return context.active_object
+
+    def draw(self, context):
+        layout = self.layout
+
+        # Active Tool
+        # -----------
+        from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
+        tool = ToolSelectPanelHelper.tool_active_from_context(context)
+        props = tool.operator_properties("mesh.poly_quilt")
+
+        col = layout.column()        
+        col.label( text = "Geom" )
+        col.prop(props, "geometry_type" , expand = True )
+
+        col = layout.column()        
+        col.label( text = "Pivot" )
+        col.prop(props, "plane_pivot" , text = "Pivot" , expand = True )
+
+        col = layout.column()        
+        col.label( text = "Move" )
+        col.prop(props, "move_type" , text = "Move" , expand = True )
+  
+        layout.label( text = "Extrude" )
+        layout.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
+
+        layout.label( text = "LOOPCUT" )
+        layout.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
+        col = layout.column()              
+        col.label( text = "Edge Snap Div" )        
+        col.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True , icon_only = False )
+
+        layout.label( text = "Brush" )
+        layout.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = False , expand = True, icon_only = False )
+
+
+
 km_tool_snap_utilities_line = "3D View Tool: Edit Mesh, PolyQuilt"
 
 
 @ToolDef.from_fn
 def tool_poly_quilt():
-    def draw_settings(context, layout, tool):
+    def draw_settings_ui(context, layout, tool):
         props = tool.operator_properties("mesh.poly_quilt")
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
 
-        scale_x = 1.0
-        toggle = True
-        if context.space_data.type != 'PROPERTIES':
-            scale_x = 1.0
-            scale_y = 0.75
-            toggle = True
-        else :
-            scale_x = 1.5
-            scale_y = 1
-            toggle = False
 
+        col = layout.column(align=True)
+        col.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = False  )
 
-        row = layout.row(align=True)
-        row.scale_x = 1.5        
-        row.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = True  )
-        box = row.box()
-        box.ui_units_x = 1.8
-        box.scale_y = 0.5
-        box.label(text = props.geometry_type)
+        col = layout.column(align=True)
+        col.prop(props, "plane_pivot" , text = "Pivot" , expand = True , icon_only = False )
 
-        row = layout.row(align=True)
-        row.prop(props, "plane_pivot" , text = "Pivot" , expand = True , icon_only = True )
-        box = row.box()
-        box.ui_units_x = 2.2
-        box.scale_y = 0.5
-        box.label(text = props.plane_pivot)
-
-        row = layout.row(align=True)
-        row.prop(props, "move_type" , text = "Move" , expand = True , icon_only = True )
-        box = row.box()
-        box.ui_units_x = 3.5
-        box.scale_y = 0.5
-        box.label(text = props.move_type)
-
-        def get_shading():
-            # Get settings from 3D viewport or OpenGL render engine
-            view = context.space_data
-#            return bpy.data.screens["Modeling"].shading
-            if view.type == 'VIEW_3D':
-                return view.shading
-            else:
-                return context.scene.display.shading
-
+        col = layout.column(align=True)
+        col.prop(props, "move_type" , text = "Move" , expand = True , icon_only = False )
   
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
-        layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False , icon = "MOD_MIRROR" )
-        layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
+        layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
+        layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = True , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
         row = layout.row(align=True)
         row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
@@ -108,8 +122,8 @@ def tool_poly_quilt():
         row = layout.row(align=True)
         row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
-        row = layout.row(align=True)
-        row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = toggle , expand = True, icon_only = False )
+        col = layout.column(align=True)
+        col.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
 
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
@@ -121,6 +135,29 @@ def tool_poly_quilt():
 #       layout.prop(tool_settings, "double_threshold")
 #       layout.prop(tool_settings, "edge_path_mode")
 
+    def draw_settings_toolheader(context, layout, tool):
+        props = tool.operator_properties("mesh.poly_quilt")
+
+        row = layout.row( align=True)
+        row.label( text = "Geom" )
+        row.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = True  )
+
+        row = layout.row( align=True)
+        row.label( text = "Brush" )
+        row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
+
+       # Expand panels from the side-bar as popovers.
+        popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
+        layout.popover_group(context=".poly_quilt_option", **popover_kw)
+ 
+    def draw_settings(context, layout, tool):
+        reg = context.region.type
+        if reg == 'UI' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'WINDOW' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'TOOL_HEADER' :
+            draw_settings_toolheader( context , layout , tool )
 
     icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 

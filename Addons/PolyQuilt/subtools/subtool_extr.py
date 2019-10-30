@@ -38,8 +38,8 @@ from .subtool_fin_slice import *
 class SubToolExtr(SubTool) :
     name = "ExtrSubTool"
 
-    def __init__(self,op,currentTarget) :
-        super().__init__(op)        
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op, button)        
         self.currentTarget = currentTarget
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , self.LMBEventCallback , op , True )
         self.isExit = False
@@ -79,10 +79,10 @@ class SubToolExtr(SubTool) :
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
                 if SubToolVertExtrude.Check( self.currentTarget ) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
-                self.SetSubTool( tools )
+                if tools :
+                    self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
