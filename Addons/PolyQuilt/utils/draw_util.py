@@ -57,12 +57,10 @@ def clear_draw() :
     pass
     
 def batch_draw( shader , primitiveType , content  , indices = None ) :
-    cnt = copy.deepcopy(content )
     if indices :
-        idx = copy.deepcopy(indices)
-        batch = batch_for_shader(shader, primitiveType , cnt , indices=idx )
+        batch = batch_for_shader(shader, primitiveType , content , indices=indices )
     else :
-        batch = batch_for_shader(shader, primitiveType , cnt )
+        batch = batch_for_shader(shader, primitiveType , content )
     batch.draw(shader)
     return batch
 
@@ -123,7 +121,7 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     bgl.glPolygonOffset(1.0, 1.0)
 
     if hide_alpha < 0.99 :
-        bgl.glDepthFunc( bgl.GL_LESS )
+        bgl.glDepthFunc( bgl.GL_LEQUAL )
     else :
         bgl.glDepthFunc( bgl.GL_ALWAYS )
 
@@ -149,7 +147,7 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
 def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide_alpha = 0.5 ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glEnable(bgl.GL_DEPTH_TEST)
-    bgl.glDepthFunc( bgl.GL_LESS )
+    bgl.glDepthFunc( bgl.GL_LEQUAL )
     bgl.glDepthMask(bgl.GL_FALSE)
     bgl.glEnable(bgl.GL_POLYGON_OFFSET_FILL)
     bgl.glPolygonOffset(1.0, 1.0)

@@ -183,9 +183,9 @@ class QMeshOperators :
 
         self.obj.data.update_gpu_tag()
         self.obj.data.update_tag()
-        self.obj.update_from_editmode()
         self.obj.update_tag()
         bmesh.update_edit_mesh(self.obj.data)
+#       self.obj.update_from_editmode()
         self.__btree = None
         self.__kdtree = None
         self.current_matrix = None    

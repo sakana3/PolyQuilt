@@ -72,6 +72,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.currentElement.Draw( self.bo.obj , self.preferences.highlight_color , self.preferences )
             draw_util.end_draw()
 
+
     def invoke(self, context, event):
         return {'RUNNING_MODAL'}
 
