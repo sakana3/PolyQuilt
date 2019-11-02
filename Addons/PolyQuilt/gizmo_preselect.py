@@ -103,6 +103,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
 
     @classmethod
     def poll(cls, context):
+        if context.mode != 'EDIT_MESH' :
+            return False
         # 自分を使っているツールを探す。
         workspace = context.workspace
         for tool in workspace.tools:
