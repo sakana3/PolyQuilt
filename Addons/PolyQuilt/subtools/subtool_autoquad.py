@@ -61,17 +61,19 @@ class SubToolAutoQuad(SubToolEx) :
     def DrawHighlight( cls , gizmo , element ) :
         if element.isVert :
             verts , normal = cls.MakePolyByVert( element.element)
+            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEdge :
             verts , normal = cls.MakePolyByEdge( element.element)
+            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEmpty :
             verts , normal = cls.MakePolyByEmpty( gizmo.bmo , gizmo.mouse_pos )
         if verts != None :
             col = gizmo.preferences.makepoly_color        
-            col = (col[0],col[1],col[2],col[3] * 0.25)            
+            col = (col[0],col[1],col[2],col[3] * 0.5)            
             mat = gizmo.bmo.obj.matrix_world
             vs = [ mat @ v if isinstance( v , mathutils.Vector ) else mat @ v.co for v in verts ]
 
-            draw_util.draw_Poly3D( bpy.context , vs , col , 0.25 )
+            draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
@@ -198,8 +200,8 @@ class SubToolAutoQuad(SubToolEx) :
     @classmethod
     def MakePolyByEmpty( cls , bmo , startPos ) :
         highlight = bmo.highlight
-        boundary_edges = { e : p for e , p in highlight.viewPosEdges.items() if e.is_boundary or e.is_wire }
-        verts = [ [(startPos-p).length , v , p ] for v,p in highlight.viewPosVerts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]
+        boundary_edges = highlight.boundaryViewPosEdges
+        verts = [ [(startPos-p).length , v , p ] for v,p in highlight.boundaryViewPosVerts ]
         verts.sort(key=lambda x:x[0] , reverse=False)
         matrix = bmo.obj.matrix_world
         context =  bpy.context
@@ -247,6 +249,10 @@ class SubToolAutoQuad(SubToolEx) :
 
             if len(quad) >= 4 :
                 return [ q[1] for q in quad ] , None
+
+            if len(quad) >= 3 :
+                if mathutils.geometry.intersect_point_tri( startPos , quad[0][2] , quad[1][2] , quad[2][2] ) :
+                    return [ q[1] for q in quad ] , None
 
         return None , None
 
