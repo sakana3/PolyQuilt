@@ -134,11 +134,12 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        from .gizmo_preselect import PQ_Gizmo_Preselect          
         def Exit() :
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
-            self.preselect.use(False)
+            PQ_Gizmo_Preselect.instance.use(False)
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
@@ -204,15 +205,12 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
 
-        gizmogroup = PQ_GizmoGroup_Preselect.instance()
-
-        if gizmogroup == None or gizmogroup.preselect.bmo == None :
+        preselect = PQ_Gizmo_Preselect.instance
+        if preselect == None or preselect.bmo  == None :
             self.report({'WARNING'}, "Gizmo Error" )
             return {'CANCELLED'}            
 
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
-            preselect = gizmogroup.preselect
-            self.preselect = preselect
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
                 return {'CANCELLED'}
@@ -342,7 +340,6 @@ class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
         else :
             MESH_OT_poly_quilt.is_lock_hold = True
             self.report({'INFO'}, "Lock Hold" )            
-        print (MESH_OT_poly_quilt.is_lock_hold)
         return {'FINISHED'}
 
 
@@ -353,7 +350,7 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     bl_options = {'REGISTER' }
 
     def invoke(self, context, event):
-        from .gizmo_preselect import PQ_GizmoGroup_Preselect  
-        PQ_GizmoGroup_Preselect.check_modifier_key( event.shift ,event.ctrl , event.alt )
+        from .gizmo_preselect import PQ_Gizmo_Preselect  
+        PQ_Gizmo_Preselect.check_modifier_key( event.shift ,event.ctrl , event.alt )
         context.area.tag_redraw()
-        return {'PASS_THROUGH'}    
+        return {'PASS_THROUGH'}

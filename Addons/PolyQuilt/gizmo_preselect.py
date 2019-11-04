@@ -24,12 +24,21 @@ __all__ = ['PQ_Gizmo_Preselect','PQ_GizmoGroup_Preselect']
 
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
+    instance = None
+    subtool = None
+    alt = False
 
     def __init__(self) :
         self.bmo = None
         self.currentElement = None
         self.preferences = bpy.context.preferences.addons[__package__].preferences
         self.run_operator = False
+        PQ_Gizmo_Preselect.instance = self
+        PQ_Gizmo_Preselect.subtool = SubToolDefault
+        PQ_Gizmo_Preselect.alt = False
+
+    def __del__(self) :
+        PQ_Gizmo_Preselect.instance = None
 
     def setup(self):
         self.bmo = None        
@@ -40,12 +49,16 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         QSnap.start(context)
 
     def exit( self , context, cancel) :
+        print("Exit")
         if self.bmo :
             del self.bmo
         self.currentElement = None
         QSnap.exit()
+        PQ_Gizmo_Preselect.instance = None
+        PQ_Gizmo_Preselect.subtool = None
 
     def test_select(self, context, location):
+        PQ_Gizmo_Preselect.instance = self
         self.mouse_pos = mathutils.Vector(location) 
         if context.region == None :
             return -1
@@ -58,8 +71,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         element = self.bmo.PickElement( location , self.preferences.distance_to_highlight )
 
         element.set_snap_div( self.preferences.loopcut_division )
-        if self.group.subtool != None :
-            if self.group.subtool.UpdateHighlight( self , element ) :
+        if PQ_Gizmo_Preselect.subtool != None :
+            if PQ_Gizmo_Preselect.subtool.UpdateHighlight( self , element ) :
                 context.area.tag_redraw()
 
         self.currentElement = element
@@ -67,8 +80,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def draw(self, context):
         if not self.run_operator :
-            if self.group.subtool != None :
-                self.group.subtool.DrawHighlight( self , self.currentElement )
+            if PQ_Gizmo_Preselect.subtool != None :
+                PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
 
     def invoke(self, context, event):
         return {'RUNNING_MODAL'}
@@ -85,6 +98,14 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.run_operator = is_using
         self.currentElement = ElementItem.Empty()
 
+    @classmethod
+    def check_modifier_key( cls , shift , ctrl , alt ) :
+        PQ_Gizmo_Preselect.subtool = SubToolDefault
+        if shift :
+            PQ_Gizmo_Preselect.subtool = SubToolBrush
+        elif ctrl :
+            PQ_Gizmo_Preselect.subtool = SubToolExtr
+        PQ_Gizmo_Preselect.alt = alt
 
 class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_idname = "MESH_GGT_PQ_Preselect"
@@ -92,22 +113,14 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_options = {'3D'}    
     bl_region_type = 'WINDOW'
     bl_space_type = 'VIEW_3D'
-    __instance = None
 
     def __init__(self) :
         self.widget = None
-        self.subtool = SubToolDefault
-        self.alt = False
-        PQ_GizmoGroup_Preselect.__instance = self
 
-    def __del__(self) :
-        print("----------------------------------------------------------")
-        PQ_GizmoGroup_Preselect.__instance = None
 
     @classmethod
     def poll(cls, context):
         if context.mode != 'EDIT_MESH' :
-#            __instance = None
             return False
         # 自分を使っているツールを探す。
         workspace = context.workspace
@@ -116,25 +129,9 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
                 break
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
-#            PQ_GizmoGroup_Preselect.__instance = None
             return False
         context.window.cursor_set( 'DEFAULT' )        
         return True
-
-    @classmethod
-    def instance(cls) : 
-        return PQ_GizmoGroup_Preselect.__instance
-
-    @classmethod
-    def check_modifier_key( cls , shift , ctrl , alt ) :
-        instance = cls.instance()
-        if instance :
-            instance.subtool = SubToolDefault
-            if shift :
-                instance.subtool = SubToolBrush
-            elif ctrl :
-                instance.subtool = SubToolExtr
-            instance.alt = alt
 
     def setup(self, context):
         self.preselect = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
