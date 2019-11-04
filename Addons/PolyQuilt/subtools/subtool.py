@@ -24,7 +24,7 @@ from ..QMesh.QMesh import *
 import time
 
 
-class SubTool :
+class SubToolRoot :
     name = "None"
     __timer_handle = None
    
@@ -39,6 +39,10 @@ class SubTool :
         self.preferences = op.preferences
         self.activeSubTool = None
         self.buttonType = button
+
+    @staticmethod
+    def Check( root  ,target ) :
+        return True
 
     def Active(self) :
         return self if self.activeSubTool == None else self.activeSubTool
@@ -157,4 +161,32 @@ class SubTool :
     def color_delete( self ,alpha = 1.0 ) :
         col = self.preferences.delete_color            
         return (col[0],col[1],col[2],col[3] * alpha)
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        if element != None and gizmo.bmo != None :
+            draw_util.begin_draw()
+            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+            draw_util.end_draw()
+
+    @classmethod
+    def UpdateHighlight( cls , gizmo , element ) :
+        if gizmo.currentElement.element != element.element :
+            return True
+        elif element.isEdge :
+            if element.coord != gizmo.currentElement.coord :
+                return True
+        return False
+
+class SubTool(SubToolRoot) :
+    def __init__( self, op ) :
+        super().__init__(op )        
+
+class SubToolEx(SubTool) :
+    def __init__( self, root ) :
+        super().__init__( root.operator )     
+        self.currentTarget = root.currentTarget           
+        self.startMousePos = root.mouse_pos.copy()
+
+
 

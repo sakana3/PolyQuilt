@@ -35,8 +35,11 @@ from .subtool_brush_move import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 from .subtool_autoquad import *
+from ..utils.dpi import *
 
-class SubToolBrush(SubTool) :
+
+
+class SubToolBrush(SubToolRoot) :
     name = "BrushSubTool"
 
     def __init__(self,op,currentTarget, button) :
@@ -45,31 +48,40 @@ class SubToolBrush(SubTool) :
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolBrush.LMBEventCallback , op , True )
         self.isExit = False
 
+        self.callback = { 
+            MBEventType.Release : [] ,
+            MBEventType.Click : [SubToolAutoQuad] ,
+            MBEventType.LongClick : [] ,
+            MBEventType.LongPressDrag : [SubToolBrushSize] ,
+            MBEventType.Drag : [SubToolRelax,SubToolBrushMove] ,
+        }
+
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
 
     @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
-
-        if event.type == MBEventType.Release :
+        if event.type in self.callback.keys() :
+            tools = [ t(self) for t in self.callback[event.type] if t.Check( self , self.currentTarget ) ]
+            if tools :
+                self.SetSubTool( tools )
             self.isExit = True
 
-        elif event.type == MBEventType.Click :
-            if self.currentTarget.isVert or self.currentTarget.isEdge or self.currentTarget.isEmpty:
-                if SubToolAutoQuad.Check(self.currentTarget) :
-                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget,self.mouse_pos))
-            self.isExit = True
-        elif event.type == MBEventType.LongClick :
-            self.isExit = True
-        elif event.type == MBEventType.LongPressDrag :
-            self.SetSubTool( SubToolBrushSize(self.operator,self.currentTarget , self.mouse_pos ) )
-        elif event.type == MBEventType.Drag :
-            if self.preferences.brush_type == 'SMOOTH' :
-                self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
-            else :
-                self.SetSubTool( SubToolBrushMove(self.operator,self.currentTarget , self.mouse_pos ) )
-#            self.SetSubTool( SubToolRelax(self.operator,self.currentTarget , self.mouse_pos ) )
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        if SubToolAutoQuad.Check( None , element ) :
+            SubToolAutoQuad.DrawHighlight(gizmo,element)
+
+        radius = gizmo.preferences.brush_size * dpm() 
+        strength = gizmo.preferences.brush_strength  
+        with draw_util.push_pop_projection2D() :
+            draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
+            draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
+
+    @classmethod
+    def UpdateHighlight( cls , gizmo , element ) :
+        return True
 
     def OnUpdate( self , context , event ) :
         if self.isExit :
@@ -81,8 +93,8 @@ class SubToolBrush(SubTool) :
     def OnDraw( self , context  ) :
         radius = self.preferences.brush_size * dpm()
         strength = self.preferences.brush_strength        
-        draw_util.draw_circle2D( self.LMBEvent.PressPos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
-        draw_util.draw_circle2D( self.LMBEvent.PressPos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
         if self.LMBEvent.isPresure :
             if self.currentTarget.isNotEmpty :
                 self.LMBEvent.Draw( self.currentTarget.coord )
@@ -90,7 +102,9 @@ class SubToolBrush(SubTool) :
                 self.LMBEvent.Draw( None )
 
     def OnDraw3D( self , context  ) :
-        pass
+        if not self.LMBEvent.presureComplite :        
+            if SubToolAutoQuad.Check( self , self.currentTarget ) :
+                SubToolAutoQuad.DrawHighlight(self,self.currentTarget)
 
     def OnEnterSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty()

@@ -35,7 +35,7 @@ from .subtool_autoquad import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
-class SubToolExtr(SubTool) :
+class SubToolExtr(SubToolRoot) :
     name = "ExtrSubTool"
 
     def __init__(self,op,currentTarget, button) :
@@ -58,8 +58,8 @@ class SubToolExtr(SubTool) :
 
         elif event.type == MBEventType.Click :
             if self.currentTarget.isVert or self.currentTarget.isEdge or self.currentTarget.isEmpty:
-                if SubToolAutoQuad.Check(self.currentTarget) :
-                    self.SetSubTool( SubToolAutoQuad(self.operator,self.currentTarget,self.mouse_pos))
+                if SubToolAutoQuad.Check( self , self.currentTarget) :
+                    self.SetSubTool( SubToolAutoQuad( self ))
             self.isExit = True
 
         elif event.type == MBEventType.LongClick :
@@ -79,7 +79,7 @@ class SubToolExtr(SubTool) :
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                if SubToolVertExtrude.Check( self.currentTarget ) :
+                if SubToolVertExtrude.Check( self ,self.currentTarget ) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
                 if tools :
                     self.SetSubTool( tools )
@@ -91,14 +91,14 @@ class SubToolExtr(SubTool) :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
                     tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
-                if SubToolEdgeloopCut.Check(self.currentTarget) : 
+                if SubToolEdgeloopCut.Check(self ,self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrudeMulti.Check(self.currentTarget) : 
+                if SubToolEdgeExtrudeMulti.Check(self ,self.currentTarget) : 
                     tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget,True))                    
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                if SubToolEdgeExtrudeMulti.Check( self.currentTarget ) :
+                if SubToolEdgeExtrudeMulti.Check( self ,self.currentTarget ) :
                     tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
@@ -114,6 +114,13 @@ class SubToolExtr(SubTool) :
         self.LMBEvent.Update(context,event)
 
         return 'RUNNING_MODAL'
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        if element != None and gizmo.bmo != None :
+            draw_util.begin_draw()
+            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+            draw_util.end_draw()
 
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :

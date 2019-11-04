@@ -12,66 +12,63 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
+import mathutils
 from .QMesh import *
 from .utils import draw_util
 from .pq_operator import MESH_OT_poly_quilt
+from .subtools.subtool_default import SubToolDefault
+from .subtools.subtool_extr import SubToolExtr
+from .subtools.subtool_brush import SubToolBrush
 
 __all__ = ['PQ_Gizmo_Preselect','PQ_GizmoGroup_Preselect']
 
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
-    instance = None
-    ctrl = False
-    shift = False
-    alt = False
 
     def __init__(self) :
-        self.bo = None
+        self.bmo = None
         self.currentElement = None
         self.preferences = bpy.context.preferences.addons[__package__].preferences
+        self.run_operator = False
 
     def setup(self):
-        self.bo = None        
+        self.bmo = None        
         self.currentElement = ElementItem.Empty()
 
     def init( self , context ) :
-        self.bo = QMesh( context.active_object , self.preferences )
+        self.bmo = QMesh( context.active_object , self.preferences )
         QSnap.start(context)
 
     def exit( self , context, cancel) :
-        if self.bo :
-            del self.bo
+        if self.bmo :
+            del self.bmo
         self.currentElement = None
-        PQ_Gizmo_Preselect.instance = None
         QSnap.exit()
 
     def test_select(self, context, location):
+        self.mouse_pos = mathutils.Vector(location) 
         if context.region == None :
             return -1
-        PQ_Gizmo_Preselect.instance = self        
-        if self.bo == None :
-            self.bo = QMesh( context.active_object , self.preferences )
-        self.bo.CheckValid( context )
-        self.bo.UpdateView(context)
+        if self.bmo == None :
+            self.bmo = QMesh( context.active_object , self.preferences )
+        self.bmo.CheckValid( context )
+        self.bmo.UpdateView(context)
         QSnap.update(context)
 
-        element = self.bo.PickElement( location , self.preferences.distance_to_highlight )
+        element = self.bmo.PickElement( location , self.preferences.distance_to_highlight )
 
         element.set_snap_div( self.preferences.loopcut_division )
-        if self.currentElement.element != element.element :
-            context.area.tag_redraw()
-        elif self.currentElement.isEdge :
-            if self.currentElement.coord != element.coord :
+        if self.group.subtool != None :
+            if self.group.subtool.UpdateHighlight( self , element ) :
                 context.area.tag_redraw()
+
         self.currentElement = element
         return -1
 
     def draw(self, context):
-        if self.currentElement != None and self.bo != None :
-            draw_util.begin_draw()            
-            self.currentElement.Draw( self.bo.obj , self.preferences.highlight_color , self.preferences )
-            draw_util.end_draw()
-
+        if not self.run_operator :
+            if self.group.subtool != None :
+                self.group.subtool.DrawHighlight( self , self.currentElement )
 
     def invoke(self, context, event):
         return {'RUNNING_MODAL'}
@@ -80,11 +77,12 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         return {'RUNNING_MODAL'}
 
     def refresh( self , context ) :
-        if self.bo != None :
-            self.bo.invalid = True
+        if self.bmo != None :
+            self.bmo.invalid = True
             self.currentElement = ElementItem.Empty()
 
-    def use(self) :
+    def use(self , is_using ) :
+        self.run_operator = is_using
         self.currentElement = ElementItem.Empty()
 
 
@@ -94,16 +92,22 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_options = {'3D'}    
     bl_region_type = 'WINDOW'
     bl_space_type = 'VIEW_3D'
+    __instance = None
 
     def __init__(self) :
         self.widget = None
+        self.subtool = SubToolDefault
+        self.alt = False
+        PQ_GizmoGroup_Preselect.__instance = self
 
     def __del__(self) :
-        draw_util.clear_draw()     
+        print("----------------------------------------------------------")
+        PQ_GizmoGroup_Preselect.__instance = None
 
     @classmethod
     def poll(cls, context):
         if context.mode != 'EDIT_MESH' :
+#            __instance = None
             return False
         # 自分を使っているツールを探す。
         workspace = context.workspace
@@ -112,36 +116,30 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
                 break
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
+#            PQ_GizmoGroup_Preselect.__instance = None
             return False
         context.window.cursor_set( 'DEFAULT' )        
         return True
 
-    def setup(self, context):
-        self.widget = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
-        self.widget.init(context)   
-#       self.widget.use_draw_modal = True
-#       self.gizmos.new("GIZMO_GT_mesh_preselect_elem_3d")  
+    @classmethod
+    def instance(cls) : 
+        return PQ_GizmoGroup_Preselect.__instance
 
-        for op in context.window_manager.operators :
-            if isinstance(op, MESH_OT_poly_quilt ):
-                self.pq = op
-                break
-        else :
-            self.pq = None
+    @classmethod
+    def check_modifier_key( cls , shift , ctrl , alt ) :
+        instance = cls.instance()
+        if instance :
+            instance.subtool = SubToolDefault
+            if shift :
+                instance.subtool = SubToolBrush
+            elif ctrl :
+                instance.subtool = SubToolExtr
+            instance.alt = alt
+
+    def setup(self, context):
+        self.preselect = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
+        self.preselect.init(context)   
 
     def refresh( self , context ) :
-        self.widget.refresh(context)
+        self.preselect.refresh(context)
 
-class MESH_OT_poly_quilt_check_key(bpy.types.Operator):
-    """Check Modifire"""
-    bl_idname = "mesh.poly_quilt_check_key"
-    bl_label = "PolyQuiltCheckKey"
-    bl_options = {'REGISTER' , 'UNDO'}
-
-    def modal(self, context, event):
-        PQ_Gizmo_Preselect.ctrl = event.ctrl
-        return {'CANCELLED'}
-
-    def invoke(self, context, event):
-        context.window_manager.modal_handler_add(self)        
-        return {'RUNNING_MODAL'}    

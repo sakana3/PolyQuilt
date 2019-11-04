@@ -22,7 +22,7 @@ import collections
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
-from .subtool import SubTool
+from .subtool import SubToolEx
 from ..utils.dpi import *
 
 class SelectStack :
@@ -57,20 +57,25 @@ class SelectStack :
         del self.face_selection
         del self.edge_selection
 
-class SubToolRelax(SubTool) :
+class SubToolRelax(SubToolEx) :
     name = "RelaxTool"
 
-    def __init__(self,op,startTarget,startMousePos) :
-        super().__init__(op)
-        self.currentTarget = startTarget
-        self.startMousePos = startMousePos.copy()
+    def __init__(self, root) :
+        super().__init__(root)
         self.radius = self.preferences.brush_size * dpm()
         self.occlusion_tbl = {}
         self.mirror_tbl = {}
-        if startTarget.isEmpty or ( startTarget.isEdge and startTarget.element.is_boundary ) :
+        if self.currentTarget.isEmpty or ( self.currentTarget.isEdge and self.currentTarget.element.is_boundary ) :
             self.effective_boundary = True
         else :
             self.effective_boundary = False
+
+    @staticmethod
+    def Check( root , target ) :
+        if root.preferences.brush_type == 'SMOOTH' :
+            return True
+        return False
+
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':

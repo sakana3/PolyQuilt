@@ -22,17 +22,15 @@ import collections
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
-from .subtool import SubTool
+from .subtool import SubToolEx
 from ..utils.dpi import *
 
-class SubToolBrushSize(SubTool) :
+class SubToolBrushSize(SubToolEx) :
     name = "BrushSizeTool"
 
-    def __init__(self,op,startTarget,startMousePos) :
-        super().__init__(op)
-        self.currentTarget = startTarget
-        self.startMousePos = startMousePos
-        self.preMousePos = startMousePos
+    def __init__(self, root ) :
+        super().__init__(root)
+        self.preMousePos = self.startMousePos
         self.start_radius = self.preferences.brush_size * dpm()
         self.radius = self.start_radius
         self.strength = self.preferences.brush_strength

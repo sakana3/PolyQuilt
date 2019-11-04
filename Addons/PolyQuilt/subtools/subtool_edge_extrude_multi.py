@@ -89,7 +89,7 @@ class SubToolEdgeExtrudeMulti(SubTool) :
                 self.ignoreEdges = self.ignoreEdges | set(face.edges)
 
     @staticmethod
-    def Check( target ) :
+    def Check( root ,target ) :
         if target.isVert :
             return target.element.is_boundary 
         elif target.isEdge :

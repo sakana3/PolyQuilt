@@ -63,7 +63,7 @@ class SubToolEdgeExtrude(SubTool) :
         self.perpendicular = view_vector.cross( n.xyz ).normalized()
 
     @staticmethod
-    def Check( target ) :
+    def Check( root ,target ) :
         return target.element.is_boundary or target.element.is_manifold == False
 
     def CalcFin( self , context , v0 , v1 , move ) :

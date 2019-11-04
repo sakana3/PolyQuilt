@@ -22,7 +22,7 @@ import collections
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
-from .subtool import SubTool
+from .subtool import SubToolEx
 from ..utils.dpi import *
 
 class SelectStack :
@@ -57,23 +57,27 @@ class SelectStack :
         del self.face_selection
         del self.edge_selection
 
-class SubToolBrushMove(SubTool) :
+class SubToolBrushMove(SubToolEx) :
     name = "MoveBrushTool"
 
-    def __init__(self,op,startTarget,startMousePos) :
-        super().__init__(op)
-        self.currentTarget = startTarget
-        self.startMousePos = startMousePos.copy()
+    def __init__(self, root ) :
+        super().__init__( root )
         self.radius = self.preferences.brush_size * dpm()
         self.mirror_tbl = {}
         matrix = self.bmo.obj.matrix_world        
         self.occlusion_tbl = {}
-        self.verts = self.CollectVerts( bpy.context , startMousePos )
+        self.verts = self.CollectVerts( bpy.context , self.startMousePos )
 
         if self.bmo.is_mirror_mode :
             self.mirrors = { vert : self.bmo.find_mirror( vert ) for vert in self.verts }
         else :
             self.mirrors = {}
+
+    @staticmethod
+    def Check( root , target ) :
+        if root.preferences.brush_type == 'MOVE' :
+            return True
+        return False
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':

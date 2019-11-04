@@ -32,7 +32,7 @@ from .subtool_vert_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 
-class SubToolDefault(SubTool) :
+class SubToolDefault(SubToolRoot) :
     name = "DefaultSubTool"
 
     def __init__(self,op,currentTarget, button) :
@@ -70,15 +70,15 @@ class SubToolDefault(SubTool) :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
                     tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
-                if SubToolEdgeloopCut.Check(self.currentTarget) : 
+                if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
                     tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrude.Check(self.currentTarget) : 
+                if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
                     tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
                 tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
-                if SubToolVertExtrude.Check( self.currentTarget ) :
+                if SubToolVertExtrude.Check( self ,self.currentTarget ) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
@@ -101,6 +101,13 @@ class SubToolDefault(SubTool) :
         self.LMBEvent.Update(context,event)
 
         return 'RUNNING_MODAL'
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        if element != None and gizmo.bmo != None :
+            draw_util.begin_draw()
+            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+            draw_util.end_draw()
 
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :

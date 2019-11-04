@@ -134,6 +134,12 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        def Exit() :
+            MESH_OT_poly_quilt.handle_remove()
+            self.RemoveTimerEvent(context)
+            self.bmo = None
+            self.preselect.use(False)
+
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
@@ -141,17 +147,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         try :
             val = self.update( context, event)
         except Exception as e:
-            MESH_OT_poly_quilt.handle_remove()
-            self.RemoveTimerEvent(context)
             self.bmo.invalid = True
-            self.bmo = None
+            Exit()
             raise e
             return {'CANCELLED'}
 
         if 'CANCELLED' in val or 'FINISHED' in val :
-            bpy.context.window.cursor_modal_restore()
-            self.RemoveTimerEvent(context)            
-            self.bmo = None
+            Exit()
         return val
 
     def update(self, context, event):
@@ -201,23 +203,31 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
-        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None :
 
+        gizmogroup = PQ_GizmoGroup_Preselect.instance()
+
+        if gizmogroup == None or gizmogroup.preselect.bmo == None :
+            self.report({'WARNING'}, "Gizmo Error" )
+            return {'CANCELLED'}            
+
+        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
+            preselect = gizmogroup.preselect
+            self.preselect = preselect
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
                 return {'CANCELLED'}
 
-            if not PQ_Gizmo_Preselect.instance.currentElement.is_valid :
+            if not preselect.currentElement.is_valid :
                 self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
-            element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)
+            element = copy.copy(preselect.currentElement)
 
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
                 return {'CANCELLED'}
 
-            self.bmo = PQ_Gizmo_Preselect.instance.bo
+            self.bmo = preselect.bmo
             if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
@@ -230,7 +240,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.currentSubTool = SubToolDefault(self , element, event )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
-            PQ_Gizmo_Preselect.instance.use()
+            preselect.use(True)
 
             if self.preferences.is_debug :
                 self.debugStr = "invoke"
@@ -334,3 +344,16 @@ class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
             self.report({'INFO'}, "Lock Hold" )            
         print (MESH_OT_poly_quilt.is_lock_hold)
         return {'FINISHED'}
+
+
+class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
+    """Check Modifire"""
+    bl_idname = "mesh.poly_quilt_key_check"
+    bl_label = "PolyQuiltKeyCheck"
+    bl_options = {'REGISTER' }
+
+    def invoke(self, context, event):
+        from .gizmo_preselect import PQ_GizmoGroup_Preselect  
+        PQ_GizmoGroup_Preselect.check_modifier_key( event.shift ,event.ctrl , event.alt )
+        context.area.tag_redraw()
+        return {'PASS_THROUGH'}    
