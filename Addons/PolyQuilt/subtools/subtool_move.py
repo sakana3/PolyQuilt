@@ -89,7 +89,7 @@ class SubToolMove(SubTool) :
 
                 if self.snapTarget.isVert \
                         and self.currentTarget.element != self.snapTarget.element \
-                        and (self.operator.fix_to_x_zero and self.currentTarget.is_x_zero and self.snapTarget.is_x_zero is False ) is False :
+                        and (self.preferences.fix_to_x_zero and self.currentTarget.is_x_zero and self.snapTarget.is_x_zero is False ) is False :
                     self.is_snap = True
                     self.currentTarget.element.co = self.snapTarget.element.co
                     if self.currentTarget.mirror is not None :
@@ -138,14 +138,16 @@ class SubToolMove(SubTool) :
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
-                verts = set( self.target_orig.keys() )
+                verts = set( self.target_orig.keys() ) | set( v for v in self.mirror_pair.values() if v != None )
+                self.bmo.UpdateMesh()
                 if self.snapTarget.isVert :
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.co)
                 elif self.snapTarget.isEdge : 
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[0].co)
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[1].co)
-                bmesh.ops.remove_doubles( self.bmo.bm , verts = list(verts) , dist = threshold )
-                self.bmo.UpdateMesh()
+                if len(verts) > 1 :
+                    bmesh.ops.remove_doubles( self.bmo.bm , verts = list(verts) , dist = threshold )
+                    self.bmo.UpdateMesh()
 
                 return 'FINISHED'
         elif event.type == 'WHEELUPMOUSE' :
@@ -195,7 +197,7 @@ class SubToolMove(SubTool) :
         self.move_plane = self.screen_space_plane
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
 
-        if self.operator.fix_to_x_zero and self.currentTarget.is_x_zero:
+        if self.preferences.fix_to_x_zero and self.currentTarget.is_x_zero:
             plane = pqutil.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
             plane.origin = self.startPos
 #           self.move_plane = plane
@@ -245,7 +247,7 @@ class SubToolMove(SubTool) :
             p = QSnap.view_adjust(p)
             p = self.bmo.obj.matrix_world.inverted() @ p
 
-            if self.operator.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
+            if self.preferences.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
                 p.x = 0.0
 
             self.bmo.set_positon( vert , p , False )

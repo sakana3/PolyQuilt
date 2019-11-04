@@ -112,6 +112,17 @@ class QSnap :
         return local_pos
 
     @classmethod
+    def adjust_local_to_world( cls , matrix_world : mathutils.Matrix , local_pos : mathutils.Vector , is_fix_to_x_zero ) :
+        if cls.instance != None :
+            location , norm , index = cls.instance.__find_nearest( matrix_world @ local_pos )
+            lp = location
+            if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(local_pos) :
+                lp.x = 0
+            return lp
+        return local_pos
+
+
+    @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
         if cls.instance != None and cls.instance.bvh_list :
             dist = bpy.context.scene.tool_settings.double_threshold                        

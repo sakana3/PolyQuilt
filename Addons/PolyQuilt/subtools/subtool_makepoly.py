@@ -419,7 +419,7 @@ class SubToolMakePoly(SubTool) :
 
         new_edge , new_vert = self.bmo.edge_split_from_position( edgeItem.element , pos )
         self.bmo.UpdateMesh()
-        QSnap.adjust_verts( self.bmo.obj , [new_vert] , self.operator.fix_to_x_zero )
+        QSnap.adjust_verts( self.bmo.obj , [new_vert] , self.preferences.fix_to_x_zero )
         self.bmo.UpdateMesh()
 
         newItem = ElementItem.FormVert( self.bmo , new_vert )

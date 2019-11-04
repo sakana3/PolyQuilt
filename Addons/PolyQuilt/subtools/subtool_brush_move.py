@@ -148,7 +148,7 @@ class SubToolBrushMove(SubToolEx) :
         return { v : x for v,x in coords.items() if x }
 
     def UpdateVerts( self , context ) :
-        is_fix_zero = self.operator.fix_to_x_zero or self.bmo.is_mirror_mode        
+        is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode        
         region = context.region
         rv3d = context.space_data.region_3d
         move = self.mouse_pos - self.startMousePos

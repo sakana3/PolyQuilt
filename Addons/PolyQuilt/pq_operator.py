@@ -155,6 +155,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if 'CANCELLED' in val or 'FINISHED' in val :
             Exit()
+            PQ_Gizmo_Preselect.instance.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
         return val
 
     def update(self, context, event):
@@ -209,6 +210,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if preselect == None or preselect.bmo  == None :
             self.report({'WARNING'}, "Gizmo Error" )
             return {'CANCELLED'}            
+
+        if preselect.currentElement == None :
+            return {'CANCELLED'} 
 
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
             if context.space_data.show_gizmo is False :

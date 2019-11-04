@@ -165,7 +165,7 @@ class SubToolRelax(SubToolEx) :
         return coords
 
     def DoRelax( self , context , coord ) :
-        is_fix_zero = self.operator.fix_to_x_zero or self.bmo.is_mirror_mode
+        is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
         coords = self.CollectVerts( context, coord  )
         if self.bmo.is_mirror_mode :
             mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }

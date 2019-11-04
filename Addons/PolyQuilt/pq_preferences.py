@@ -234,6 +234,11 @@ class PolyQuiltPreferences(AddonPreferences):
         min=0.0,
         max=1.0)    
 
+    fix_to_x_zero : bpy.props.BoolProperty(
+              name = "fix_to_x_zero" ,
+              default = False ,
+              description="Fix X=0",
+            )
 
     def draw(self, context):
         layout = self.layout

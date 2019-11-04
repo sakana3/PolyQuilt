@@ -59,7 +59,6 @@ class QMeshHighlight :
             self.__boundaryViewPosEdges = { e : p for e , p in self.viewPosEdges.items() if e.is_boundary or e.is_wire }            
         return self.__boundaryViewPosEdges
 
-
     def setDirty( self ) :
         if self.__viewPosVerts :
             del self.__viewPosVerts

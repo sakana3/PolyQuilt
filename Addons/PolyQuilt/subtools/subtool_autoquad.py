@@ -37,8 +37,17 @@ class SubToolAutoQuad(SubToolEx) :
         elif self.currentTarget.isEmpty :
             verts , normal = self.MakePolyByEmpty( self.bmo , self.startMousePos )
 
+        def makeVert( p ) :
+            if isinstance( p , bmesh.types.BMVert ) :
+                return p
+            else :
+                v = QSnap.adjust_local( self.bmo.obj.matrix_world , p , self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode )
+                vt = self.bmo.AddVertex(v)
+                self.bmo.UpdateMesh()
+                return vt
+
         if verts != None :
-            vs = [ v if isinstance( v , bmesh.types.BMVert ) else self.bmo.AddVertex(v) for v in verts ]
+            vs = [ makeVert(v) for v in verts ]
             self.bmo.AddFace( vs , normal )
             self.bmo.UpdateMesh()
 
@@ -71,9 +80,18 @@ class SubToolAutoQuad(SubToolEx) :
             col = gizmo.preferences.makepoly_color        
             col = (col[0],col[1],col[2],col[3] * 0.5)            
             mat = gizmo.bmo.obj.matrix_world
-            vs = [ mat @ v if isinstance( v , mathutils.Vector ) else mat @ v.co for v in verts ]
 
+            def calcVert( v ) :
+                if isinstance( v , mathutils.Vector ) :
+                    return  QSnap.adjust_local_to_world( mat , v , gizmo.preferences.fix_to_x_zero or gizmo.bmo.is_mirror_mode )
+                else :
+                    return mat @ v.co
+
+            vs = [ calcVert(v) for v in verts ]
             draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
+            if gizmo.bmo.is_mirror_mode :
+                rv = [ mathutils.Vector( ( -v.x,v.y,v.z )) for v in vs ]
+                draw_util.draw_Poly3D( bpy.context , rv , (col[0],col[1],col[2],col[3] * 0.25) , 0.5 )
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'

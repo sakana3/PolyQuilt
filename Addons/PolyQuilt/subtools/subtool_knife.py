@@ -115,7 +115,7 @@ class SubToolKnife(SubTool) :
         for e in ret['geom_cut'] :
             e.select_set(True)
         if QSnap.is_active() :
-            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
+            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.preferences.fix_to_x_zero )
 
         if self.bmo.is_mirror_mode :
             slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
@@ -131,5 +131,5 @@ class SubToolKnife(SubTool) :
                 for e in ret['geom_cut'] :
                     e.select_set(True)
                     if QSnap.is_active() :
-                        QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
+                        QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.preferences.fix_to_x_zero )
 

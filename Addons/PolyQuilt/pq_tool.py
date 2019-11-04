@@ -39,7 +39,8 @@ class ToolPolyQuilt(WorkSpaceTool):
         layout.prop(props, "geometry_type" , text = "Geom" , icon = "OUTLINER_DATA_LATTICE", toggle = True , expand = True , icon_only = True  )
         layout.prop(props, "plane_pivot" , text = "Pivot", toggle = True, expand = True )
         layout.prop(props, "move_type" , text = "Move", toggle = True, expand = True )
-        layout.prop(props, "fix_to_x_zero" , text = "Fix X=0" )
+        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero" , text = "Fix X=0"  )
+
 #       layout.prop(props, "backface" , text = "Use backface", icon = 'NORMALS_FACE')
 
 
@@ -112,7 +113,7 @@ def tool_poly_quilt():
   
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
         layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
-        layout.prop(props, "fix_to_x_zero" ,text = "Fix X=0", toggle = True , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
+        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero" , text = "Fix X=0"  )
 
         row = layout.row(align=True)
         row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )

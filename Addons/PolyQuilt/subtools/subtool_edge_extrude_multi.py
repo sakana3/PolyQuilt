@@ -65,7 +65,7 @@ class SubToolEdgeExtrudeMulti(SubTool) :
                 self.minusVerts = { v : self.bmo.find_mirror( v ) for v in self.verts if v not in self.plusVerts and v not in self.centerVerts }
             self.mirrorEdges = [ e for e in self.edges if self.bmo.find_mirror( e ) in self.edges ]
         else :
-            if self.operator.fix_to_x_zero :
+            if self.preferences.fix_to_x_zero :
                 self.centerVerts = [ v for v in self.verts if self.bmo.is_x_zero_pos(v.co) ]
             else :
                 self.centerVerts = []

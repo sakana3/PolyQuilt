@@ -58,6 +58,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         PQ_Gizmo_Preselect.subtool = None
 
     def test_select(self, context, location):
+        if self.currentElement == None :
+            self.currentElement = ElementItem.Empty()
+
         PQ_Gizmo_Preselect.instance = self
         self.mouse_pos = mathutils.Vector(location) 
         if context.region == None :
@@ -69,7 +72,6 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         QSnap.update(context)
 
         element = self.bmo.PickElement( location , self.preferences.distance_to_highlight )
-
         element.set_snap_div( self.preferences.loopcut_division )
         if PQ_Gizmo_Preselect.subtool != None :
             if PQ_Gizmo_Preselect.subtool.UpdateHighlight( self , element ) :
@@ -79,7 +81,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         return -1
 
     def draw(self, context):
-        if not self.run_operator :
+        if not self.run_operator and self.currentElement != None :
             if PQ_Gizmo_Preselect.subtool != None :
                 PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
 
@@ -96,7 +98,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def use(self , is_using ) :
         self.run_operator = is_using
-        self.currentElement = ElementItem.Empty()
+        self.currentElement = None
 
     @classmethod
     def check_modifier_key( cls , shift , ctrl , alt ) :
