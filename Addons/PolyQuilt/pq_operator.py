@@ -100,12 +100,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         items=enum_move_type_callback,
     )
 
-    fix_to_x_zero : bpy.props.BoolProperty(
-              name = "fix_to_x_zero" ,
-              default = False ,
-              description="Fix X=0",
-            )
-
     loopcut_mode : bpy.props.EnumProperty(
         name="LoopCut Mode",
         description="LoopCut Mode",
