@@ -30,10 +30,12 @@ class SubToolAutoQuad(SubToolEx) :
 
     def __init__(self , root ) :
         super().__init__(root)
+        is_x_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
+
         if self.currentTarget.isVert :
-            verts , normal = self.MakePolyByVert( self.currentTarget.element)
+            verts , normal = self.MakePolyByVert( self.currentTarget.element , is_x_zero)
         elif self.currentTarget.isEdge :
-            verts , normal = self.MakePolyByEdge( self.currentTarget.element)
+            verts , normal = self.MakePolyByEdge( self.currentTarget.element , is_x_zero)
         elif self.currentTarget.isEmpty :
             verts , normal = self.MakePolyByEmpty( self.bmo , self.startMousePos )
 
@@ -68,11 +70,12 @@ class SubToolAutoQuad(SubToolEx) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
+        is_x_zero = gizmo.preferences.fix_to_x_zero or gizmo.bmo.is_mirror_mode
         if element.isVert :
-            verts , normal = cls.MakePolyByVert( element.element)
+            verts , normal = cls.MakePolyByVert( element.element , is_x_zero)
             element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEdge :
-            verts , normal = cls.MakePolyByEdge( element.element)
+            verts , normal = cls.MakePolyByEdge( element.element , is_x_zero)
             element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEmpty :
             verts , normal = cls.MakePolyByEmpty( gizmo.bmo , gizmo.mouse_pos )
@@ -83,7 +86,7 @@ class SubToolAutoQuad(SubToolEx) :
 
             def calcVert( v ) :
                 if isinstance( v , mathutils.Vector ) :
-                    return  QSnap.adjust_local_to_world( mat , v , gizmo.preferences.fix_to_x_zero or gizmo.bmo.is_mirror_mode )
+                    return  QSnap.adjust_local_to_world( mat , v , is_x_zero )
                 else :
                     return mat @ v.co
 
@@ -128,7 +131,19 @@ class SubToolAutoQuad(SubToolEx) :
         return nrm
 
     @classmethod
-    def MakePolyByEdge( cls , edge ) :
+    def check_z_zero( cls , v , p , is_x_zero ) :
+        if math.isclose( v.co.x , 0 ) :
+            return None
+
+        if ( v.co.x > 0 and p.x < 0 ) or ( v.co.x < 0 and p.x > 0 ) :
+            ray = pqutil.Ray( v.co , p - v.co )            
+            plane = pqutil.Plane( mathutils.Vector( (0,0,0) ) , mathutils.Vector( ( 1 , 0 , 0 ) ) )
+            r = plane.intersect_ray( ray )
+            return r
+        return p
+
+    @classmethod
+    def MakePolyByEdge( cls , edge , is_x_zero ) :
         len = edge.calc_length()
         loop = edge.link_loops
         if loop[0].vert == edge.verts[0] :
@@ -143,38 +158,61 @@ class SubToolAutoQuad(SubToolEx) :
         e1 = cls.FindBoundaryEdge( edge , v1 )
 
         if e0 == None and e1 != None :
-            return cls.Make_Isosceles_Trapezoid( edge ,e1, v1 )
+            return cls.Make_Isosceles_Trapezoid( edge ,e1, v1 , is_x_zero )
         if e0 != None and e1 == None :
-            return cls.Make_Isosceles_Trapezoid( edge ,e0, v0 )
+            return cls.Make_Isosceles_Trapezoid( edge ,e0, v0 , is_x_zero )
 
-        nrm1 = cls.CalaTangent(edge,v0)        
         if e0:
             p0 = e0.other_vert(v0)
         else :
-            p0 = v0.co + nrm1 * len
+            p0 = cls.check_z_zero( v0 , v0.co + cls.CalaTangent(edge,v0) * len , is_x_zero )
 
-        nrm2 = cls.CalaTangent(edge,v1)
         if e1:
             p1 = e1.other_vert(v1)
         else :
-            p1 = v1.co + nrm2 * len
+            p1 = cls.check_z_zero( v1 , v1.co + cls.CalaTangent(edge,v1) * len , is_x_zero )
 
-        verts = [v1,v0,p0,p1]
+        verts = [ v for v in [v1,v0,p0,p1] if v != None ]
+
+        return verts , None
+
+    @classmethod
+    def Make_Isosceles_Trapezoid( cls , edge , boundary_edge , vert , is_x_zero ) :
+        edge_other_vert = edge.other_vert(vert)
+        boundary_other_vert = boundary_edge.other_vert(vert)
+
+        edge_nrm = cls.CalaTangent(edge , edge_other_vert)
+        edge_ray = pqutil.Ray( edge_other_vert.co , edge_nrm )
+        boundary_nrm = edge_other_vert.co - vert.co
+        boundary_ray = pqutil.Ray( boundary_other_vert.co , boundary_nrm.normalized() )
+
+        Q0 , Q1 , len = edge_ray.distance( boundary_ray )
+        p = cls.check_z_zero( edge_other_vert , Q1 , is_x_zero )
+        verts = [ v for v in [ edge_other_vert , p , boundary_other_vert , vert ] if v != None ]
 
         normal = None
+        if edge.link_faces :
+            for loop in edge.link_faces[0].loops :
+                if edge == loop.edge :
+                    if loop.vert == vert :
+                        verts.reverse()
+                        break
+        else :
+            normal = pqutil.getViewDir()
+
         return verts , normal
 
     @classmethod
-    def MakePolyByVert( cls , vert , isosceles_trapezoid = False ) :
+    def MakePolyByVert( cls , vert , is_x_zero ) :
         edges = [ edge for edge in vert.link_edges if edge.is_boundary ]        
         if len(edges) != 2 :
             return 
         v1 = edges[0].other_vert(vert)
         v2 = edges[1].other_vert(vert)
         c = (v1.co + v2.co) / 2.0
-        p = vert.co + (c-vert.co) * 2
+        p = cls.check_z_zero( vert , vert.co + (c-vert.co) * 2 , is_x_zero )
 
-        verts = [v2,vert,v1,p]
+        verts = [ v for v in [v2,vert,v1,p] if v != None ]
 
         normal = None
         edge = edges[0]
@@ -189,31 +227,7 @@ class SubToolAutoQuad(SubToolEx) :
 
         return verts , normal
 
-    @classmethod
-    def Make_Isosceles_Trapezoid( cls , edge , boundary_edge , vert ) :
-        edge_other_vert = edge.other_vert(vert)
-        boundary_other_vert = boundary_edge.other_vert(vert)
 
-        edge_nrm = cls.CalaTangent(edge , edge_other_vert)
-        edge_ray = pqutil.Ray( edge_other_vert.co , edge_nrm )
-        boundary_nrm = edge_other_vert.co - vert.co
-        boundary_ray = pqutil.Ray( boundary_other_vert.co , boundary_nrm.normalized() )
-
-        Q0 , Q1 , len = edge_ray.distance( boundary_ray )
-
-        verts = [ edge_other_vert , Q1 , boundary_other_vert , vert ]
-
-        normal = None
-        if edge.link_faces :
-            for loop in edge.link_faces[0].loops :
-                if edge == loop.edge :
-                    if loop.vert == vert :
-                        verts.reverse()
-                        break
-        else :
-            normal = pqutil.getViewDir()
-
-        return verts , normal
 
     @classmethod
     def MakePolyByEmpty( cls , bmo , startPos ) :

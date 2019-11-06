@@ -42,7 +42,7 @@ def enum_geometry_type_callback(scene, context):
         items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
                ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
                ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
-               ('QUAD', bpy.app.translations.pgettext("Quad") , "", custom_icon("icon_geom_quad") , 0),
+               ('QUAD', "Quad" , "", custom_icon("icon_geom_quad") , 0),
                ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
         return items
 
