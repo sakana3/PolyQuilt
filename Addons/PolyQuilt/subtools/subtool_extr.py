@@ -152,7 +152,7 @@ class SubToolExtr(SubToolRoot) :
         else :
             if self.currentTarget.isEdge : 
                 if SubToolAutoQuad.Check( None , self.currentTarget ) :
-                    drawAutoQuad = SubToolAutoQuad.DrawHighlight( self.currentTarget.element)
+                    drawAutoQuad = SubToolAutoQuad.DrawHighlight( self.currentTarget.element )
                     if drawAutoQuad :
                         drawAutoQuad()
         if self.currentTarget.isEdge :                    

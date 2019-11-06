@@ -111,7 +111,9 @@ class SubToolBrush(SubToolRoot) :
     def OnDraw3D( self , context  ) :
         if not self.LMBEvent.presureComplite :        
             if SubToolAutoQuad.Check( self , self.currentTarget ) :
-                SubToolAutoQuad.DrawHighlight(self,self.currentTarget)()
+                draw = SubToolAutoQuad.DrawHighlight(self,self.currentTarget)
+                if draw :
+                    draw()
 
     def OnEnterSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty()

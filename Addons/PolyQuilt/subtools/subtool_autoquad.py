@@ -101,7 +101,9 @@ class SubToolAutoQuad(SubToolEx) :
                     rv.append( rv[0] )
                     draw_util.draw_lines3D( bpy.context , rv , (col[0],col[1],col[2],0.5) , 2 , 0.5 )
             return Draw
-        return None
+        def Dummy() :
+            pass
+        return Dummy()
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
