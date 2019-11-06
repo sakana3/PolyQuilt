@@ -33,6 +33,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.currentElement = None
         self.preferences = bpy.context.preferences.addons[__package__].preferences
         self.run_operator = False
+        self.DrawHighlight = None
         PQ_Gizmo_Preselect.instance = self
         PQ_Gizmo_Preselect.subtool = SubToolDefault
         PQ_Gizmo_Preselect.alt = False
@@ -78,9 +79,15 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
                 context.area.tag_redraw()
 
         self.currentElement = element
+
+        self.DrawHighlight = PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
+
         return -1
 
     def draw(self, context):
+        if self.DrawHighlight != None :
+            self.DrawHighlight()
+        return 
         if not self.run_operator and self.currentElement != None :
             if PQ_Gizmo_Preselect.subtool != None :
                 PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
@@ -95,10 +102,12 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         if self.bmo != None :
             self.bmo.invalid = True
             self.currentElement = ElementItem.Empty()
+            self.DrawHighlight = None
 
     def use(self , is_using ) :
         self.run_operator = is_using
-        self.currentElement = None
+        self.currentElement = ElementItem.Empty()
+        self.DrawHighlight = None
 
     @classmethod
     def check_modifier_key( cls , shift , ctrl , alt ) :

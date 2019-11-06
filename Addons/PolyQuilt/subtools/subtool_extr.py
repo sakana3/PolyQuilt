@@ -118,9 +118,24 @@ class SubToolExtr(SubToolRoot) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if SubToolAutoQuad.Check( None , element ) :
-            SubToolAutoQuad.DrawHighlight(gizmo,element)
-            
-        element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+            drawAutoQuad = SubToolAutoQuad.DrawHighlight(gizmo,element)
+        else :
+            drawAutoQuad = None
+
+        if element.isEdge :
+            edges , verts = gizmo.bmo.findEdgeLoop( element.element )
+        else :
+            edges = []
+
+        width = gizmo.preferences.highlight_line_width
+        color = gizmo.preferences.highlight_color
+        def Draw() :
+            if drawAutoQuad:
+                drawAutoQuad()
+            for edge in edges :
+                vs = [ gizmo.bmo.obj.matrix_world @ v.co for v in edge.verts ] 
+                draw_util.draw_lines3D( bpy.context , vs , color , width , primitiveType = 'LINES' , hide_alpha = 0.5 )        
+        return Draw
 
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :
@@ -130,11 +145,24 @@ class SubToolExtr(SubToolRoot) :
                 self.LMBEvent.Draw( None )
 
     def OnDraw3D( self , context  ) :
-        if self.currentTarget.isNotEmpty :
-            color = self.color_highlight()
-            if self.LMBEvent.presureComplite :
-                color = self.color_delete()
-            self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
+        width = self.preferences.highlight_line_width
+        color = self.preferences.highlight_color        
+        if self.LMBEvent.isPresure :
+            color = self.preferences.makepoly_color 
+        else :
+            if self.currentTarget.isEdge : 
+                if SubToolAutoQuad.Check( None , self.currentTarget ) :
+                    drawAutoQuad = SubToolAutoQuad.DrawHighlight( self.currentTarget.element)
+                    if drawAutoQuad :
+                        drawAutoQuad()
+        if self.currentTarget.isEdge :                    
+            edges , verts = self.bmo.findEdgeLoop( self.currentTarget.element )
+        else :
+            edges = []
+        for edge in edges :
+            vs = [ self.bmo.obj.matrix_world @ v.co for v in edge.verts ] 
+            draw_util.draw_lines3D( bpy.context , vs , color , width , primitiveType = 'LINES' , hide_alpha = 0.5 )        
+
 
     def OnEnterSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty()

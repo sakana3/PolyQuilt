@@ -91,10 +91,17 @@ class SubToolAutoQuad(SubToolEx) :
                     return mat @ v.co
 
             vs = [ calcVert(v) for v in verts ]
-            draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
-            if gizmo.bmo.is_mirror_mode :
-                rv = [ mathutils.Vector( ( -v.x,v.y,v.z )) for v in vs ]
-                draw_util.draw_Poly3D( bpy.context , rv , (col[0],col[1],col[2],col[3] * 0.25) , 0.5 )
+            def Draw() :
+                draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
+                vs.append( vs[0] )
+                draw_util.draw_lines3D( bpy.context , vs , (col[0],col[1],col[2],col[3] * 1)  , 2 , 0 )
+                if gizmo.bmo.is_mirror_mode :
+                    rv = [ mathutils.Vector( ( -v.x,v.y,v.z )) for v in vs ]
+                    draw_util.draw_Poly3D( bpy.context , rv , (col[0],col[1],col[2],col[3] * 0.25) , 0.5 )
+                    rv.append( rv[0] )
+                    draw_util.draw_lines3D( bpy.context , rv , (col[0],col[1],col[2],0.5) , 2 , 0.5 )
+            return Draw
+        return None
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'

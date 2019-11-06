@@ -79,6 +79,7 @@ def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 
     bgl.glEnable(bgl.GL_LINE_SMOOTH)
     bgl.glLineWidth(width )   
     bgl.glEnable(bgl.GL_BLEND)    
+    bgl.glDisable(bgl.GL_DEPTH_TEST)    
     shader2D.bind()
     shader2D.uniform_float("color", color )
     primitiveType = 'TRI_FAN' if fill else 'LINE_STRIP'

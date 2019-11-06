@@ -105,9 +105,10 @@ class SubToolDefault(SubToolRoot) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            draw_util.begin_draw()
-            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
-            draw_util.end_draw()
+            def Draw() :
+                element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+            return Draw
+        return None
 
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :
