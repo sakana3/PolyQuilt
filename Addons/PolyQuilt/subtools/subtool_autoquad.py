@@ -141,14 +141,15 @@ class SubToolAutoQuad(SubToolEx) :
 
     @classmethod
     def check_z_zero( cls , v , p , is_x_zero ) :
-        if math.isclose( v.co.x , 0 ) :
-            return None
+        if is_x_zero :
+            if math.isclose( v.co.x , 0 ) :
+                return None
 
-        if ( v.co.x > 0 and p.x < 0 ) or ( v.co.x < 0 and p.x > 0 ) :
-            ray = pqutil.Ray( v.co , p - v.co )            
-            plane = pqutil.Plane( mathutils.Vector( (0,0,0) ) , mathutils.Vector( ( 1 , 0 , 0 ) ) )
-            r = plane.intersect_ray( ray )
-            return r
+            if ( v.co.x > 0 and p.x < 0 ) or ( v.co.x < 0 and p.x > 0 ) :
+                ray = pqutil.Ray( v.co , p - v.co )            
+                plane = pqutil.Plane( mathutils.Vector( (0,0,0) ) , mathutils.Vector( ( 1 , 0 , 0 ) ) )
+                r = plane.intersect_ray( ray )
+                return r
         return p
 
     @classmethod
