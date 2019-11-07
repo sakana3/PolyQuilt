@@ -110,12 +110,15 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.DrawHighlight = None
 
     @classmethod
-    def check_modifier_key( cls , shift , ctrl , alt ) :
-        PQ_Gizmo_Preselect.subtool = SubToolDefault
+    def check_modifier_key( cls , context , shift , ctrl , alt ) :
+        subtool = SubToolDefault
         if shift :
-            PQ_Gizmo_Preselect.subtool = SubToolBrush
+            subtool = SubToolBrush
         elif ctrl :
-            PQ_Gizmo_Preselect.subtool = SubToolExtr
+            subtool = SubToolExtr
+        if PQ_Gizmo_Preselect.subtool != subtool :
+            PQ_Gizmo_Preselect.subtool = subtool
+            context.area.tag_redraw()            
         PQ_Gizmo_Preselect.alt = alt
 
 class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
@@ -127,7 +130,6 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
 
     def __init__(self) :
         self.widget = None
-
 
     @classmethod
     def poll(cls, context):

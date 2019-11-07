@@ -347,8 +347,28 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     bl_label = "PolyQuiltKeyCheck"
     bl_options = {'REGISTER' }
 
-    def invoke(self, context, event):
-        from .gizmo_preselect import PQ_Gizmo_Preselect  
-        PQ_Gizmo_Preselect.check_modifier_key( event.shift ,event.ctrl , event.alt )
-        context.area.tag_redraw()
+    is_runngin = False
+
+    @classmethod
+    def poll( cls , context ) :
+        return not MESH_OT_poly_quilt_key_check.is_runngin
+
+    def modal(self, context, event):
+        if event.type == 'TIMER' :
+            return {'PASS_THROUGH'}
+
+        from .gizmo_preselect import PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect   
+
+        # 自分を使っているツールを探す。
+        if context.mode != 'EDIT_MESH' or PQ_GizmoGroup_Preselect.bl_idname not in [ tool.widget for tool in context.workspace.tools ] :
+            MESH_OT_poly_quilt_key_check.is_runngin = False
+            return {'CANCELLED'}
+
+        PQ_Gizmo_Preselect.check_modifier_key( context , event.shift ,event.ctrl , event.alt )
+
         return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+        MESH_OT_poly_quilt_key_check.is_runngin = True
+        context.window_manager.modal_handler_add(self)        
+        return {'RUNNING_MODAL'}
