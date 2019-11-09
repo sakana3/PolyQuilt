@@ -23,6 +23,7 @@ import time
 import copy
 from .utils.pqutil import *
 from .utils import draw_util
+from .utils.dpi import *
 from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
 from .subtools.subtool_extr import SubToolExtr
@@ -345,7 +346,6 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     """Check Modifire"""
     bl_idname = "mesh.poly_quilt_key_check"
     bl_label = "PolyQuiltKeyCheck"
-    bl_options = {'REGISTER' }
 
     is_runngin = False
 
@@ -371,4 +371,35 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     def invoke(self, context, event):
         MESH_OT_poly_quilt_key_check.is_runngin = True
         context.window_manager.modal_handler_add(self)        
+        return {'RUNNING_MODAL'}
+
+class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
+    """Change Brush Size"""
+    bl_idname = "mesh.poly_quilt_brush_size"
+    bl_label = "PolyQuiltBrushSize"
+
+    brush_size_value : bpy.props.FloatProperty(
+        name="Brush Size Value",
+        description="Brush Size Value",
+        default=0.0,
+        min=-1000.0,
+        max=1000.0)
+
+    brush_strong_value : bpy.props.FloatProperty(
+        name="Brush Strong Value",
+        description="Brush Strong Value",
+        default=0.0,
+        min=0.0,
+        max=1.0)
+
+    def invoke(self, context, event):
+        for area in context.window.screen.areas:        
+            area.tag_redraw()
+        if context.area.type == 'VIEW_3D' :
+            preferences = context.preferences.addons[__package__].preferences        
+
+            preferences.brush_size += self.brush_size_value / dpm()        
+
+            strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
+            preferences.brush_strength = strength
         return {'RUNNING_MODAL'}

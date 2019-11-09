@@ -185,7 +185,9 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
             ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
             ("mesh.poly_quilt_key_check", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-        ]},
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'ANY', "shift": True }, {"properties": [("brush_size_value",25)]}),
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'ANY', "shift": True }, {"properties": [("brush_size_value",-25)]}),
+         ]},
     )
 
 def km_view3d_empty(km_name):

@@ -25,7 +25,7 @@ bl_info = {
 
 import bpy
 from bpy.utils.toolsystem import ToolDef
-from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock , MESH_OT_poly_quilt_key_check 
+from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock , MESH_OT_poly_quilt_key_check , MESH_OT_poly_quilt_brush_size
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
 from .pq_tool import ToolPolyQuilt , register_tools , unregister_tools , register_keymaps , unregister_keymaps, VIEW3D_PT_tools_polyquilt_options
@@ -34,11 +34,12 @@ from .pq_preferences import *
 from .translation import pq_translation_dict
 
 classes = (
-    MESH_OT_poly_quilt_key_check ,
     PQ_Gizmo_Preselect ,
     PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,
     MESH_OT_poly_quilt_hold_lock ,
+    MESH_OT_poly_quilt_brush_size ,
+    MESH_OT_poly_quilt_key_check ,
     PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
     PQ_OT_CheckAddonUpdate ,
