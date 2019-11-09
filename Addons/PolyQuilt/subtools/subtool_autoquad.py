@@ -56,11 +56,18 @@ class SubToolAutoQuad(SubToolEx) :
     @staticmethod
     def Check( root , target ) :
         if target.isVert :
-            edges = [ e for e in target.element.link_edges if len(e.link_faces) == 1 ]
+            vert = target.element
+            edges = [ e for e in vert.link_edges if len(e.link_loops) == 1 ]
             if len(edges) == 2 :
-                if set(edges[0].link_faces) == set(edges[1].link_faces) :
-                    return False
-                return True
+                n0 = (edges[0].other_vert( vert ).co - vert.co).normalized()
+                n1 = (edges[1].other_vert( vert).co - vert.co).normalized()
+                if n0.dot( n1 ) > -0.95 :
+                    t0 = edges[0].calc_tangent(edges[0].link_loops[0])
+                    t1 = edges[1].calc_tangent(edges[1].link_loops[0])
+                    t = (t0+t1).normalized()
+                    n = (n0+n1).normalized()
+                    if n.dot( t ) < 0 :
+                        return True
         elif target.isEdge :
             if target.element.is_boundary and len(target.element.link_faces) == 1 :
                 return True
@@ -73,10 +80,8 @@ class SubToolAutoQuad(SubToolEx) :
         is_x_zero = gizmo.preferences.fix_to_x_zero or gizmo.bmo.is_mirror_mode
         if element.isVert :
             verts , normal = cls.MakePolyByVert( element.element , is_x_zero)
-            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEdge :
             verts , normal = cls.MakePolyByEdge( element.element , is_x_zero)
-            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
         elif element.isEmpty :
             verts , normal = cls.MakePolyByEmpty( gizmo.bmo , gizmo.mouse_pos )
         if verts != None :
@@ -92,6 +97,10 @@ class SubToolAutoQuad(SubToolEx) :
 
             vs = [ calcVert(v) for v in verts ]
             def Draw() :
+                if element.isVert :
+                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+                elif element.isEdge :
+                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
                 draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
                 vs.append( vs[0] )
                 draw_util.draw_lines3D( bpy.context , vs , (col[0],col[1],col[2],col[3] * 1)  , 2 , 0 )
