@@ -260,9 +260,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         self.RemoveTimerEvent(context)
         
     @staticmethod
-    def draw_callback_px(self , context):
+    def draw_callback_px(self , context , region_data):
         draw_util.begin_draw()
-        if self != None :
+        if self != None and context.region_data == region_data :
             if self.preferences.is_debug :
                 font_id = 0  # XXX, need to find out how best to get this.
                 # draw some text
@@ -279,8 +279,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         draw_util.end_draw()
 
     @staticmethod
-    def draw_callback_3d(self , context):
-        if self != None :
+    def draw_callback_3d(self , context , region_data):
+        if self != None and context.region_data == region_data :
             if self.currentSubTool is not None :
                 draw_util.begin_draw()
                 self.currentSubTool.Draw3D(context)
@@ -293,7 +293,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     @staticmethod
     def handle_add(self,context):
-        args = (self, context)        
+        args = (self, context , context.region_data)        
         MESH_OT_poly_quilt.__draw_handle2D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
         MESH_OT_poly_quilt.__draw_handle3D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
 
@@ -356,7 +356,6 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     def modal(self, context, event):
         if event.type == 'TIMER' :
             return {'PASS_THROUGH'}
-
         from .gizmo_preselect import PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect   
 
         # 自分を使っているツールを探す。
@@ -365,19 +364,18 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
             return {'CANCELLED'}
 
         PQ_Gizmo_Preselect.check_modifier_key( context , event.shift ,event.ctrl , event.alt )
-
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
         MESH_OT_poly_quilt_key_check.is_runngin = True
-        context.window_manager.modal_handler_add(self)        
+        context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
     """Change Brush Size"""
     bl_idname = "mesh.poly_quilt_brush_size"
     bl_label = "PolyQuiltBrushSize"
-
+    
     brush_size_value : bpy.props.FloatProperty(
         name="Brush Size Value",
         description="Brush Size Value",
@@ -393,13 +391,11 @@ class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
         max=1.0)
 
     def invoke(self, context, event):
-        for area in context.window.screen.areas:        
-            area.tag_redraw()
         if context.area.type == 'VIEW_3D' :
             preferences = context.preferences.addons[__package__].preferences        
-
             preferences.brush_size += self.brush_size_value / dpm()        
-
             strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
             preferences.brush_strength = strength
-        return {'RUNNING_MODAL'}
+            context.area.tag_redraw()
+        return {'CANCELLED'}
+

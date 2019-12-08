@@ -99,7 +99,7 @@ class SubToolBrushMove(SubToolEx) :
 
 
     def CollectVerts( self , context , coord ) :
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         region = context.region
         halfW = region.width / 2.0
         halfH = region.height / 2.0
@@ -150,11 +150,11 @@ class SubToolBrushMove(SubToolEx) :
     def UpdateVerts( self , context ) :
         is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode        
         region = context.region
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         move = self.mouse_pos - self.startMousePos
         matrix = self.bmo.obj.matrix_world         
         matrix_inv = self.bmo.obj.matrix_world.inverted()         
-        region_2d_to_location_3d = bpy_extras.view3d_utils.region_2d_to_location_3d
+        region_2d_to_location_3d = pqutil.region_2d_to_location_3d
         is_x_zero_pos = self.bmo.is_x_zero_pos
         zero_pos = self.bmo.zero_pos
         mirror_pos = self.bmo.mirror_pos

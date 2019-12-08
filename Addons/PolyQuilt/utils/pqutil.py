@@ -34,13 +34,13 @@ class Plane :
 
     @staticmethod
     def from_screen( context , origin ) :
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         vector = -rv3d.view_matrix.inverted().col[2].xyz
         vector.normalize()
         return Plane( origin , vector )
 
     def from_screen_slice( context , startPos , endPos ) :
-        rv3d = context.space_data.region_3d    
+        rv3d = context.region_data   
         region = context.region
 #       pc = region_2d_to_origin_3d(region, rv3d, startPos)
         no = region_2d_to_vector_3d(region, rv3d, startPos)
@@ -104,7 +104,7 @@ class Ray :
 
     @staticmethod
     def from_screen( context , coord : mathutils.Vector) :
-        rv3d = context.space_data.region_3d    
+        rv3d = context.region_data   
         region = context.region
         origin = region_2d_to_origin_3d(region, rv3d, coord)
         vector = region_2d_to_vector_3d(region, rv3d, coord)
@@ -337,7 +337,7 @@ def region_2d_to_location_3d(region, rv3d, coord, depth_location):
 
 def location_3d_to_region_2d( coord ) :
     region = bpy.context.region
-    rv3d = bpy.context.space_data.region_3d
+    rv3d = bpy.context.region_data
     perspective_matrix = rv3d.perspective_matrix
 
     prj = perspective_matrix @ Vector((coord[0], coord[1], coord[2], 1.0))
@@ -354,7 +354,7 @@ def location_3d_to_region_2d( coord ) :
 def TransformBMVerts( obj , verts ) : 
     Item = collections.namedtuple('Item', ('vert', 'region' , 'world' ))
     region = bpy.context.region
-    rv3d = bpy.context.space_data.region_3d    
+    rv3d = bpy.context.region_data    
 
     halfW = region.width / 2.0
     halfH = region.height / 2.0
@@ -373,7 +373,7 @@ def TransformBMVerts( obj , verts ) :
 
 
 def getViewDir() :
-    rv3d = bpy.context.space_data.region_3d
+    rv3d = bpy.context.region_data
     view_dir = -rv3d.view_matrix.inverted().col[2].xyz
     view_dir.normalize()
     return view_dir

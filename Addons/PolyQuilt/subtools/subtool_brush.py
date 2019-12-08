@@ -75,15 +75,15 @@ class SubToolBrush(SubToolRoot) :
         else :
             drawAutoQuad = None
 
-        radius = gizmo.preferences.brush_size * dpm() 
+        radius = gizmo.preferences.brush_size * dpm()
         strength = gizmo.preferences.brush_strength  
 
         def Draw() :
             if drawAutoQuad :
                 drawAutoQuad()
             with draw_util.push_pop_projection2D() :
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
         return Draw
 
     @classmethod

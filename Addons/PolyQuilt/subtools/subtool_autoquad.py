@@ -50,7 +50,8 @@ class SubToolAutoQuad(SubToolEx) :
 
         if verts != None :
             vs = [ makeVert(v) for v in verts ]
-            self.bmo.AddFace( vs , normal )
+            face = self.bmo.AddFace( vs , normal )
+            face.select_set(True)
             self.bmo.UpdateMesh()
 
     @staticmethod
@@ -117,24 +118,6 @@ class SubToolAutoQuad(SubToolEx) :
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
 
-    @classmethod
-    def FindBoundaryEdge( cls , edge , vert ) :
-        manifolds = [ e for e in vert.link_edges if not e.link_faces and e != edge ]
-        if len(manifolds) == 1 :
-            nrm0 = ( vert.co - edge.other_vert(vert).co ).normalized()
-            nrm1 = ( vert.co - manifolds[0].other_vert(vert).co ).normalized()
-            if nrm0.angle( nrm1 ) * 57.3 < 150 :
-                if cls.CalaTangent(edge,vert).dot(nrm1) < 0 :
-                    return manifolds[0]
-
-        boundary_edge = [ e for e in vert.link_edges if e.is_boundary and e != edge and edge.link_faces[0] not in e.link_faces ]
-        if len( boundary_edge ) == 1 :
-            nrm0 = ( vert.co - edge.other_vert(vert).co ).normalized()
-            nrm1 = ( vert.co - boundary_edge[0].other_vert(vert).co ).normalized()
-            if nrm0.angle( nrm1 ) * 57.3 < 150 :
-                if cls.CalaTangent(edge,vert).dot(nrm1) < 0 :
-                    return boundary_edge[0]
-        return None
 
 
     @classmethod
@@ -151,8 +134,9 @@ class SubToolAutoQuad(SubToolEx) :
     @classmethod
     def check_z_zero( cls , v , p , is_x_zero ) :
         if is_x_zero :
-            if math.isclose( v.co.x , 0 ) :
-                return None
+            if abs( v.co[0] ) <=  bpy.context.scene.tool_settings.double_threshold :
+                p.x = 0.0
+                return p
 
             if ( v.co.x > 0 and p.x < 0 ) or ( v.co.x < 0 and p.x > 0 ) :
                 ray = pqutil.Ray( v.co , p - v.co )            
@@ -160,6 +144,29 @@ class SubToolAutoQuad(SubToolEx) :
                 r = plane.intersect_ray( ray )
                 return r
         return p
+
+
+    @classmethod
+    def FindBoundaryEdge( cls , edge , vert ) :
+        if abs( vert.co[0] ) <=  bpy.context.scene.tool_settings.double_threshold :
+            return None
+
+        manifolds = [ e for e in vert.link_edges if not e.link_faces and e != edge ]
+        if len(manifolds) == 1 :
+            nrm0 = ( vert.co - edge.other_vert(vert).co ).normalized()
+            nrm1 = ( vert.co - manifolds[0].other_vert(vert).co ).normalized()
+            if nrm0.angle( nrm1 ) * 57.3 < 150 :
+                if cls.CalaTangent(edge,vert).dot(nrm1) < 0 :
+                    return manifolds[0]
+
+        boundary_edge = [ e for e in vert.link_edges if e.is_boundary and e != edge and edge.link_faces[0] not in e.link_faces ]
+        if len( boundary_edge ) == 1 :
+            nrm0 = ( vert.co - edge.other_vert(vert).co ).normalized()
+            nrm1 = ( vert.co - boundary_edge[0].other_vert(vert).co ).normalized()
+            if nrm0.angle( nrm1 ) * 57.3 < 150 :
+                if cls.CalaTangent(edge,vert).dot(nrm1) < 0 :
+                    return boundary_edge[0]
+        return None
 
     @classmethod
     def MakePolyByEdge( cls , edge , is_x_zero ) :

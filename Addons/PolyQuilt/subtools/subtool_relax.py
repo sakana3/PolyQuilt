@@ -98,7 +98,7 @@ class SubToolRelax(SubToolEx) :
         pass
 
     def CollectVerts( self , context , coord ) :
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         region = context.region
         halfW = region.width / 2.0
         halfH = region.height / 2.0

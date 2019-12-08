@@ -27,6 +27,8 @@ from .ElementItem import ElementItem
 __all__ = ['QMeshHighlight']
 
 class QMeshHighlight :
+    __grobal_tag__ = 0
+
     def __init__(self,pqo) :
         self.pqo = pqo
         self.__viewPosVerts = None
@@ -34,46 +36,66 @@ class QMeshHighlight :
         self.current_matrix = None
         self.__boundaryViewPosVerts = None
         self.__boundaryViewPosEdges = None
+        self.__local_tag__ = 0
 
     @property
     def viewPosVerts(self):
+        self.checkDirty()
         if self.__viewPosVerts == None :
             self.UpdateView( bpy.context , True )
         return self.__viewPosVerts
 
     @property
     def viewPosEdges(self):
+        self.checkDirty()
         if self.__viewPosEdges == None :
             self.UpdateView( bpy.context , True )
         return self.__viewPosEdges
 
     @property
     def boundaryViewPosVerts(self):
+        self.checkDirty()
         if self.__boundaryViewPosVerts == None :
             self.__boundaryViewPosVerts = [ ( v , p ) for v,p in self.viewPosVerts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]           
         return self.__boundaryViewPosVerts
 
     @property
     def boundaryViewPosEdges(self):
+        self.checkDirty()
         if self.__boundaryViewPosEdges == None :
             self.__boundaryViewPosEdges = { e : p for e , p in self.viewPosEdges.items() if e.is_boundary or e.is_wire }            
         return self.__boundaryViewPosEdges
 
     def setDirty( self ) :
-        if self.__viewPosVerts :
-            del self.__viewPosVerts
-        self.__viewPosVerts = None
-        if self.__viewPosEdges :
-            del self.__viewPosEdges
-        self.__viewPosEdges = None
-        self.current_matrix = None
-        self.__boundaryViewPosVerts = None
-        self.__boundaryViewPosEdges = None
+        QMeshHighlight.__grobal_tag__ = QMeshHighlight.__grobal_tag__ + 1
+        self.checkDirty()
 
+    def checkDirty( self ) :
+        if QMeshHighlight.__grobal_tag__ != self.__local_tag__ :
+            if self.__viewPosVerts :
+                del self.__viewPosVerts
+            self.__viewPosVerts = None
+
+            if self.__viewPosEdges :
+                del self.__viewPosEdges
+            self.__viewPosEdges = None
+
+            if self.__boundaryViewPosVerts :
+                del self.__boundaryViewPosVerts
+            self.__boundaryViewPosVerts = None
+
+            if self.__boundaryViewPosEdges :
+                del self.__boundaryViewPosEdges
+            self.__boundaryViewPosEdges = None
+
+            self.current_matrix = None
+            self.__local_tag__ = QMeshHighlight.__grobal_tag__
 
     def UpdateViewNP( self ,context , forced = False ):
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        self.checkDirty()
+
         if forced == True or matrix != self.current_matrix :
             region = context.region
             halfW = region.width / 2.0
@@ -108,8 +130,10 @@ class QMeshHighlight :
             self.current_matrix = matrix        
 
     def UpdateView( self ,context , forced = False ):
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        self.checkDirty()
+
         if forced == True or matrix != self.current_matrix :
             region = context.region
             halfW = region.width / 2.0

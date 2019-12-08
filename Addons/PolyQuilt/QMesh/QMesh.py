@@ -56,7 +56,7 @@ class QMesh(QMeshOperators) :
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = None , elements = ['FACE','EDGE','VERT'] ) -> ElementItem :
         if backface_culling == None :
             backface_culling = self.get_shading(bpy.context).show_backface_culling
-        rv3d = bpy.context.space_data.region_3d
+        rv3d = bpy.context.region_data
         matrix = rv3d.perspective_matrix
         radius = radius * dpm()
 
