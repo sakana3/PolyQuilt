@@ -50,6 +50,7 @@ class SubToolAutoQuad(SubToolEx) :
 
         if verts != None :
             vs = [ makeVert(v) for v in verts ]
+            vs = sorted(set(vs), key=vs.index)
             face = self.bmo.AddFace( vs , normal )
             face.select_set(True)
             self.bmo.UpdateMesh()
@@ -92,23 +93,27 @@ class SubToolAutoQuad(SubToolEx) :
 
             def calcVert( v ) :
                 if isinstance( v , mathutils.Vector ) :
-                    return  QSnap.adjust_local_to_world( mat , v , is_x_zero )
+                    return  QSnap.adjust_point( mat @ v , is_x_zero )
                 else :
                     return mat @ v.co
 
             vs = [ calcVert(v) for v in verts ]
+            vs.append( vs[0] )
+            if gizmo.bmo.is_mirror_mode :
+                inv = mat.inverted()
+                rv = [ inv @ v for v in vs ]
+                rv = [ mat @ mathutils.Vector( ( -v.x,v.y,v.z )) for v in rv ]
+                rv.append( rv[0] )
+
             def Draw() :
                 if element.isVert :
                     element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
                 elif element.isEdge :
                     element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
                 draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
-                vs.append( vs[0] )
                 draw_util.draw_lines3D( bpy.context , vs , (col[0],col[1],col[2],col[3] * 1)  , 2 , 0 )
                 if gizmo.bmo.is_mirror_mode :
-                    rv = [ mathutils.Vector( ( -v.x,v.y,v.z )) for v in vs ]
                     draw_util.draw_Poly3D( bpy.context , rv , (col[0],col[1],col[2],col[3] * 0.25) , 0.5 )
-                    rv.append( rv[0] )
                     draw_util.draw_lines3D( bpy.context , rv , (col[0],col[1],col[2],0.5) , 2 , 0.5 )
             return Draw
         def Dummy() :
@@ -122,24 +127,25 @@ class SubToolAutoQuad(SubToolEx) :
 
     @classmethod
     def CalaTangent( cls , edge , vert ) :
-        loop = edge.link_loops        
-        if loop[0].vert == edge.verts[0] :
-            vec = ( edge.verts[0].co - edge.verts[1].co ).normalized()
-        else :
-            vec = ( edge.verts[1].co - edge.verts[0].co ).normalized()
+        return -edge.calc_tangent( edge.link_loops[0] )
 
-        nrm = vert.normal.cross(vec).normalized()
-        return nrm
+    @classmethod
+    def is_x_zero( cls , p ) :
+        return abs( p[0] ) <=  bpy.context.scene.tool_settings.double_threshold 
 
     @classmethod
     def check_z_zero( cls , v , p , is_x_zero ) :
         if is_x_zero :
-            if abs( v.co[0] ) <=  bpy.context.scene.tool_settings.double_threshold :
+            if cls.is_x_zero(p) :
                 p.x = 0.0
                 return p
 
-            if ( v.co.x > 0 and p.x < 0 ) or ( v.co.x < 0 and p.x > 0 ) :
-                ray = pqutil.Ray( v.co , p - v.co )            
+            if cls.is_x_zero(v) :
+                p.x = 0.0
+                return p
+
+            if ( v.x > 0 and p.x < 0 ) or ( v.x < 0 and p.x > 0 ) :
+                ray = pqutil.Ray( v , p - v )            
                 plane = pqutil.Plane( mathutils.Vector( (0,0,0) ) , mathutils.Vector( ( 1 , 0 , 0 ) ) )
                 r = plane.intersect_ray( ray )
                 return r
@@ -147,8 +153,8 @@ class SubToolAutoQuad(SubToolEx) :
 
 
     @classmethod
-    def FindBoundaryEdge( cls , edge , vert ) :
-        if abs( vert.co[0] ) <=  bpy.context.scene.tool_settings.double_threshold :
+    def FindBoundaryEdge( cls , edge , vert , is_x_zero ) :
+        if is_x_zero and cls.is_x_zero( vert.co ) :
             return None
 
         manifolds = [ e for e in vert.link_edges if not e.link_faces and e != edge ]
@@ -180,23 +186,22 @@ class SubToolAutoQuad(SubToolEx) :
             v1 = edge.verts[0]
 
         # 境界エッジを探す
-        e0 = cls.FindBoundaryEdge( edge , v0 )
-        e1 = cls.FindBoundaryEdge( edge , v1 )
+        e0 = cls.FindBoundaryEdge( edge , v0 , is_x_zero )
+        e1 = cls.FindBoundaryEdge( edge , v1 , is_x_zero )
 
         if e0 == None and e1 != None :
             return cls.Make_Isosceles_Trapezoid( edge ,e1, v1 , is_x_zero )
         if e0 != None and e1 == None :
             return cls.Make_Isosceles_Trapezoid( edge ,e0, v0 , is_x_zero )
 
-        if e0:
+        if e0 and e1:
             p0 = e0.other_vert(v0)
-        else :
-            p0 = cls.check_z_zero( v0 , v0.co + cls.CalaTangent(edge,v0) * len , is_x_zero )
-
-        if e1:
             p1 = e1.other_vert(v1)
-        else :
-            p1 = cls.check_z_zero( v1 , v1.co + cls.CalaTangent(edge,v1) * len , is_x_zero )
+            if p0 == p1 :
+                return  [v1,v0,p0] , None
+        elif not e0 and not e1:
+            p0 = cls.check_z_zero( v0.co , v0.co + cls.CalaTangent(edge,v0) * len , is_x_zero )
+            p1 = cls.check_z_zero( v1.co , v1.co + cls.CalaTangent(edge,v1) * len , is_x_zero )
 
         verts = [ v for v in [v1,v0,p0,p1] if v != None ]
 
@@ -213,7 +218,10 @@ class SubToolAutoQuad(SubToolEx) :
         boundary_ray = pqutil.Ray( boundary_other_vert.co , boundary_nrm.normalized() )
 
         Q0 , Q1 , len = edge_ray.distance( boundary_ray )
-        p = cls.check_z_zero( edge_other_vert , Q1 , is_x_zero )
+        if is_x_zero and cls.is_x_zero( boundary_other_vert.co ) :
+            p = cls.check_z_zero( boundary_other_vert.co , Q1 , is_x_zero )
+        else :
+            p = cls.check_z_zero( edge_other_vert.co , Q1 , is_x_zero )
         verts = [ v for v in [ edge_other_vert , p , boundary_other_vert , vert ] if v != None ]
 
         normal = None
@@ -236,7 +244,15 @@ class SubToolAutoQuad(SubToolEx) :
         v1 = edges[0].other_vert(vert)
         v2 = edges[1].other_vert(vert)
         c = (v1.co + v2.co) / 2.0
-        p = cls.check_z_zero( vert , vert.co + (c-vert.co) * 2 , is_x_zero )
+        p = vert.co + (c-vert.co) * 2
+        v = vert
+        z1 = cls.is_x_zero( v1.co )
+        z2 = cls.is_x_zero( v2.co )
+        if z1 and not z2 :
+            v = v2
+        elif z2 and not z1 :
+            v = v1
+        p = cls.check_z_zero( v.co , p , is_x_zero )
 
         verts = [ v for v in [v2,vert,v1,p] if v != None ]
 

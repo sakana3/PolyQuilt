@@ -95,9 +95,11 @@ class QSnap :
         return world_pos
 
     @classmethod
-    def adjust_point( cls , world_pos : mathutils.Vector ) :
+    def adjust_point( cls , world_pos : mathutils.Vector , is_fix_to_x_zero = False) :
         if cls.instance != None :
             location , norm , index = cls.instance.__find_nearest( world_pos )
+            if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(location) :
+                location.x = 0
             return location
         return world_pos
 

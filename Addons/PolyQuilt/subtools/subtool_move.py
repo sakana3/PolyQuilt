@@ -39,9 +39,9 @@ class SubToolMove(SubTool) :
         if self.bmo.is_mirror_mode :
             mirrors = [ self.bmo.find_mirror(v) for v in startTarget.verts ]
             if self.startPos.x >= 0 :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m == None or v.co.x >= 0.0 }
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m != None or v.co.x >= 0.0 }
             else :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m == None or v.co.x <= 0.0 }
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m != None or v.co.x <= 0.0 }
         else :
             self.mirror_pair = { v : None for v in startTarget.verts }
 
