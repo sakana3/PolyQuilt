@@ -37,11 +37,12 @@ class SubToolMove(SubTool) :
         self.startPos = startTarget.hitPosition.copy()
         self.target_orig = { v : v.co.copy()  for v in startTarget.verts if v != None }
         if self.bmo.is_mirror_mode :
+            inv = self.bmo.obj.matrix_world.inverted() @ self.startPos
             mirrors = [ self.bmo.find_mirror(v) for v in startTarget.verts ]
-            if self.startPos.x >= 0 :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m != None or v.co.x >= 0.0 }
+            if inv.x >= 0 :
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if v not in mirrors or v.co.x > 0 }
             else :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if m != None or v.co.x <= 0.0 }
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if v not in mirrors or v.co.x < 0 }
         else :
             self.mirror_pair = { v : None for v in startTarget.verts }
 
