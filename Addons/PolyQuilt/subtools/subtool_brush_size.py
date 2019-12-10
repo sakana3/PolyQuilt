@@ -52,7 +52,7 @@ class SubToolBrushSize(SubToolEx) :
                 self.strength = min( max( 0 , self.strength ) , 1 )
                 self.preferences.brush_strength = self.strength
 
-        elif event.type == 'LEFTMOUSE' : 
+        elif event.type == self.rootTool.buttonType : 
             if event.value == 'RELEASE' :
                 return 'FINISHED'
 

@@ -185,6 +185,7 @@ class SubTool(SubToolRoot) :
 class SubToolEx(SubTool) :
     def __init__( self, root ) :
         super().__init__( root.operator )     
+        self.rootTool = root
         self.currentTarget = root.currentTarget           
         self.startMousePos = root.mouse_pos.copy()
 

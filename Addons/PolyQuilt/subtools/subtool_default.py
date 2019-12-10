@@ -38,7 +38,7 @@ class SubToolDefault(SubToolRoot) :
     def __init__(self,op,currentTarget, button) :
         super().__init__(op, button)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolDefault.LMBEventCallback , op , True )
+        self.LMBEvent = ButtonEventUtil( button , self , SubToolDefault.LMBEventCallback , op , True )
         self.isExit = False
 
     def is_animated( self , context ) :

@@ -81,6 +81,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
               description="Lock HOLD",
             )
 
+    alternative : bpy.props.BoolProperty(
+              name = "Alternative" ,
+              default = False ,
+              description="Alternative",
+            )
+
+
+
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
         description="Geometry Type.",
@@ -134,7 +142,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
-            PQ_Gizmo_Preselect.instance.use(False)
+            if PQ_Gizmo_Preselect.instance :
+                PQ_Gizmo_Preselect.instance.use(False)
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
@@ -234,7 +243,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             elif self.tool_mode == 'BRUSH' :
                 self.currentSubTool = SubToolBrush(self , element, event.type )
             else :
-                self.currentSubTool = SubToolDefault(self , element, event )
+                self.currentSubTool = SubToolDefault(self , element, event.type )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
             preselect.use(True)
@@ -387,7 +396,7 @@ class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
         name="Brush Strong Value",
         description="Brush Strong Value",
         default=0.0,
-        min=0.0,
+        min=-1.0,
         max=1.0)
 
     def invoke(self, context, event):
@@ -397,5 +406,6 @@ class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
             strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
             preferences.brush_strength = strength
             context.area.tag_redraw()
+
         return {'CANCELLED'}
 

@@ -45,16 +45,25 @@ class SubToolBrush(SubToolRoot) :
     def __init__(self,op,currentTarget, button) :
         super().__init__(op, button)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolBrush.LMBEventCallback , op , True )
+        self.LMBEvent = ButtonEventUtil( button , self , SubToolBrush.LMBEventCallback , op , True )
         self.isExit = False
-
-        self.callback = { 
-            MBEventType.Release : [] ,
-            MBEventType.Click : [SubToolAutoQuad] ,
-            MBEventType.LongClick : [] ,
-            MBEventType.LongPressDrag : [SubToolBrushSize] ,
-            MBEventType.Drag : [SubToolRelax,SubToolBrushMove] ,
-        }
+        brush_type = self.preferences.brush_type
+        if op.alternative :
+            self.callback = { 
+                MBEventType.Release : [] ,
+                MBEventType.Click : [] ,
+                MBEventType.LongClick : [] ,
+                MBEventType.LongPressDrag : [] ,
+                MBEventType.Drag : [SubToolBrushMove] if brush_type == 'SMOOTH' else [SubToolRelax] ,
+            }
+        else :
+            self.callback = { 
+                MBEventType.Release : [] ,
+                MBEventType.Click : [SubToolAutoQuad] ,
+                MBEventType.LongClick : [] ,
+                MBEventType.LongPressDrag : [SubToolBrushSize] ,
+                MBEventType.Drag : [SubToolRelax] if brush_type == 'SMOOTH' else [SubToolBrushMove] ,
+            }
 
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
@@ -75,10 +84,9 @@ class SubToolBrush(SubToolRoot) :
         else :
             drawAutoQuad = None
 
-        radius = gizmo.preferences.brush_size * dpm()
-        strength = gizmo.preferences.brush_strength  
-
         def Draw() :
+            radius = gizmo.preferences.brush_size * dpm()
+            strength = gizmo.preferences.brush_strength  
             if drawAutoQuad :
                 drawAutoQuad()
             with draw_util.push_pop_projection2D() :
