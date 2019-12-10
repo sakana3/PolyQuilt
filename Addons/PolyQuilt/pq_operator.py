@@ -126,13 +126,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='PARALLEL',
     )
 
-    brush_size : bpy.props.FloatProperty(
-        name="Brush Size",
-        description="Brush Size",
-        default=50.0,
-        min=10.0,
-        max=1000.0)
-
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
 
@@ -402,7 +395,9 @@ class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
     def invoke(self, context, event):
         if context.area.type == 'VIEW_3D' :
             preferences = context.preferences.addons[__package__].preferences        
-            preferences.brush_size += self.brush_size_value / dpm()        
+
+            a = (preferences.brush_size * preferences.brush_size) / 40000.0 + 0.1
+            preferences.brush_size += self.brush_size_value * a       
             strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
             preferences.brush_strength = strength
             context.area.tag_redraw()
