@@ -67,17 +67,18 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         props = tool.operator_properties("mesh.poly_quilt")
 
         col = layout.column()        
-        col.label( text = "Geom" )
-        col.prop(props, "geometry_type" , expand = True )
-
-        col = layout.column()        
         col.label( text = "Pivot" )
         col.prop(props, "plane_pivot" , text = "Pivot" , expand = True )
 
         col = layout.column()        
         col.label( text = "Move" )
-        col.prop(props, "move_type" , text = "Move" , expand = True )
+        row = layout.row()           
+        row.ui_units_x = 3.25     
+        row.prop(props, "move_type" , text = "" , expand = True , icon_only = True )
   
+        layout.label( text = "Fix X=0" )
+        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero", toggle = True , text = "" , icon_only = True, icon_value = custom_icon("icon_opt_x0") )
+
         layout.label( text = "Extrude" )
         layout.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
 
@@ -86,9 +87,6 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         col = layout.column()              
         col.label( text = "Edge Snap Div" )        
         col.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True , icon_only = False )
-
-        layout.label( text = "Brush" )
-        layout.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = False , expand = True, icon_only = False )
 
 
 
@@ -101,7 +99,6 @@ def tool_poly_quilt():
         props = tool.operator_properties("mesh.poly_quilt")
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
 
-
         col = layout.column(align=True)
         col.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = False  )
 
@@ -113,7 +110,7 @@ def tool_poly_quilt():
   
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
         layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
-        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero" , text = "Fix X=0"  )
+        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero", toggle = True , text = "Fix X=0" , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
         row = layout.row(align=True)
         row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )

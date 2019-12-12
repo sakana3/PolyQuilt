@@ -24,7 +24,6 @@ __all__ = ['PQ_Gizmo_Preselect','PQ_GizmoGroup_Preselect']
 
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
-    instance = None
     subtool = None
     alt = False
 
@@ -34,27 +33,22 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.preferences = bpy.context.preferences.addons[__package__].preferences
         self.run_operator = False
         self.DrawHighlight = None
-        PQ_Gizmo_Preselect.instance = self
+        self.region = None
         PQ_Gizmo_Preselect.subtool = SubToolDefault
         PQ_Gizmo_Preselect.alt = False
 
     def __del__(self) :
-        PQ_Gizmo_Preselect.instance = None
+        pass
 
     def setup(self):
         self.bmo = None        
         self.currentElement = ElementItem.Empty()
 
     def init( self , context ) :
+        self.region = context.region_data
         self.bmo = QMesh( context.active_object , self.preferences )
-        QSnap.start(context)
 
     def exit( self , context, cancel) :
-        print("Exit")
-        if self.bmo :
-            del self.bmo
-        self.currentElement = None
-        QSnap.exit()
         PQ_Gizmo_Preselect.instance = None
         PQ_Gizmo_Preselect.subtool = None
 
@@ -64,7 +58,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
         PQ_Gizmo_Preselect.instance = self
         self.mouse_pos = mathutils.Vector(location) 
-        if context.region == None :
+        if context.region == self.region :
             return -1
         if self.bmo == None :
             self.bmo = QMesh( context.active_object , self.preferences )
@@ -87,10 +81,6 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def draw(self, context):
         if self.DrawHighlight != None :
             self.DrawHighlight()
-        return 
-        if not self.run_operator and self.currentElement != None :
-            if PQ_Gizmo_Preselect.subtool != None :
-                PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
 
     def invoke(self, context, event):
         return {'RUNNING_MODAL'}
@@ -128,8 +118,16 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_region_type = 'WINDOW'
     bl_space_type = 'VIEW_3D'
 
+    gizmos = []
+
     def __init__(self) :
         self.widget = None
+
+    def __del__(self) :
+        if hasattr( self , "preselect" ) :
+            PQ_GizmoGroup_Preselect.gizmos = [ i for i in PQ_GizmoGroup_Preselect.gizmos if i != self.preselect ]
+        if not PQ_GizmoGroup_Preselect.gizmos :
+            QSnap.exit()
 
     @classmethod
     def poll(cls, context):
@@ -147,9 +145,18 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
         return True
 
     def setup(self, context):
+        QSnap.start(context)
         self.preselect = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)     
         self.preselect.init(context)   
+        PQ_GizmoGroup_Preselect.gizmos.append(self.preselect)
 
     def refresh( self , context ) :
         self.preselect.refresh(context)
+
+    @classmethod
+    def getGizmo(cls, region ):
+        gizmo = [ i for i in cls.gizmos if i.region == region ]
+        if gizmo :
+            return gizmo[0]
+        return None
 

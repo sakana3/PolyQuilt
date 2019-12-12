@@ -130,13 +130,11 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
-        from .gizmo_preselect import PQ_Gizmo_Preselect          
         def Exit() :
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
-            if PQ_Gizmo_Preselect.instance :
-                PQ_Gizmo_Preselect.instance.use(False)
+            self.preselect.use(False)
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
@@ -152,7 +150,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if 'CANCELLED' in val or 'FINISHED' in val :
             Exit()
-            PQ_Gizmo_Preselect.instance.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
+            self.preselect.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
         return val
 
     def update(self, context, event):
@@ -203,30 +201,32 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
 
-        preselect = PQ_Gizmo_Preselect.instance
-        if preselect == None or preselect.bmo  == None :
-            self.report({'WARNING'}, "Gizmo Error" )
-            return {'CANCELLED'}            
-
-        if preselect.currentElement == None :
-            return {'CANCELLED'} 
-
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
+            self.preselect = PQ_GizmoGroup_Preselect.getGizmo( context.region_data )
+            if self.preselect == None or self.preselect.bmo  == None :
+                self.report({'WARNING'}, "Gizmo Error" )
+                self.preselect.use(True)
+                return {'CANCELLED'}            
+
+            if self.preselect.currentElement == None :
+                return {'CANCELLED'} 
+
+
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
                 return {'CANCELLED'}
 
-            if not preselect.currentElement.is_valid :
+            if not self.preselect.currentElement.is_valid :
                 self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
-            element = copy.copy(preselect.currentElement)
+            element = copy.copy(self.preselect.currentElement)
 
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
                 return {'CANCELLED'}
 
-            self.bmo = preselect.bmo
+            self.bmo = self.preselect.bmo
             if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
@@ -239,7 +239,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.currentSubTool = SubToolDefault(self , element, event.type )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
-            preselect.use(True)
 
             if self.preferences.is_debug :
                 self.debugStr = "invoke"
@@ -282,11 +281,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     @staticmethod
     def draw_callback_3d(self , context , region_data):
-        if self != None and context.region_data == region_data :
-            if self.currentSubTool is not None :
-                draw_util.begin_draw()
-                self.currentSubTool.Draw3D(context)
-                draw_util.end_draw()
+        if self.currentSubTool is not None :
+            draw_util.begin_draw()
+            self.currentSubTool.Draw3D(context)
+            draw_util.end_draw()
 
     @staticmethod
     def handle_reset(self,context):

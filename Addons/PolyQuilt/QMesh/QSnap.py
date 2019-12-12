@@ -27,13 +27,15 @@ class QSnap :
 
     @classmethod
     def start( cls,context ) :
-        cls.instance = cls(context)
-        cls.update(context)
+        if cls.instance == None :
+            cls.instance = cls(context)
+            cls.update(context)
 
     @classmethod
     def exit(cls) :
         if cls.instance :
             del cls.instance
+            cls.instance = None
 
     @classmethod
     def is_active( cls ) :
