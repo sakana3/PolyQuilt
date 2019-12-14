@@ -65,6 +65,7 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
         tool = ToolSelectPanelHelper.tool_active_from_context(context)
         props = tool.operator_properties("mesh.poly_quilt")
+        preferences = bpy.context.preferences.addons[__package__].preferences
 
         col = layout.column()        
         col.label( text = "Pivot" )
@@ -77,7 +78,7 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         row.prop(props, "move_type" , text = "" , expand = True , icon_only = True )
   
         layout.label( text = "Fix X=0" )
-        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero", toggle = True , text = "" , icon_only = True, icon_value = custom_icon("icon_opt_x0") )
+        layout.prop( preferences, "fix_to_x_zero", toggle = True , text = "" , icon_only = True, icon_value = custom_icon("icon_opt_x0") )
 
         layout.label( text = "Extrude" )
         layout.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
@@ -86,8 +87,11 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         layout.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
         col = layout.column()              
         col.label( text = "Edge Snap Div" )        
-        col.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True , icon_only = False )
+        col.prop( preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True , icon_only = False )
 
+        col.label( text = "Brush" )        
+        col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
+        col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
 
 
 km_tool_snap_utilities_line = "3D View Tool: Edit Mesh, PolyQuilt"
@@ -97,6 +101,7 @@ km_tool_snap_utilities_line = "3D View Tool: Edit Mesh, PolyQuilt"
 def tool_poly_quilt():
     def draw_settings_ui(context, layout, tool):
         props = tool.operator_properties("mesh.poly_quilt")
+        preferences = bpy.context.preferences.addons[__package__].preferences        
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
 
         col = layout.column(align=True)
@@ -110,7 +115,7 @@ def tool_poly_quilt():
   
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
         layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
-        layout.prop( bpy.context.preferences.addons[__package__].preferences, "fix_to_x_zero", toggle = True , text = "Fix X=0" , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
+        layout.prop( preferences, "fix_to_x_zero", toggle = True , text = "Fix X=0" , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
         row = layout.row(align=True)
         row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
@@ -118,11 +123,13 @@ def tool_poly_quilt():
         row = layout.row(align=True)
         row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
         row = layout.row(align=True)
-        row.prop( bpy.context.preferences.addons[__package__].preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
+        row.prop( preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
         col = layout.column(align=True)
-        col.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
+        col.prop( preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
 
+        col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
+        col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
 #            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))

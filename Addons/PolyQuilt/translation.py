@@ -16,6 +16,7 @@ pq_translation_dict = {
             ("*", "Edge Snap Div") : "辺スナップ分割数" ,
             ("*", "Setup GameEngine like Keymaps") : "ゲームエンジン風キーマップをセットアップ" ,
             ("*", "Empty Mesh Object") : "空メッシュ" ,
+            ("*", "Brush Strength") : "ブラシ強度" ,
             ("*", "Flex") : "自由" ,
         }
 }

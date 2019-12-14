@@ -31,6 +31,7 @@ class SubToolBrushMove(SubToolEx) :
     def __init__(self, root ) :
         super().__init__( root )
         self.radius = self.preferences.brush_size * dpm()
+        self.strength = self.preferences.brush_strength
         self.mirror_tbl = {}
         matrix = self.bmo.obj.matrix_world        
         self.occlusion_tbl = {}
@@ -85,6 +86,8 @@ class SubToolBrushMove(SubToolEx) :
         occlusion_tbl_get = self.occlusion_tbl.get
         is_target = QSnap.is_target
         new_vec = mathutils.Vector
+        pw = (self.strength * self.strength ) * 8
+
         def ProjVert( vt ) :
             co = vt.co
             is_occlusion = occlusion_tbl_get(vt)
@@ -105,7 +108,8 @@ class SubToolBrushMove(SubToolEx) :
                 return None
 
             x = (radius - r) / radius
-            return ( p , (1-x) ** 2 , matrix_world @ co , co )
+            r = (1-x) ** pw
+            return ( p , r , matrix_world @ co , co )
 
         coords = { vert : ProjVert(vert) for vert in verts if vert.select }
 
