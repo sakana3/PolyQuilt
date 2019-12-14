@@ -104,8 +104,13 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         subtool = SubToolDefault
         if shift :
             subtool = SubToolBrush
+            PQ_GizmoGroup_Preselect.set_cursor('CROSSHAIR')
         elif ctrl :
             subtool = SubToolExtr
+            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
+        else :
+            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
+
         if PQ_Gizmo_Preselect.subtool != subtool :
             PQ_Gizmo_Preselect.subtool = subtool
             context.area.tag_redraw()            
@@ -119,6 +124,7 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_space_type = 'VIEW_3D'
 
     gizmos = []
+    cursor = 'DEFAULT'
 
     def __init__(self) :
         self.widget = None
@@ -141,7 +147,7 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
             return False
-        context.window.cursor_set( 'DEFAULT' )        
+        context.window.cursor_set( cls.cursor )        
         return True
 
     def setup(self, context):
@@ -152,6 +158,10 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
 
     def refresh( self , context ) :
         self.preselect.refresh(context)
+
+    @classmethod
+    def set_cursor(cls, cursor ):
+        cls.cursor = cursor
 
     @classmethod
     def getGizmo(cls, region ):
