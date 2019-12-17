@@ -34,7 +34,6 @@ class SubToolBrushMove(SubToolEx) :
         self.strength = self.preferences.brush_strength
         self.mirror_tbl = {}
         matrix = self.bmo.obj.matrix_world        
-        self.occlusion_tbl = {}
         self.verts = self.CollectVerts( bpy.context , self.startMousePos )
 
         if self.bmo.is_mirror_mode :
@@ -83,19 +82,13 @@ class SubToolBrushMove(SubToolEx) :
         bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
-        occlusion_tbl_get = self.occlusion_tbl.get
         is_target = QSnap.is_target
         new_vec = mathutils.Vector
         pw = (self.strength * self.strength ) * 8
 
         def ProjVert( vt ) :
             co = vt.co
-            is_occlusion = occlusion_tbl_get(vt)
-            if is_occlusion == None :
-                is_occlusion = is_target(matrix_world @ co)
-                self.occlusion_tbl[vt] = is_occlusion
-
-            if not is_occlusion :
+            if not is_target(matrix_world @ co) :
                 return None
 
             pv = matrix @ co.to_4d()

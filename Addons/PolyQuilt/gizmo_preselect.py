@@ -122,7 +122,7 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
     bl_options = {'3D'}    
     bl_region_type = 'WINDOW'
     bl_space_type = 'VIEW_3D'
-
+ 
     gizmos = []
     cursor = 'DEFAULT'
 

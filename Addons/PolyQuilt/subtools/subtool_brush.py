@@ -29,7 +29,7 @@ from .subtool_knife import *
 from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
-from .subtool_relax import *
+from .subtool_brush_relax import *
 from .subtool_brush_size import *
 from .subtool_brush_move import *
 from .subtool_move import *
@@ -106,15 +106,7 @@ class SubToolBrush(SubToolRoot) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        radius = self.preferences.brush_size * dpm()
-        strength = self.preferences.brush_strength        
-        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.5), fill = False , subdivide = 64 , dpi= False )
-        draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi= False )
-        if self.LMBEvent.isPresure :
-            if self.currentTarget.isNotEmpty :
-                self.LMBEvent.Draw( self.currentTarget.coord )
-            else:
-                self.LMBEvent.Draw( None )
+        return
 
     def OnDraw3D( self , context  ) :
         if not self.LMBEvent.presureComplite :        

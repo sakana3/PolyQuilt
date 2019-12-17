@@ -142,18 +142,19 @@ class QSnap :
 
     @classmethod
     def is_target( cls , world_pos : mathutils.Vector) -> bool :
+        dist = bpy.context.scene.tool_settings.double_threshold
         if cls.instance != None :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
             if ray == None :
                 return False
-            location , normal , obj = cls.instance.__raycast( ray )
+            location , normal , face = cls.instance.__raycast( ray )
             if location != None :
-                if (location - ray.origin).length >= (world_pos - ray.origin).length :
+                if (location - world_pos).length <= dist :
                     return True
                 else :
                     ray2 = pqutil.Ray( world_pos , ray.vector )
-                    location2 , normal2 , obj2 = cls.instance.__raycast_double( ray2 )
-                    if obj2 == obj :
+                    location2 , normal2 , face2 = cls.instance.__raycast_double( ray2 )
+                    if face2 == face :
                         return True
                 return False
         return True
@@ -192,19 +193,19 @@ class QSnap :
 
     def __raycast_double( self , ray : pqutil.Ray ) :
         # ターゲットからビュー方向にレイを飛ばす
-        location_r , normal_r , obj_r = self.__raycast( ray )
-        location_i , normal_i , obj_i = self.__raycast( ray.invert )
+        location_r , normal_r , face_r = self.__raycast( ray )
+        location_i , normal_i , face_i = self.__raycast( ray.invert )
 
-        if None in [obj_i,obj_r] :
-            if obj_i != None :
-                return location_i , normal_i , obj_i
-            elif obj_r != None :
-                return location_r , normal_r , obj_r
+        if None in [face_i,face_r] :
+            if face_i != None :
+                return location_i , normal_i , face_i
+            elif face_r != None :
+                return location_r , normal_r , face_r
         else :
             if (location_r - ray.origin).length <= (location_i - ray.origin).length :
-                return location_r , normal_r , obj_r
+                return location_r , normal_r , face_r
             else :
-                return location_i , normal_i , obj_i        
+                return location_i , normal_i , face_i        
         return None , None , None
 
     def __find_nearest( self, pos : mathutils.Vector ) :
