@@ -105,7 +105,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         if shift :
             subtool = SubToolBrush
             PQ_GizmoGroup_Preselect.set_cursor('CROSSHAIR')
-        elif ctrl :
+        elif ctrl and False :
             subtool = SubToolExtr
             PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
         else :
