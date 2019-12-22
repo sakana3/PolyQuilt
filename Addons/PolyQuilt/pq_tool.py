@@ -187,7 +187,7 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "alt": True}, {"properties": [("lock_hold", True)]}),
 #           ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "ctrl": True}, {"properties": [("tool_mode", 'EXTRUDE')]}),
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-            ("mesh.poly_quilt", {"type": "MIDDLEMOUSE", "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("alternative",True)]}),
+#           ("mesh.poly_quilt", {"type": "MIDDLEMOUSE", "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("alternative",True)]}),
             ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
             ("mesh.poly_quilt_key_check", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
             ("mesh.poly_quilt_brush_size", {"type": 'WHEELINMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
