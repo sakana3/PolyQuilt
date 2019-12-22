@@ -45,7 +45,7 @@ class SubToolVertExtrude(SubTool) :
         self.ignore = set(self.ignore )
 
     @staticmethod
-    def Check( target ) :
+    def Check( root ,target ) :
         edges = [ e for e in target.element.link_edges if len(e.link_faces) == 1 ]
         if len(edges) == 2 :
             if set(edges[0].link_faces) == set(edges[1].link_faces) :

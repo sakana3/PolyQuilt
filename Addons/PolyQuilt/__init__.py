@@ -14,7 +14,7 @@
 bl_info = {
     "name" : "PolyQuilt",
     "author" : "Sakana3",
-    "version": (1, 0, 13),
+    "version": (1, 1, 0),
     "blender" : (2, 80, 0),
     "location": "View3D > Mesh > PolyQuilt",
     "description": "Lowpoly Tool",
@@ -25,53 +25,27 @@ bl_info = {
 
 import bpy
 from bpy.utils.toolsystem import ToolDef
-from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock
+from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock , MESH_OT_poly_quilt_key_check , MESH_OT_poly_quilt_brush_size
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
-from .pq_tool import ToolPolyQuilt , tool_poly_quilt , register_keymaps , unregister_keymaps
-from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
+from .pq_tool import ToolPolyQuilt , register_tools , unregister_tools , register_keymaps , unregister_keymaps, VIEW3D_PT_tools_polyquilt_options
+from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect 
 from .pq_preferences import *
 from .translation import pq_translation_dict
-
 
 classes = (
     PQ_Gizmo_Preselect ,
     PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,
     MESH_OT_poly_quilt_hold_lock ,
+    MESH_OT_poly_quilt_brush_size ,
+    MESH_OT_poly_quilt_key_check ,
     PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
     PQ_OT_CheckAddonUpdate ,
-    PQ_OT_UpdateAddon
+    PQ_OT_UpdateAddon ,
+    VIEW3D_PT_tools_polyquilt_options
 )
-
-def get_tool_list(space_type, context_mode):
-    from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
-    cls = ToolSelectPanelHelper._tool_class_from_space_type(space_type)
-    return cls._tools[context_mode]
-
-
-def register_tools():
-    tools = get_tool_list('VIEW_3D', 'EDIT_MESH')
-
-    for index, tool in enumerate(tools, 1):
-        if isinstance(tool, ToolDef) and tool.label == "Poly Build":
-            break
-
-    tools[:index] += None, tool_poly_quilt
-
-    del tools
-
-
-def unregister_tools():
-    tools = get_tool_list('VIEW_3D', 'EDIT_MESH')
-
-    index = tools.index(tool_poly_quilt) - 1 #None
-    tools.pop(index)
-    tools.remove(tool_poly_quilt)
-
-    del tools
-    del index
 
 
 def register():

@@ -57,12 +57,10 @@ def clear_draw() :
     pass
     
 def batch_draw( shader , primitiveType , content  , indices = None ) :
-    cnt = copy.deepcopy(content )
     if indices :
-        idx = copy.deepcopy(indices)
-        batch = batch_for_shader(shader, primitiveType , cnt , indices=idx )
+        batch = batch_for_shader(shader, primitiveType , content , indices=indices )
     else :
-        batch = batch_for_shader(shader, primitiveType , cnt )
+        batch = batch_for_shader(shader, primitiveType , content )
     batch.draw(shader)
     return batch
 
@@ -70,15 +68,24 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
-def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 ):
-    r = radius * dpm()
+def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True, width : float = 1.0  ):
+    if dpi :
+        r = radius * dpm()
+    else :
+        r = radius
     dr = math.pi * 2 / subdivide
     vertices = [( pos[0] + r * math.cos(i*dr), pos[1] + r * math.sin(i*dr)) for i in range(subdivide+1)]
 
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glLineWidth(width )   
+    bgl.glEnable(bgl.GL_BLEND)    
+    bgl.glDisable(bgl.GL_DEPTH_TEST)    
     shader2D.bind()
     shader2D.uniform_float("color", color )
     primitiveType = 'TRI_FAN' if fill else 'LINE_STRIP'
     batch_draw(shader2D, primitiveType , {"pos": vertices} )
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
 
 def draw_donuts2D( pos , radius_out , width , rate , color = (1,1,1,1) ):
     r = radius_out * dpm()
@@ -115,7 +122,7 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     bgl.glPolygonOffset(1.0, 1.0)
 
     if hide_alpha < 0.99 :
-        bgl.glDepthFunc( bgl.GL_LESS )
+        bgl.glDepthFunc( bgl.GL_LEQUAL )
     else :
         bgl.glDepthFunc( bgl.GL_ALWAYS )
 
@@ -138,10 +145,10 @@ def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hi
     bgl.glDisable(bgl.GL_POLYGON_OFFSET_LINE)
     bgl.glDisable(bgl.GL_POLYGON_OFFSET_FILL)
 
-def draw_Poly3D( context , verts : bmesh.types.BMFace , color = (1,1,1,1) , hide_alpha = 0.5 ):
+def draw_Poly3D( context , verts , color = (1,1,1,1) , hide_alpha = 0.5 ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glEnable(bgl.GL_DEPTH_TEST)
-    bgl.glDepthFunc( bgl.GL_LESS )
+    bgl.glDepthFunc( bgl.GL_LEQUAL )
     bgl.glDepthMask(bgl.GL_FALSE)
     bgl.glEnable(bgl.GL_POLYGON_OFFSET_FILL)
     bgl.glPolygonOffset(1.0, 1.0)
@@ -311,4 +318,31 @@ def DrawFont( text , size , positon , offset = (0,0) ) :
     w,h = blf.dimensions(font_id, text )
     blf.position(font_id, positon[0] - w / 2 + offset[0] * dpm() , positon[1] + h + offset[1] * dpm() , 0)
     blf.draw(font_id, text )
+
+
+def make_mat4_ortho( left, right, bottom, top, _near = - 100, _far = 100) :
+    return mathutils.Matrix(
+        (
+        (2.0 / (right - left),0,0,-(right + left) / (right - left)) ,
+        (0,2.0 / (top - bottom),0,-(top + bottom) / (top - bottom)) ,
+        (0,0,-2.0 / (_far - _near),-(_far + _near) / (_far - _near)) ,
+        (0,0,0,1) )
+        )
+
+class push_pop_projection2D:
+    def __enter__(self):
+        region = bpy.context.region   
+        matrix = make_mat4_ortho( 0 , region.width , 0 , region.height )
+        gpu.matrix.push()
+        gpu.matrix.push_projection()
+        gpu.matrix.load_projection_matrix( matrix )
+        gpu.matrix.load_identity()
+        return self
+    def __exit__(self, exc_type, exc_value, traceback):
+        gpu.matrix.pop()
+        gpu.matrix.pop_projection()
+        if (exc_type!=None):
+            #return True  #例外を抑制するには
+            return False #例外を伝播する
+
 

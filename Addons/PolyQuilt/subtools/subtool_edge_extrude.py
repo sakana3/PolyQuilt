@@ -29,7 +29,7 @@ from .subtool import SubTool
 class SubToolEdgeExtrude(SubTool) :
     name = "EdgeExtrudeTool"
 
-    def __init__(self,op, target : ElementItem ) :
+    def __init__(self,op, target : ElementItem, is_loop : bool = False ) :
         super().__init__(op)
         self.currentEdge = target
         self.startPos = target.hitPosition.copy()
@@ -63,7 +63,7 @@ class SubToolEdgeExtrude(SubTool) :
         self.perpendicular = view_vector.cross( n.xyz ).normalized()
 
     @staticmethod
-    def Check( target ) :
+    def Check( root ,target ) :
         return target.element.is_boundary or target.element.is_manifold == False
 
     def CalcFin( self , context , v0 , v1 , move ) :

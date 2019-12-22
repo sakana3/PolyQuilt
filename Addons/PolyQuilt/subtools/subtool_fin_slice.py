@@ -160,7 +160,7 @@ class SubToolFinSlice(SubTool) :
         for e in ret['geom_inner'] :
             e.select_set(True)
         if QSnap.is_active() :
-            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_inner'] if isinstance( v , bmesh.types.BMVert ) ] , self.operator.fix_to_x_zero )
+            QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_inner'] if isinstance( v , bmesh.types.BMVert ) ] , self.preferences.fix_to_x_zero )
 
         self.bmo.UpdateMesh()
 

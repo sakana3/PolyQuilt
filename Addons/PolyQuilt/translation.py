@@ -1,8 +1,6 @@
 pq_translation_dict = {
     "ja_JP" :
         {
-            ("*", "Quad") : "四角" ,
-            ("*", "Vert") : "点" ,
             ("*", "Fix X=0") : "X=0を固定" ,
             ("*", "Tool settings:") : "ツールセッティング" ,            
             ("*", "Long Press Time") : "長押し判定の時間" ,
@@ -18,6 +16,7 @@ pq_translation_dict = {
             ("*", "Edge Snap Div") : "辺スナップ分割数" ,
             ("*", "Setup GameEngine like Keymaps") : "ゲームエンジン風キーマップをセットアップ" ,
             ("*", "Empty Mesh Object") : "空メッシュ" ,
+            ("*", "Brush Strength") : "ブラシ強度" ,
             ("*", "Flex") : "自由" ,
         }
 }

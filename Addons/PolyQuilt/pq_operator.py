@@ -23,8 +23,11 @@ import time
 import copy
 from .utils.pqutil import *
 from .utils import draw_util
+from .utils.dpi import *
 from .pq_icon import *
 from .subtools.subtool_default import SubToolDefault
+from .subtools.subtool_extr import SubToolExtr
+from .subtools.subtool_brush import SubToolBrush
 from .subtools.subtool import SubTool
 from .QMesh import *
 
@@ -40,7 +43,7 @@ def enum_geometry_type_callback(scene, context):
         items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
                ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
                ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
-               ('QUAD', bpy.app.translations.pgettext("Quad") , "", custom_icon("icon_geom_quad") , 0),
+               ('QUAD', "Quad" , "", custom_icon("icon_geom_quad") , 0),
                ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
         return items
 
@@ -67,7 +70,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         name="Tool Mode",
         description="Tool Mode",
         items=[('LOWPOLY' , "LowPoly", "" ),
-               ('EXTRUDE' , "Extrude", "" ) ],
+               ('EXTRUDE' , "Extrude", "" ),
+               ('BRUSH' , "Brush", "" ) ],
         default='LOWPOLY',
     )
 
@@ -76,6 +80,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
               default = False ,
               description="Lock HOLD",
             )
+
+    alternative : bpy.props.BoolProperty(
+              name = "Alternative" ,
+              default = False ,
+              description="Alternative",
+            )
+
+
 
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
@@ -97,12 +109,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         items=enum_move_type_callback,
     )
 
-    fix_to_x_zero : bpy.props.BoolProperty(
-              name = "fix_to_x_zero" ,
-              default = False ,
-              description="Fix X=0",
-            )
-
     loopcut_mode : bpy.props.EnumProperty(
         name="LoopCut Mode",
         description="LoopCut Mode",
@@ -120,11 +126,16 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='PARALLEL',
     )
 
-
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        def Exit() :
+            MESH_OT_poly_quilt.handle_remove()
+            self.RemoveTimerEvent(context)
+            self.bmo = None
+            self.preselect.use(False)
+
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
@@ -132,20 +143,20 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         try :
             val = self.update( context, event)
         except Exception as e:
-            MESH_OT_poly_quilt.handle_remove()
-            self.RemoveTimerEvent(context)
             self.bmo.invalid = True
-            self.bmo = None
+            Exit()
             raise e
             return {'CANCELLED'}
 
         if 'CANCELLED' in val or 'FINISHED' in val :
-            bpy.context.window.cursor_modal_restore()
-            self.RemoveTimerEvent(context)            
-            self.bmo = None
+            Exit()
+            self.preselect.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
         return val
 
     def update(self, context, event):
+        if self.preferences.is_debug :
+            t = time.time()
+                    
         if event.type == 'TIMER':
             if self.currentSubTool is None or not self.currentSubTool.check_animated(context) :
                 return {'PASS_THROUGH'}
@@ -157,9 +168,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
             self.report({'WARNING'}, "BMesh Broken..." )
             return {'CANCELLED'}
-
-        if self.preferences.is_debug :
-            t = time.time()
 
         self.bmo.CheckValid( context )
         ret = 'FINISHED'
@@ -192,31 +200,45 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
-        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' and PQ_Gizmo_Preselect.instance.bo != None :
+
+        if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
+            self.preselect = PQ_GizmoGroup_Preselect.getGizmo( context.region_data )
+            if self.preselect == None or self.preselect.bmo  == None :
+                self.report({'WARNING'}, "Gizmo Error" )
+                self.preselect.use(True)
+                return {'CANCELLED'}            
+
+            if self.preselect.currentElement == None :
+                return {'CANCELLED'} 
+
 
             if context.space_data.show_gizmo is False :
                 self.report({'WARNING'}, "Gizmo is not active.Please check Show Gizmo and try again" )
                 return {'CANCELLED'}
 
-            if not PQ_Gizmo_Preselect.instance.currentElement.is_valid :
+            if not self.preselect.currentElement.is_valid :
                 self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
-            element = copy.copy(PQ_Gizmo_Preselect.instance.currentElement)
+            element = copy.copy(self.preselect.currentElement)
 
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
                 return {'CANCELLED'}
 
-            self.bmo = PQ_Gizmo_Preselect.instance.bo
+            self.bmo = self.preselect.bmo
             if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
 
-            self.currentSubTool = SubToolDefault(self , element )
+            if self.tool_mode == 'EXTRUDE' :
+                self.currentSubTool = SubToolExtr(self , element, event.type )
+            elif self.tool_mode == 'BRUSH' :
+                self.currentSubTool = SubToolBrush(self , element, event.type )
+            else :
+                self.currentSubTool = SubToolDefault(self , element, event.type )
             self.currentSubTool.OnInit(context )
             self.currentSubTool.Update(context, event)
-            PQ_Gizmo_Preselect.instance.use()
 
             if self.preferences.is_debug :
                 self.debugStr = "invoke"
@@ -239,9 +261,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         self.RemoveTimerEvent(context)
         
     @staticmethod
-    def draw_callback_px(self , context):
+    def draw_callback_px(self , context , region_data):
         draw_util.begin_draw()
-        if self != None :
+        if self != None and context.region_data == region_data :
             if self.preferences.is_debug :
                 font_id = 0  # XXX, need to find out how best to get this.
                 # draw some text
@@ -258,12 +280,11 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         draw_util.end_draw()
 
     @staticmethod
-    def draw_callback_3d(self , context):
-        if self != None :
-            if self.currentSubTool is not None :
-                draw_util.begin_draw()
-                self.currentSubTool.Draw3D(context)
-                draw_util.end_draw()
+    def draw_callback_3d(self , context , region_data):
+        if self.currentSubTool is not None :
+            draw_util.begin_draw()
+            self.currentSubTool.Draw3D(context)
+            draw_util.end_draw()
 
     @staticmethod
     def handle_reset(self,context):
@@ -272,7 +293,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     @staticmethod
     def handle_add(self,context):
-        args = (self, context)        
+        args = (self, context , context.region_data)        
         MESH_OT_poly_quilt.__draw_handle2D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
         MESH_OT_poly_quilt.__draw_handle3D = bpy.types.SpaceView3D.draw_handler_add( MESH_OT_poly_quilt.draw_callback_3d, args, 'WINDOW', 'POST_VIEW')
 
@@ -318,5 +339,66 @@ class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
         else :
             MESH_OT_poly_quilt.is_lock_hold = True
             self.report({'INFO'}, "Lock Hold" )            
-        print (MESH_OT_poly_quilt.is_lock_hold)
         return {'FINISHED'}
+
+
+class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
+    """Check Modifire"""
+    bl_idname = "mesh.poly_quilt_key_check"
+    bl_label = "PolyQuiltKeyCheck"
+
+    is_runngin = False
+
+    @classmethod
+    def poll( cls , context ) :
+        return not MESH_OT_poly_quilt_key_check.is_runngin
+
+    def modal(self, context, event):
+        if event.type == 'TIMER' :
+            return {'PASS_THROUGH'}
+        from .gizmo_preselect import PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect   
+
+        # 自分を使っているツールを探す。
+        if context.mode != 'EDIT_MESH' or PQ_GizmoGroup_Preselect.bl_idname not in [ tool.widget for tool in context.workspace.tools ] :
+            MESH_OT_poly_quilt_key_check.is_runngin = False
+            return {'CANCELLED'}
+
+        PQ_Gizmo_Preselect.check_modifier_key( context , event.shift ,event.ctrl , event.alt )
+        return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+        MESH_OT_poly_quilt_key_check.is_runngin = True
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
+    """Change Brush Size"""
+    bl_idname = "mesh.poly_quilt_brush_size"
+    bl_label = "PolyQuiltBrushSize"
+    
+    brush_size_value : bpy.props.FloatProperty(
+        name="Brush Size Value",
+        description="Brush Size Value",
+        default=0.0,
+        min=-1000.0,
+        max=1000.0)
+
+    brush_strong_value : bpy.props.FloatProperty(
+        name="Brush Strong Value",
+        description="Brush Strong Value",
+        default=0.0,
+        min=-1.0,
+        max=1.0)
+
+    def invoke(self, context, event):
+        if context.area.type == 'VIEW_3D' :
+            preferences = context.preferences.addons[__package__].preferences        
+
+            a = (preferences.brush_size * preferences.brush_size) / 40000.0 + 0.1
+            preferences.brush_size += self.brush_size_value * a       
+            strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
+            preferences.brush_strength = strength
+            context.area.tag_redraw()
+
+        return {'CANCELLED'}
+

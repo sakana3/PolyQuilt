@@ -27,36 +27,75 @@ from .ElementItem import ElementItem
 __all__ = ['QMeshHighlight']
 
 class QMeshHighlight :
+    __grobal_tag__ = 0
+
     def __init__(self,pqo) :
         self.pqo = pqo
         self.__viewPosVerts = None
         self.__viewPosEdges = None
         self.current_matrix = None
+        self.__boundaryViewPosVerts = None
+        self.__boundaryViewPosEdges = None
+        self.__local_tag__ = 0
 
     @property
     def viewPosVerts(self):
+        self.checkDirty()
         if self.__viewPosVerts == None :
             self.UpdateView( bpy.context , True )
         return self.__viewPosVerts
 
     @property
     def viewPosEdges(self):
+        self.checkDirty()
         if self.__viewPosEdges == None :
             self.UpdateView( bpy.context , True )
         return self.__viewPosEdges
 
+    @property
+    def boundaryViewPosVerts(self):
+        self.checkDirty()
+        if self.__boundaryViewPosVerts == None :
+            self.__boundaryViewPosVerts = [ ( v , p ) for v,p in self.viewPosVerts.items() if v.is_boundary or v.is_wire or not v.is_manifold ]           
+        return self.__boundaryViewPosVerts
+
+    @property
+    def boundaryViewPosEdges(self):
+        self.checkDirty()
+        if self.__boundaryViewPosEdges == None :
+            self.__boundaryViewPosEdges = { e : p for e , p in self.viewPosEdges.items() if e.is_boundary or e.is_wire }            
+        return self.__boundaryViewPosEdges
+
     def setDirty( self ) :
-        if self.__viewPosVerts :
-            del self.__viewPosVerts
-        self.__viewPosVerts = None
-        if self.__viewPosEdges :
-            del self.__viewPosEdges
-        self.__viewPosEdges = None
-        self.current_matrix = None
+        QMeshHighlight.__grobal_tag__ = QMeshHighlight.__grobal_tag__ + 1
+        self.checkDirty()
+
+    def checkDirty( self ) :
+        if QMeshHighlight.__grobal_tag__ != self.__local_tag__ :
+            if self.__viewPosVerts :
+                del self.__viewPosVerts
+            self.__viewPosVerts = None
+
+            if self.__viewPosEdges :
+                del self.__viewPosEdges
+            self.__viewPosEdges = None
+
+            if self.__boundaryViewPosVerts :
+                del self.__boundaryViewPosVerts
+            self.__boundaryViewPosVerts = None
+
+            if self.__boundaryViewPosEdges :
+                del self.__boundaryViewPosEdges
+            self.__boundaryViewPosEdges = None
+
+            self.current_matrix = None
+            self.__local_tag__ = QMeshHighlight.__grobal_tag__
 
     def UpdateViewNP( self ,context , forced = False ):
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        self.checkDirty()
+
         if forced == True or matrix != self.current_matrix :
             region = context.region
             halfW = region.width / 2.0
@@ -78,44 +117,42 @@ class QMeshHighlight :
             verts_proj = verts_xyz / verts_w * np.array( (halfW , halfH , 1) ) + np.array( (halfW , halfH , 0) ) 
             verts_proj_xy = verts_view[:,[0,1]] 
 
-            viewPos = { v : ( v , Vector( p ).to_2d() ) for (v,p,w) in zip(verts , verts_proj , verts_world ) }
+            viewPos = { v : Vector( p ).to_2d() for (v,p,w) in zip(verts , verts_proj , verts_world ) }
 
             edges = self.pqo.bm.edges
             edges_size = len(edges) 
 #           edges_verts = [ (e.verts[0].index,e.verts[1].index) for e in edges ]
 #           self.__viewPosEdges = [ (e , verts_xyz[e[0]] , verts_xyz[e[1]] ) for e in edges_verts ]
 
-            self.__viewPosEdges = [ (e, p1[1] , p2[1] ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
-            self.__viewPosVerts = [ p for p in viewPos.values() if p and not p[0].hide ]
+            self.__viewPosEdges = { e : [ p1 , p2 ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
+            self.__viewPosVerts = [ (a,p) for v,p in viewPos.items() if p and not p[0].hide ]
 
             self.current_matrix = matrix        
 
     def UpdateView( self ,context , forced = False ):
-        rv3d = context.space_data.region_3d
+        rv3d = context.region_data
         matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        self.checkDirty()
+
         if forced == True or matrix != self.current_matrix :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            matrix_world = self.pqo.obj.matrix_world
-            perspective_matrix = rv3d.perspective_matrix
-            matrix = matrix_world @ perspective_matrix
-            half = Vector( (halfW,halfH) )
+            matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
 
             verts = self.pqo.bm.verts
 
             def ProjVert( vt ) :
-                wp = matrix_world @ vt.co
-                pv = perspective_matrix @ wp.to_4d()
-                w = pv.w
-                return Vector( (pv.x * halfW , pv.y * halfH ) ) / w + half if w > 0.0 else None
+                pv = matrix @ vt.co.to_4d()
+                w = pv[3]
+                return Vector( (pv.x * halfW / w + halfW , pv.y * halfH / w + halfH ) )  if w > 0.0 else None
 
             viewPos = { p : ProjVert(p) for p in verts }
 
             edges = self.pqo.bm.edges
 
-            self.__viewPosEdges = [ (e, p1 , p2 ) for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide ]
-            self.__viewPosVerts = [ (v,p) for v,p in viewPos.items() if p and not v.hide ]
+            self.__viewPosEdges = { e : [ p1 , p2 ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
+            self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
 
             self.current_matrix = copy.copy(matrix)
 
@@ -125,7 +162,7 @@ class QMeshHighlight :
         viewPos = self.viewPosVerts
         rr = Vector( (r,0) )
         verts = self.pqo.bm.verts
-        s = [ i for i in viewPos if i[1] - p <= rr and i[0] in verts ]
+        s = [ [v,s] for v,s in viewPos.items() if s - p <= rr and v in verts ]
         if edgering :
             s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
 
@@ -136,7 +173,7 @@ class QMeshHighlight :
         s = [ i for i in s if i[0] not in ignore ]
 
         r = sorted( s , key=lambda i:(i[1] - p).length_squared )
-        matrix_world = self.pqo.obj.matrix_world        
+        matrix_world = self.pqo.obj.matrix_world
         return [ ElementItem( self.pqo ,i[0] , i[1] , matrix_world @ i[0].co ) for i in r ] 
 
 
@@ -158,9 +195,9 @@ class QMeshHighlight :
         intersect = geometry.intersect_line_sphere_2d
         edges = self.pqo.bm.edges
         if edgering :        
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
         else :
-            r = [ Conv(e) for e,p1,p2 in viewPosEdge if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
 
         if backface_culling :
             ray2 = ray.world_to_object( self.pqo.obj )
@@ -192,36 +229,3 @@ class QMeshHighlight :
 
         return ElementItem.Empty()
 
-
-
-    def find_view_range( self , coord , radius ) :
-#       xray = bpy.context.space_data.shading.show_xray 
-#       select_mode = bpy.context.tool_settings.mesh_select_mode
-
-        #bpy.context.tool_settings.mesh_select_mode = [True,True,True] 
-
-        #bpy.ops.ed.undo_push(message="For find nearest") 
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius ) 
-
-        rv = [ v for v in  bm.verts if v.select ]
-        re = [ e for e in  bm.edges if e.select ] 
-        rf = [ f for f in  bm.faces if f.select ] 
-
-        #bpy.ops.ed.undo_redo() 
-
-#       bpy.ops.action.select_all( 'DESELECT' ) 
-        #bpy.context.tool_settings.mesh_select_mode = select_mode 
-#       bpy.context.space_data.shading.show_xray = xray 
-
-        return rv , re , rf 
-
-def find_view_range( coord , radius ) :
-    bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius ) 
-
-    rv = [ v for v in  bm.verts if v.select ]
-    re = [ e for e in  bm.edges if e.select ] 
-    rf = [ f for f in  bm.faces if f.select ] 
-
-    bpy.ops.action.select_all( 'DESELECT' ) 
-
-    return rv , re , rf 

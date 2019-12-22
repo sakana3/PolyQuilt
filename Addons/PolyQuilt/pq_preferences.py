@@ -26,6 +26,7 @@ from .utils.addon_updater import (
     get_separator,
 )
 from bpy.types import AddonPreferences
+from .pq_icon import *
 
 __all__ = [
     "PolyQuiltPreferences" ,
@@ -34,6 +35,11 @@ __all__ = [
     "PQ_OT_UpdateAddon" ,
     "register_updater"
 ]
+
+def enum_brush_type_callback(scene, context):
+        items=(('SMOOTH' , "Smooth", "" , custom_icon("icon_brush_relax") , 0),
+               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 1 ) )
+        return items
 
 class PQ_OT_CheckAddonUpdate(bpy.types.Operator):
     bl_idname = "mesh.pq_ot_check_addon_update"
@@ -92,6 +98,7 @@ def get_update_candidate_branches(_, __):
         return []
 
     return [(name, name, "") for name in manager.get_candidate_branch_names()]
+
 
 
 class PolyQuiltPreferences(AddonPreferences):
@@ -210,6 +217,32 @@ class PolyQuiltPreferences(AddonPreferences):
         max = 16,
         default=0,
     )
+
+    brush_type : bpy.props.EnumProperty(
+        name="Brush Type",
+        description="Brush Type",
+        items=enum_brush_type_callback
+    )    
+
+    brush_size : bpy.props.FloatProperty(
+        name="Brush Size",
+        description="Brush Size",
+        default=50.0,
+        min=5.0,
+        max=200.0)    
+
+    brush_strength : bpy.props.FloatProperty(
+        name="Brush Strength",
+        description="Brush Strength",
+        default=0.5,
+        min=0.0,
+        max=1.0)    
+
+    fix_to_x_zero : bpy.props.BoolProperty(
+              name = "fix_to_x_zero" ,
+              default = False ,
+              description="Fix X=0",
+            )
 
     def draw(self, context):
         layout = self.layout

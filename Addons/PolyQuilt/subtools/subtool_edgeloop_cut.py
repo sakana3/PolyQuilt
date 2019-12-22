@@ -34,7 +34,7 @@ class SubToolEdgeloopCut(SubTool) :
         self.EdgeLoops = None
         self.VertLoops = None
 
-    def Check( target : ElementItem ) :
+    def Check( root ,target : ElementItem ) :
         if len( target.element.link_faces ) == 2 :
             return True
         return False
