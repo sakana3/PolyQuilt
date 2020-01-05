@@ -190,18 +190,19 @@ class SubToolMakePoly(SubTool) :
                         self.do_splite()
                     else :
                         if self.currentTarget.isFace :
+                            wp = QSnap.view_adjust(self.currentTarget.hitPosition)                
                             if  self.currentTarget.element in self.vert_array.verts[-1].link_faces :
                                 self.mode = 'SPLITE'
                                 self.vert_array.clear_edges()                             
                                 self.vert_array.add_face( self.currentTarget.element )
-                                vert = self.bmo.AddVertexWorld( self.currentTarget.hitPosition )
+                                vert = self.bmo.AddVertexWorld( wp )
                                 self.bmo.UpdateMesh()                      
                                 self.vert_array.add_line( vert )
                                 self.bmo.UpdateMesh()
                             else :
-                                vert = self.bmo.AddVertexWorld( self.currentTarget.hitPosition )
+                                vert = self.bmo.AddVertexWorld( wp )
                                 self.bmo.UpdateMesh()
-                                self.currentTarget = ElementItem( self.bmo ,vert , self.mouse_pos , self.currentTarget.hitPosition , 0.0 )
+                                self.currentTarget = ElementItem( self.bmo ,vert , self.mouse_pos , wp , 0.0 )
 
                         if self.currentTarget.isEdge :
                             self.currentTarget = self.edge_split( self.currentTarget )
@@ -530,7 +531,8 @@ class SubToolMakePoly(SubTool) :
         mirror_face = None
         if self.currentTarget.isFace :
             if  self.currentTarget.element == self.vert_array.faces[-1] :                            
-                vert = self.bmo.AddVertexWorld( self.currentTarget.hitPosition )
+                wp = QSnap.view_adjust(self.currentTarget.hitPosition)                
+                vert = self.bmo.AddVertexWorld( wp )
                 self.bmo.UpdateMesh()                                
                 self.vert_array.add_line( vert )
                 self.bmo.UpdateMesh()
@@ -548,7 +550,6 @@ class SubToolMakePoly(SubTool) :
                 self.bmo.UpdateMesh()
                 splite_end = True
 
-        print(splite_end)
         if splite_end :
             if self.bmo.is_mirror_mode :
                 mirror_face = self.bmo.find_mirror( self.vert_array.faces[-1] , check_same = False )
@@ -564,8 +565,6 @@ class SubToolMakePoly(SubTool) :
                                 facesp = bmesh.utils.face_split_edgenet( fs[0] , mirror_edges )
                                 self.bmo.UpdateMesh()
                     else :
-                        print(self.vert_array.faces[-1])
-                        print(self.vert_array.edges)
                         facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
                         mirror_edges = [ self.bmo.find_mirror(e) for e in self.vert_array.edges ]
                         facesp = bmesh.utils.face_split_edgenet( mirror_face , mirror_edges )
