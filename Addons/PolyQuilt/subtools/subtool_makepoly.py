@@ -198,6 +198,10 @@ class SubToolMakePoly(SubTool) :
                                 self.bmo.UpdateMesh()                      
                                 self.vert_array.add_line( vert )
                                 self.bmo.UpdateMesh()
+                            else :
+                                vert = self.bmo.AddVertexWorld( self.currentTarget.hitPosition )
+                                self.bmo.UpdateMesh()
+                                self.currentTarget = ElementItem( self.bmo ,vert , self.mouse_pos , self.currentTarget.hitPosition , 0.0 )
 
                         if self.currentTarget.isEdge :
                             self.currentTarget = self.edge_split( self.currentTarget )
@@ -244,20 +248,6 @@ class SubToolMakePoly(SubTool) :
             else :
                 self.PlanlagtePos = self.currentTarget.hitPosition
 
-    def check_splite( self ) :
-        # 面分割を行うかどうか
-        will_splite = False
-        b0 = self.vert_array.get(-1)
-        e0 = self.bmo.local_to_2d( b0.co )
-        for f in self.vert_array.last_vert.link_faces :
-            if f is self.currentTarget.element :
-                return True
-#                for e in [ e for e in f.edges if b0 not in e.verts ] :
-#                    v0 , v1 = self.bmo.local_to_2d( e.verts[0].co ) , self.bmo.local_to_2d( e.verts[1].co )
- #                   if mathutils.geometry.intersect_line_line_2d( e0 , self.mouse_pos , v0,v1 ) :
-  #                      self.will_splite = True
-#                        return True
-        return False
 
     def OnUpdate( self , context , event ) :
         self.LMBEvent.Update( context , event )
@@ -520,6 +510,21 @@ class SubToolMakePoly(SubTool) :
             newItem.setup_mirror()
         return newItem
 
+    def check_splite( self ) :
+        # 面分割を行うかどうか
+        will_splite = False
+        b0 = self.vert_array.get(0)
+        e0 = self.bmo.local_to_2d( b0.co )
+        for f in self.vert_array.last_vert.link_faces :
+            if f is self.currentTarget.element :
+                return True
+#                for e in [ e for e in f.edges if b0 not in e.verts ] :
+#                    v0 , v1 = self.bmo.local_to_2d( e.verts[0].co ) , self.bmo.local_to_2d( e.verts[1].co )
+ #                   if mathutils.geometry.intersect_line_line_2d( e0 , self.mouse_pos , v0,v1 ) :
+  #                      self.will_splite = True
+#                        return True
+        return False
+
     def do_splite( self ) : 
         splite_end = False
         mirror_face = None
@@ -529,7 +534,6 @@ class SubToolMakePoly(SubTool) :
                 self.bmo.UpdateMesh()                                
                 self.vert_array.add_line( vert )
                 self.bmo.UpdateMesh()
-                self.mode = 'SPLITE'
 
         if self.currentTarget.isEdge :
             if self.vert_array.faces[-1] in self.currentTarget.element.link_faces :
@@ -544,6 +548,7 @@ class SubToolMakePoly(SubTool) :
                 self.bmo.UpdateMesh()
                 splite_end = True
 
+        print(splite_end)
         if splite_end :
             if self.bmo.is_mirror_mode :
                 mirror_face = self.bmo.find_mirror( self.vert_array.faces[-1] , check_same = False )
@@ -559,10 +564,14 @@ class SubToolMakePoly(SubTool) :
                                 facesp = bmesh.utils.face_split_edgenet( fs[0] , mirror_edges )
                                 self.bmo.UpdateMesh()
                     else :
+                        print(self.vert_array.faces[-1])
+                        print(self.vert_array.edges)
                         facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
                         mirror_edges = [ self.bmo.find_mirror(e) for e in self.vert_array.edges ]
                         facesp = bmesh.utils.face_split_edgenet( mirror_face , mirror_edges )
                         self.bmo.UpdateMesh()
+                else :
+                    facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
             else :
                 facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
             self.bmo.UpdateMesh()
