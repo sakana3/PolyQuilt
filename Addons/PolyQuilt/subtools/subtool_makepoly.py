@@ -554,21 +554,17 @@ class SubToolMakePoly(SubTool) :
             if self.bmo.is_mirror_mode :
                 mirror_face = self.bmo.find_mirror( self.vert_array.faces[-1] , check_same = False )
                 if mirror_face != None :
+                    # 同一面をカットする時
                     if mirror_face == self.vert_array.faces[-1] :
-                        facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
-                        self.bmo.UpdateMesh()
-                        mirror_vert = self.bmo.find_mirror( self.vert_array.verts[0] , check_same = False )
-                        if mirror_vert != None :
-                            fs = [ f for f in facesp if f in mirror_vert.link_faces ]
-                            if len(fs) == 1 :
-                                mirror_edges = [ self.bmo.find_mirror(e, check_same = False ) for e in self.vert_array.edges ]
-                                facesp = bmesh.utils.face_split_edgenet( fs[0] , mirror_edges )
-                                self.bmo.UpdateMesh()
+                        edges = self.vert_array.edges
+                        mirror_edges = [ self.bmo.find_mirror(e, check_same = False ) for e in edges ]
+                        edges.extend( mirror_edges )
+                        facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , edges )
                     else :
                         facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
+                        self.bmo.UpdateMesh()
                         mirror_edges = [ self.bmo.find_mirror(e) for e in self.vert_array.edges ]
                         facesp = bmesh.utils.face_split_edgenet( mirror_face , mirror_edges )
-                        self.bmo.UpdateMesh()
                 else :
                     facesp = bmesh.utils.face_split_edgenet( self.vert_array.faces[-1] , self.vert_array.edges )
             else :
