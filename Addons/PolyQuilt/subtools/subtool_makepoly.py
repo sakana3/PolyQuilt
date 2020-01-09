@@ -206,13 +206,10 @@ class SubToolMakePoly(SubTool) :
 
                         if self.currentTarget.isEdge :
                             self.currentTarget = self.edge_split( self.currentTarget )
-                            self.bmo.UpdateMesh()
-                            self.isEnd = self.AddVert(self.currentTarget ) == False
-
+                            
                         elif self.currentTarget.isEmpty :
                             self.pivot = self.calc_planned_construction_position()
                             vert = self.bmo.AddVertexWorld( self.pivot )
-                            self.bmo.UpdateMesh()
                             self.currentTarget = ElementItem( self.bmo ,vert , self.mouse_pos , self.pivot , 0.0 )
 
                         if self.currentTarget.isVert and self.mode != 'SPLITE' :
@@ -254,6 +251,12 @@ class SubToolMakePoly(SubTool) :
         self.LMBEvent.Update( context , event )
 
         if event.type == 'RIGHTMOUSE' and event.value == 'RELEASE' :
+            if self.mode == 'SPLITE' and len(self.vert_array.verts) > 1 :
+                # 分割モード中なら一番近い点を選んで終了する
+                p = self.vert_array.last_vert.co
+                r = sorted( self.vert_array.last_face.verts , key = lambda i:(i.co - p).length_squared )
+                self.currentTarget = ElementItem( self.bmo , r[0] , self.mouse_pos , self.bmo.local_to_world_pos(r[0].co) , 0 )
+                self.do_splite()
             self.isEnd = True
 
         if self.isEnd == True :
@@ -398,7 +401,7 @@ class SubToolMakePoly(SubTool) :
                 ret = False
 
             if self.mode == 'EDGE' :
-               self.vert_array.clear_verts()
+               self.vert_array.reset_verts()
 
         if dirty :
             self.bmo.UpdateMesh()             
@@ -512,8 +515,6 @@ class SubToolMakePoly(SubTool) :
         return newItem
 
     def check_splite( self ) :
-        # 面分割を行うかどうか
-        will_splite = False
         b0 = self.vert_array.get(0)
         e0 = self.bmo.local_to_2d( b0.co )
         for f in self.vert_array.last_vert.link_faces :
