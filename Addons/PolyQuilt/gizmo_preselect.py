@@ -26,12 +26,12 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
     subtool = None
     alt = False
+    run_operator = False
 
     def __init__(self) :
         self.bmo = None
         self.currentElement = None
         self.preferences = bpy.context.preferences.addons[__package__].preferences
-        self.run_operator = False
         self.DrawHighlight = None
         self.region = None
         PQ_Gizmo_Preselect.subtool = SubToolDefault
@@ -53,6 +53,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         PQ_Gizmo_Preselect.subtool = None
 
     def test_select(self, context, location):
+        if self.run_operator :
+            self.DrawHighlight = None
+        
         if self.currentElement == None :
             self.currentElement = ElementItem.Empty()
 
@@ -79,6 +82,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         return -1
 
     def draw(self, context):
+        if self.run_operator :
+            self.DrawHighlight = None
+
         if self.DrawHighlight != None :
             self.DrawHighlight()
 
@@ -94,10 +100,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.currentElement = ElementItem.Empty()
             self.DrawHighlight = None
 
-    def use(self , is_using ) :
-        self.run_operator = is_using
-        self.currentElement = ElementItem.Empty()
-        self.DrawHighlight = None
+    @classmethod
+    def use(cls, is_using ) :
+        cls.run_operator = is_using
 
     @classmethod
     def check_modifier_key( cls , context , shift , ctrl , alt ) :
