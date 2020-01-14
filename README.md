@@ -1,3 +1,6 @@
+
+I am currently working on an English document. [Click here](https://github.com/sakana3/PolyQuilt/releases/download/1.1.2/PolyQuilt_v1.1.2.zip) to download the latest version.
+
 # PolyQuilt(ポリキルト)
 ---
 PolyQuiltはローポリモデリングをサポートするBlender2.8用アドオンです。シンプルでオーソドックスでオールドスクールな面張り機能に加えてドラッグや長押し等のマウスオペレーションに様々な機能を割り振ることでツールの切り替えを最小限にしてポリゴンモデリングを支援します。
