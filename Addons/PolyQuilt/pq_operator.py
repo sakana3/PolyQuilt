@@ -151,7 +151,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if 'CANCELLED' in val or 'FINISHED' in val :
             Exit()
-            self.preselect.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
+#           self.preselect.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
         return val
 
     def update(self, context, event):
