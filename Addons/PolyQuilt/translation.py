@@ -18,5 +18,7 @@ pq_translation_dict = {
             ("*", "Empty Mesh Object") : "空メッシュ" ,
             ("*", "Brush Strength") : "ブラシ強度" ,
             ("*", "Flex") : "自由" ,
+            ("*", "Space Drag Operation") : "スペースでドラッグした時の操作" ,
         }
 }
+

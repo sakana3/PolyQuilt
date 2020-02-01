@@ -88,8 +88,19 @@ class SubToolDefault(SubToolRoot) :
             if self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :
-                bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
-                self.isExit = True
+                if self.preferences.space_drag_op == "ORBIT" :
+                    bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
+                    self.isExit = True
+                elif self.preferences.space_drag_op == "PAN" :
+                    bpy.ops.view3d.move('INVOKE_DEFAULT', use_cursor_init=True)
+                    self.isExit = True
+                elif self.preferences.space_drag_op == "DOLLY" :
+                    bpy.ops.view3d.zoom('INVOKE_DEFAULT', use_cursor_init=True)
+                    self.isExit = True
+                elif self.preferences.space_drag_op == "KNIFE" :
+                    self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
+                else :
+                    self.isExit = True
 
     def OnUpdate( self , context , event ) :
         if self.isExit :

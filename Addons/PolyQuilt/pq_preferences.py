@@ -244,6 +244,17 @@ class PolyQuiltPreferences(AddonPreferences):
               description="Fix X=0",
             )
 
+    space_drag_op : bpy.props.EnumProperty(
+        name="Space Drag Operation",
+        description="Space Drag Operation",
+        items=[('NONE' , "None", "" ),
+               ('ORBIT' , "Orbit", "" ),
+               ('PAN' , "Pan", "" ) ,
+               ('DOLLY' , "Dolly", "" ) ,
+               ('KNIFE' , "Knife", "" ) ],
+        default='ORBIT',
+    )
+
     def draw(self, context):
         layout = self.layout
 
@@ -265,6 +276,9 @@ class PolyQuiltPreferences(AddonPreferences):
         row = box.row()
         row.label(text="Highlight Face Alpha", icon = 'FACESEL' )
         row.prop(self, "highlight_face_alpha" , text = "Alpha" )
+        row = box.row()
+        row.label(text="Space Drag Operation" )
+        row.prop(self, "space_drag_op" , text = "")
 
         row = layout.row()
         row.column().label(text="Color settings:" , icon = 'COLOR')

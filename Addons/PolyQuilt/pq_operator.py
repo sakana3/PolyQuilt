@@ -371,6 +371,11 @@ class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
     def invoke(self, context, event):
         MESH_OT_poly_quilt_key_check.is_runngin = True
         context.window_manager.modal_handler_add(self)
+
+#        for keymap in bpy.context.window_manager.keyconfigs.addon.keymaps:
+#            for key in keymap.keymap_items:
+ #               pass
+
         return {'RUNNING_MODAL'}
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
