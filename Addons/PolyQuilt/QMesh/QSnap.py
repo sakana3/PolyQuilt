@@ -156,6 +156,8 @@ class QSnap :
                     location2 , normal2 , face2 = cls.instance.__raycast_double( ray2 )
                     if face2 == face :
                         return True
+                    if (location - location2).length <= dist :
+                        return True
                 return False
         return True
 
