@@ -147,17 +147,22 @@ class QSnap :
             ray = pqutil.Ray.from_world_to_screen( bpy.context , world_pos )
             if ray == None :
                 return False
-            location , normal , face = cls.instance.__raycast( ray )
-            if location != None :
-                if (location - world_pos).length <= dist :
+            hit , normal , face = cls.instance.__raycast( ray )
+            if hit != None :
+                v2h = (ray.origin - hit).length
+                v2w = (ray.origin - world_pos).length
+
+                if abs(v2h - v2w) <= dist :
                     return True
                 else :
-                    ray2 = pqutil.Ray( world_pos , ray.vector )
-                    location2 , normal2 , face2 = cls.instance.__raycast_double( ray2 )
-                    if face2 == face :
-                        return True
-                    if (location - location2).length <= dist :
-                        return True
+                    ray2 = pqutil.Ray( hit + ray.vector * dist , ray.vector )
+                    hit2 , normal2 , face2 = cls.instance.__raycast( ray2 )
+                    h2h = ( ray2.origin - hit2 ).length
+                    w2h0 = ( ray2.origin - world_pos ).length
+                    w2h1 = ( world_pos - hit2 ).length
+                    if w2h0 < h2h :
+                        if w2h0 < w2h1 :
+                            return True
                 return False
         return True
 
