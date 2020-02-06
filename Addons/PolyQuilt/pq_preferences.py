@@ -251,7 +251,9 @@ class PolyQuiltPreferences(AddonPreferences):
                ('ORBIT' , "Orbit", "" ),
                ('PAN' , "Pan", "" ) ,
                ('DOLLY' , "Dolly", "" ) ,
-               ('KNIFE' , "Knife", "" ) ],
+               ('KNIFE' , "Knife", "" ) ,
+               ('SELECT_BOX' , "Select Box", "" ) ,
+               ('SELECT_LASSO' , "Select Lasso", "" ) ],
         default='ORBIT',
     )
 

@@ -99,6 +99,12 @@ class SubToolDefault(SubToolRoot) :
                     self.isExit = True
                 elif self.preferences.space_drag_op == "KNIFE" :
                     self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
+                elif self.preferences.space_drag_op == "SELECT_BOX" :
+                    bpy.ops.view3d.select_box('INVOKE_DEFAULT',wait_for_input=False, mode='SET')
+                    self.isExit = True
+                elif self.preferences.space_drag_op == "SELECT_LASSO" :
+                    bpy.ops.view3d.select_lasso('INVOKE_DEFAULT', mode='SET')
+                    self.isExit = True
                 else :
                     self.isExit = True
 
