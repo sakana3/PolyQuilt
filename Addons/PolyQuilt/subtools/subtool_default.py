@@ -100,14 +100,14 @@ class SubToolDefault(SubToolRoot) :
                 elif self.preferences.space_drag_op == "KNIFE" :
                     self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
                 elif self.preferences.space_drag_op == "SELECT_BOX" :
-                    bpy.context.window.cursor_warp( event.PressPos.x ,event.PressPos.y )
+                    bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
                     bpy.ops.view3d.select_box('INVOKE_DEFAULT' ,wait_for_input=False, mode='SET')
-                    bpy.context.window.cursor_warp( self.mouse_pos.x ,self.mouse_pos.y )
+                    bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
                     self.isExit = True
                 elif self.preferences.space_drag_op == "SELECT_LASSO" :
-                    bpy.context.window.cursor_warp( event.PressPos.x ,event.PressPos.y )
-                    bpy.ops.view3d.select_lasso('INVOKE_DEFAULT', mode='SET')
-                    bpy.context.window.cursor_warp( self.mouse_pos.x ,self.mouse_pos.y )
+                    bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
+                    bpy.ops.view3d.select_lasso('INVOKE_DEFAULT' , path = [], mode='SET')
+                    bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
                     self.isExit = True
                 else :
                     self.isExit = True
