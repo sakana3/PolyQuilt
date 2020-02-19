@@ -204,7 +204,7 @@ class ElementItem :
         p = pqutil.location_3d_to_region_2d( co )
         return ElementItem( qmesh ,e , p , co , 0.0 )
 
-    def Draw( self , obj , color , preferences ) :
+    def Draw( self , obj , color , preferences , marker = False ) :
         if self.is_valid :
             size = preferences.highlight_vertex_size
             width = preferences.highlight_line_width
@@ -218,8 +218,68 @@ class ElementItem :
                     v = self.__qmesh.local_to_world_pos( element.verts[0].co.lerp( element.verts[1].co , r) )
                     draw_util.draw_pivots3D( (v,) , 0.75 , div_col )                
                 draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
+                if marker and len(element.link_faces) <= 1 :
+                    self.draw_extrude_marker()
 
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 draw_util.drawElementHilight3D( obj , self.mirror , size , width ,alpha , color )
+
+    def draw_extrude_marker( self ) :
+        element = self.element    
+        with draw_util.push_pop_projection2D() :
+            p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
+            v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
+            v1 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[1].co) )
+            length = (v0-v1).length
+            center = ((v0 + v1 ) / 2)
+            vec = (v1 - v0 ).normalized()
+            norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
+            radius = min( [ length / 10 , dpm() * 4 ] )
+
+            tangents = []
+            for face in element.link_faces :
+                for loop in [ l for l in face.loops if l.edge == element ]:
+                    tangent = element.calc_tangent( loop )
+                    p = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos (element.verts[0].co + tangent ) )
+                    tangents.append( (p - v0).normalized() )
+
+            can_extrude = False
+            if len( [ t for t in tangents if t.dot( norm ) > 0 ] ) <= 0 :
+                offset = center + norm * 2 * dpm()
+                if (p1 - center).length <= radius :
+                    vs = [ offset + vec * radius , offset - vec * radius , offset + norm * radius ]
+                    draw_util.draw_poly2D( vs , (1,1,1,1) )
+                else :
+                    radius = radius * 0.9
+                    vs = [ offset + vec * radius , offset - vec * radius , offset + norm * radius , offset + vec * radius ]
+                    draw_util.draw_lines2D( vs , (1,1,1,0.5) , 1.0 )
+                    can_extrude = True
+
+            if len( [ t for t in tangents  if t.dot( norm ) < 0 ] ) <= 0 :
+                offset = center - norm * 2 * dpm()
+                if (p1 - center).length <= radius :
+                    vs = [ offset + vec * radius , offset - vec * radius , offset - norm * radius ]
+                    draw_util.draw_poly2D( vs , (1,1,1,1) )
+                else :
+                    radius = radius * 0.9
+                    vs = [ offset + vec * radius , offset - vec * radius , offset - norm * radius , offset + vec * radius ]
+                    draw_util.draw_lines2D( vs , (1,1,1,0.5) , 1.0 )
+                    can_extrude = True
+        return can_extrude
+
+    def can_extrude( self ) :
+        element = self.element            
+        if self.isEdge and len(element.link_faces) <= 1 :            
+            p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
+            v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
+            v1 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[1].co) )
+            length = (v0-v1).length
+            center = ((v0 + v1 ) / 2)
+            vec = (v1 - v0 ).normalized()
+            norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
+            radius = min( [ length / 10 , dpm() * 5 ] )
+
+            return (p1 - center).length <= radius
+        return False
 

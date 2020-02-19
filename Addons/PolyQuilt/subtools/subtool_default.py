@@ -85,7 +85,12 @@ class SubToolDefault(SubToolRoot) :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
         elif event.type == MBEventType.Drag :
-            if self.currentTarget.isNotEmpty :
+            if self.currentTarget.isEdge :
+                if self.currentTarget.can_extrude() :
+                    self.SetSubTool( SubToolEdgeExtrude(self.operator,self.currentTarget , False ) )
+                else :
+                    self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
+            elif self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :
                 if self.preferences.space_drag_op == "ORBIT" :
@@ -127,7 +132,7 @@ class SubToolDefault(SubToolRoot) :
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
             def Draw() :
-                element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+                element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
             return Draw
         return None
 

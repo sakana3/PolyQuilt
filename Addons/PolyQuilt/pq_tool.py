@@ -184,16 +184,16 @@ def km_3d_view_tool_snap_utilities_line(tool_mouse):
         {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
         {"items": [
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS'}, {"properties": [("tool_mode", 'LOWPOLY')]}),
-            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "alt": True}, {"properties": [("lock_hold", True)]}),
+            ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "oskey": True}, {"properties": [("lock_hold", True)]}),
 #           ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "ctrl": True}, {"properties": [("tool_mode", 'EXTRUDE')]}),
             ("mesh.poly_quilt", {"type": tool_mouse, "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
 #           ("mesh.poly_quilt", {"type": "MIDDLEMOUSE", "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("alternative",True)]}),
             ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
             ("mesh.poly_quilt_key_check", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-            ("mesh.poly_quilt_brush_size", {"type": 'WHEELINMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
-            ("mesh.poly_quilt_brush_size", {"type": 'WHEELOUTMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
-            ("mesh.poly_quilt_brush_size", {"type": 'WHEELINMOUSE', "value": 'PRESS', "shift": True, "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
-            ("mesh.poly_quilt_brush_size", {"type": 'WHEELOUTMOUSE', "value": 'PRESS', "shift": True , "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True, "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
+            ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True , "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
          ]},
     )
 

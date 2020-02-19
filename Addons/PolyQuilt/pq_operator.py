@@ -130,12 +130,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
         def Exit() :
-            from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
             PQ_Gizmo_Preselect.use(False)
+        PQ_Gizmo_Preselect.use(True)
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )

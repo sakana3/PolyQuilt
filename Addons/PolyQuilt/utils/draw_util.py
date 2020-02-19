@@ -108,6 +108,15 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
 
+def draw_poly2D( verts , color = (1,1,1,1) ):
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glEnable(bgl.GL_BLEND)
+    shader2D.bind()
+    shader2D.uniform_float("color", color )
+    batch_draw(shader2D, 'TRIS', {"pos": verts} )
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
+    bgl.glDisable(bgl.GL_BLEND)
+
 def begin2d() :
     bgl.glDisable(bgl.GL_DEPTH_TEST)
 
