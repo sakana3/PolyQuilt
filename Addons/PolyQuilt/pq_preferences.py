@@ -257,6 +257,13 @@ class PolyQuiltPreferences(AddonPreferences):
         default='ORBIT',
     )
 
+    vertex_dissolve_angle : FloatProperty(
+        name="Vertex Dessolve Angle",
+        description="Vertex Dessolve Angle",
+        default= 160,
+        min=0,
+        max=180)
+
     def draw(self, context):
         layout = self.layout
 

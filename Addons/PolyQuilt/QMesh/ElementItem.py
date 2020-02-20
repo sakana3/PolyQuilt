@@ -251,7 +251,6 @@ class ElementItem :
                     vs = [ offset + vec * radius , offset - vec * radius , offset + norm * radius ]
                     draw_util.draw_poly2D( vs , (1,1,1,1) )
                 else :
-                    radius = radius * 0.9
                     vs = [ offset + vec * radius , offset - vec * radius , offset + norm * radius , offset + vec * radius ]
                     draw_util.draw_lines2D( vs , (1,1,1,0.5) , 1.0 )
                     can_extrude = True
@@ -262,7 +261,6 @@ class ElementItem :
                     vs = [ offset + vec * radius , offset - vec * radius , offset - norm * radius ]
                     draw_util.draw_poly2D( vs , (1,1,1,1) )
                 else :
-                    radius = radius * 0.9
                     vs = [ offset + vec * radius , offset - vec * radius , offset - norm * radius , offset + vec * radius ]
                     draw_util.draw_lines2D( vs , (1,1,1,0.5) , 1.0 )
                     can_extrude = True

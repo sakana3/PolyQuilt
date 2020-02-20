@@ -59,7 +59,7 @@ class SubToolDefault(SubToolRoot) :
             if self.currentTarget.isVert :
                 self.bmo.dissolve_vert( self.currentTarget.element , False , False )
             elif self.currentTarget.isEdge :
-                self.bmo.dissolve_edge( self.currentTarget.element , False , False )
+                self.bmo.dissolve_edge( self.currentTarget.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif self.currentTarget.isFace :
                 self.bmo.Remove( self.currentTarget.element )
             self.bmo.UpdateMesh()

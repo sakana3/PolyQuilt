@@ -89,6 +89,9 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         col.label( text = "Edge Snap Div" )        
         col.prop( preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True , icon_only = False )
 
+        col.label( text = "Vertex Dissolve Angle" )        
+        col.prop( preferences, "vertex_dissolve_angle" , text = "Vertex Dissolve Angle", expand = True, slider = True , icon_only = False  )
+
         col.label( text = "Brush" )        
         col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
         col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
@@ -120,11 +123,17 @@ def tool_poly_quilt():
         row = layout.row(align=True)
         row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
 
+        layout.separator()
         row = layout.row(align=True)
         row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
         row = layout.row(align=True)
         row.prop( preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
+        layout.separator()
+        col = layout.column(align=True)
+        col.prop( preferences, "vertex_dissolve_angle" , text = "Vertex Dissolve Angle", expand = True, slider = True , icon_only = False  )
+
+        layout.separator()
         col = layout.column(align=True)
         col.prop( preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
 
