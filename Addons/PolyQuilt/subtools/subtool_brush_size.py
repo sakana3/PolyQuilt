@@ -28,13 +28,14 @@ from ..utils.dpi import *
 class SubToolBrushSize(SubToolEx) :
     name = "BrushSizeTool"
 
-    def __init__(self, root ) :
+    def __init__(self, event , root ) :
         super().__init__(root)
         self.preMousePos = self.startMousePos
         self.start_radius = self.preferences.brush_size * dpm()
         self.radius = self.start_radius
         self.strength = self.preferences.brush_strength
         self.start_strength = self.strength
+        self.PressPrevPos = mathutils.Vector( (event.mouse_prev_x , event.mouse_prev_y) )    
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -54,6 +55,7 @@ class SubToolBrushSize(SubToolEx) :
 
         elif event.type == self.rootTool.buttonType : 
             if event.value == 'RELEASE' :
+                bpy.context.window.cursor_warp( self.PressPrevPos.x , self.PressPrevPos.y )
                 return 'FINISHED'
 
         return 'RUNNING_MODAL'
@@ -70,3 +72,7 @@ class SubToolBrushSize(SubToolEx) :
     def resetMouse(self, context, event):
         context.window.cursor_warp(context.region.x + context.region.width / 2 - 0.5*(event.mouse_x - event.mouse_prev_x), \
             context.region.y + context.region.height / 2 - 0.5*(event.mouse_y - event.mouse_prev_y))
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'NONE'

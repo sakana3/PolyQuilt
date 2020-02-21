@@ -31,6 +31,7 @@ from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
+from .subtool_polypen import *
 
 class SubToolDefault(SubToolRoot) :
     name = "DefaultSubTool"
@@ -57,9 +58,9 @@ class SubToolDefault(SubToolRoot) :
 
         elif event.type == MBEventType.LongClick :
             if self.currentTarget.isVert :
-                self.bmo.dissolve_vert( self.currentTarget.element , False , False )
+                self.bmo.dissolve_vert( self.currentTarget.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif self.currentTarget.isEdge :
-                self.bmo.dissolve_edge( self.currentTarget.element , False , False )
+                self.bmo.dissolve_edge( self.currentTarget.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif self.currentTarget.isFace :
                 self.bmo.Remove( self.currentTarget.element )
             self.bmo.UpdateMesh()
@@ -68,12 +69,15 @@ class SubToolDefault(SubToolRoot) :
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
                 tools = []
-                if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
-                if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
+                if SubToolPolyPen.Check( self ,self.currentTarget) : 
+                    tools.append(SubToolPolyPen(self.operator,self.currentTarget))
+                else :
+                    if len(self.currentTarget.element.link_faces) > 0 :
+                        tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
+                    if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
+                        tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
+                    if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
+                        tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
@@ -85,7 +89,12 @@ class SubToolDefault(SubToolRoot) :
                 self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
 
         elif event.type == MBEventType.Drag :
-            if self.currentTarget.isNotEmpty :
+            if self.currentTarget.isEdge :
+                if self.currentTarget.can_extrude() :
+                    self.SetSubTool( SubToolEdgeExtrude(self.operator,self.currentTarget , False ) )
+                else :
+                    self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
+            elif self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :
                 if self.preferences.space_drag_op == "ORBIT" :
@@ -99,6 +108,16 @@ class SubToolDefault(SubToolRoot) :
                     self.isExit = True
                 elif self.preferences.space_drag_op == "KNIFE" :
                     self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
+                elif self.preferences.space_drag_op == "SELECT_BOX" :
+                    bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
+                    bpy.ops.view3d.select_box('INVOKE_DEFAULT' ,wait_for_input=False, mode='SET')
+                    bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
+                    self.isExit = True
+                elif self.preferences.space_drag_op == "SELECT_LASSO" :
+                    bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
+                    bpy.ops.view3d.select_lasso('INVOKE_DEFAULT' , path = [], mode='SET')
+                    bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
+                    self.isExit = True
                 else :
                     self.isExit = True
 
@@ -117,7 +136,7 @@ class SubToolDefault(SubToolRoot) :
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
             def Draw() :
-                element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+                element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
             return Draw
         return None
 

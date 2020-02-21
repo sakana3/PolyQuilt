@@ -14,6 +14,7 @@ pq_translation_dict = {
             ("*", "SplitColor") : "分割色" ,
             ("*", "DeleteColor") : "削除色" ,
             ("*", "Edge Snap Div") : "辺スナップ分割数" ,
+            ("*", "Vertex Dissolve Angle") : "頂点融解角度" ,
             ("*", "Setup GameEngine like Keymaps") : "ゲームエンジン風キーマップをセットアップ" ,
             ("*", "Empty Mesh Object") : "空メッシュ" ,
             ("*", "Brush Strength") : "ブラシ強度" ,

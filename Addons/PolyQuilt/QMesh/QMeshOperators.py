@@ -264,22 +264,43 @@ class QMeshOperators :
 
     # BMesh Operators
 
-    def dissolve_vert( self , vert  , use_verts = False , use_face_split = False , use_boundary_tear = False, is_mirror = None  ) :
+    def dissolve_vert( self , vert  , use_verts = False , use_face_split = False , use_boundary_tear = False, dissolve_vert_angle = 180, is_mirror = None  ) :
         if vert.is_manifold == False :
             self.Remove( vert , is_mirror )
         else :
             verts = [vert,]
+            other_verts = [ e.other_vert(vert) for e in  vert.link_edges ]
             if self.check_mirror(is_mirror) :
                 mirror = self.find_mirror( vert )
                 if mirror != None :
                     verts.append(mirror)
             bmesh.ops.dissolve_verts( self.bm , verts  = verts , use_face_split = use_face_split , use_boundary_tear = use_boundary_tear )
+            self.dissolve_limit_verts(other_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = is_mirror )
 
-    def dissolve_edge( self , edge , use_verts = False , use_face_split = False, is_mirror = None  ) :
+    def dissolve_edge( self , edge , use_verts = False , use_face_split = False , dissolve_vert_angle = 180 , is_mirror = None  ) :
         if len( edge.link_faces ) <= 1 :
             self.Remove( edge , is_mirror )
         else :
-            self.dissolve_edges( edges = (edge,) , use_verts = use_verts , use_face_split = use_face_split, is_mirror = is_mirror )
+            verts = edge.verts[:]
+            faces = [ f for f in edge.link_faces if len(f.verts) == 3 ]
+            newFace = self.dissolve_edges( edges = (edge,) , use_verts = use_verts , use_face_split = use_face_split, is_mirror = is_mirror )
+            if len(faces) != 2:
+                self.dissolve_limit_verts(verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = is_mirror )
+
+    def dissolve_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
+        for vert in [ v for v in verts if v.is_valid and len(v.link_edges) == 2 ] :
+            n0 = (vert.link_edges[0].other_vert(vert).co - vert.co).normalized()
+            n1 = (vert.link_edges[1].other_vert(vert).co - vert.co).normalized()
+            r = max( min( n0.dot(n1) , 1 ) , -1 )
+            r = math.acos(r)
+            r = math.ceil(math.degrees(r))
+            if r > dissolve_vert_angle :
+                removes = [vert]
+                if self.check_mirror(is_mirror) :
+                    mirror = self.find_mirror( vert )
+                    if mirror != None :
+                        removes.append(mirror)                
+                bmesh.ops.dissolve_verts( self.bm , verts  = removes , use_face_split = False , use_boundary_tear = False )
 
     def dissolve_edges( self , edges , use_verts = False , use_face_split = False, is_mirror = None ) :
         if self.check_mirror(is_mirror) :
@@ -287,7 +308,7 @@ class QMeshOperators :
             mirror_edges = {edge for edge in mirror_edges if edge is not None }
             edges = list( set(edges) | mirror_edges )
 
-        bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
+        return bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
     def dissolve_faces( self , fades , use_verts = False ) :
         return bmesh.ops.dissolve_faces( self.bm , fades = fades , use_verts = use_verts )

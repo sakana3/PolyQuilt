@@ -36,6 +36,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.region = None
         PQ_Gizmo_Preselect.subtool = SubToolDefault
         PQ_Gizmo_Preselect.alt = False
+        PQ_Gizmo_Preselect.run_operator = False
 
     def __del__(self) :
         pass
@@ -53,7 +54,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         PQ_Gizmo_Preselect.subtool = None
 
     def test_select(self, context, location):
-        if self.run_operator :
+        if PQ_Gizmo_Preselect.run_operator :
             self.DrawHighlight = None
         
         if self.currentElement == None :
@@ -78,11 +79,10 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.currentElement = element
 
         self.DrawHighlight = PQ_Gizmo_Preselect.subtool.DrawHighlight( self , self.currentElement )
-
         return -1
 
     def draw(self, context):
-        if self.run_operator :
+        if PQ_Gizmo_Preselect.run_operator :
             self.DrawHighlight = None
 
         if self.DrawHighlight != None :
@@ -101,20 +101,18 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.DrawHighlight = None
 
     @classmethod
-    def use(cls, is_using ) :
-        cls.run_operator = is_using
+    def use( cls , is_using ) :
+        PQ_Gizmo_Preselect.run_operator = is_using
 
     @classmethod
     def check_modifier_key( cls , context , shift , ctrl , alt ) :
         subtool = SubToolDefault
         if shift :
             subtool = SubToolBrush
-            PQ_GizmoGroup_Preselect.set_cursor('CROSSHAIR')
         elif ctrl and False :
             subtool = SubToolExtr
-            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
-        else :
-            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
+
+        PQ_GizmoGroup_Preselect.set_cursor( subtool.GetCursor() )
 
         if PQ_Gizmo_Preselect.subtool != subtool :
             PQ_Gizmo_Preselect.subtool = subtool
@@ -152,7 +150,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
             return False
-        context.window.cursor_set( cls.cursor )        
+        if PQ_Gizmo_Preselect.run_operator == False :
+            context.window.cursor_set( cls.cursor )        
         return True
 
     def setup(self, context):

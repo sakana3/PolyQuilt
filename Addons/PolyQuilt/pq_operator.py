@@ -130,12 +130,13 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
+        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
         def Exit() :
-            from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
             PQ_Gizmo_Preselect.use(False)
+        PQ_Gizmo_Preselect.use(True)
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
@@ -180,6 +181,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if self.currentSubTool is not None :
             ret = self.currentSubTool.Update(context, event)
+            context.window.cursor_modal_set( self.currentSubTool.CurrentCursor() )
 
         if self.preferences.is_debug :
             self.count = self.count + 1
@@ -248,7 +250,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.time = 0
                 self.maxTime = 0
 
-            bpy.context.window.cursor_modal_set( self.currentSubTool.GetCursor() )
+            bpy.context.window.cursor_modal_set( self.currentSubTool.CurrentCursor() )
             context.window_manager.modal_handler_add(self)
 #           MESH_OT_poly_quilt.handle_add(self,context)
             self.AddTimerEvent(context)

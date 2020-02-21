@@ -94,8 +94,8 @@ class SubToolEdgeExtrude(SubTool) :
 
             p0 = self.targetPos + f0
             p1 = self.targetPos + f1
-            p0 = QSnap.adjust_point(p0)
-            p1 = QSnap.adjust_point(p1)
+            p0 = QSnap.view_adjust(p0)
+            p1 = QSnap.view_adjust(p1)
             return [p0,p1]
 
     def OnUpdate( self , context , event ) :

@@ -45,6 +45,7 @@ class ButtonEventUtil :
         self.mouse_pos = mathutils.Vector((0.0,0.0))
         self.event = None
         self.PressPos = mathutils.Vector((0.0,0.0))
+        self.PressPrevPos = mathutils.Vector((0.0,0.0))
         self.presureCompOnce = False
         self.preferences = op.preferences
         self.use_hold_lock = use_hold_lock
@@ -91,6 +92,7 @@ class ButtonEventUtil :
                     self.presureCompOnce = False
                     self.PressTime = time.time()
                     self.PressPos = self.mouse_pos
+                    self.PressPrevPos = mathutils.Vector((event.mouse_prev_x, event.mouse_prev_y))  
                     self.OnEvent( event , MBEventType.Down )
                 else :
                     self.OnEvent( event , MBEventType.Press )
