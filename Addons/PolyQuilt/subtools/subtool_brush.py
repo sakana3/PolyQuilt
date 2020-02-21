@@ -72,7 +72,7 @@ class SubToolBrush(SubToolRoot) :
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
         if event.type in self.callback.keys() :
-            tools = [ t(self) for t in self.callback[event.type] if t.Check( self , self.currentTarget ) ]
+            tools = [ t( event.event , self) for t in self.callback[event.type] if t.Check( self , self.currentTarget ) ]
             if tools :
                 self.SetSubTool( tools )
             self.isExit = True
@@ -106,7 +106,16 @@ class SubToolBrush(SubToolRoot) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        return
+        radius = self.preferences.brush_size * dpm()
+        strength = self.preferences.brush_strength          
+        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )        
+
+        self.LMBEvent.Draw( self.mouse_pos )
+
+        if self.LMBEvent.is_hold :
+            draw_util.DrawFont( "Strenght = " + '{:.0f}'.format(self.preferences.brush_strength * 100) , 10 , self.mouse_pos , (0,0) )
+            draw_util.DrawFont( "Radius = " + '{:.0f}'.format(self.preferences.brush_size * dpm() ) , 10 , self.mouse_pos , (0,-8) )
 
     def OnDraw3D( self , context  ) :
         if not self.LMBEvent.presureComplite :        
@@ -121,6 +130,10 @@ class SubToolBrush(SubToolRoot) :
 
     def OnExitSubTool( self ,context,subTool ):
         self.currentTarget = ElementItem.Empty() # self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight )
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'CROSSHAIR'
 
     def OnExit( self ) :
         pass

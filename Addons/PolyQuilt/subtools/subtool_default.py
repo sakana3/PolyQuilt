@@ -31,6 +31,7 @@ from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
+from .subtool_polypen import *
 
 class SubToolDefault(SubToolRoot) :
     name = "DefaultSubTool"
@@ -57,7 +58,7 @@ class SubToolDefault(SubToolRoot) :
 
         elif event.type == MBEventType.LongClick :
             if self.currentTarget.isVert :
-                self.bmo.dissolve_vert( self.currentTarget.element , False , False )
+                self.bmo.dissolve_vert( self.currentTarget.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif self.currentTarget.isEdge :
                 self.bmo.dissolve_edge( self.currentTarget.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif self.currentTarget.isFace :
@@ -68,12 +69,15 @@ class SubToolDefault(SubToolRoot) :
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
                 tools = []
-                if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
-                if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
+                if SubToolPolyPen.Check( self ,self.currentTarget) : 
+                    tools.append(SubToolPolyPen(self.operator,self.currentTarget))
+                else :
+                    if len(self.currentTarget.element.link_faces) > 0 :
+                        tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
+                    if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
+                        tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
+                    if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
+                        tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []

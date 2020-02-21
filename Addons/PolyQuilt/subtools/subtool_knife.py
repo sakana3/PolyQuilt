@@ -133,3 +133,6 @@ class SubToolKnife(SubTool) :
                     if QSnap.is_active() :
                         QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_cut'] if isinstance( v , bmesh.types.BMVert ) ] , self.preferences.fix_to_x_zero )
 
+    @classmethod
+    def GetCursor(cls) :
+        return 'KNIFE'

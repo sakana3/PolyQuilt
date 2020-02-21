@@ -28,7 +28,7 @@ from ..utils.dpi import *
 class SubToolBrushMove(SubToolEx) :
     name = "MoveBrushTool"
 
-    def __init__(self, root ) :
+    def __init__(self, event ,  root ) :
         super().__init__( root )
         self.radius = self.preferences.brush_size * dpm()
         self.strength = self.preferences.brush_strength
@@ -147,3 +147,6 @@ class SubToolBrushMove(SubToolEx) :
 
         self.bmo.UpdateMesh()        
 
+    @classmethod
+    def GetCursor(cls) :
+        return 'SCROLL_XY'

@@ -47,8 +47,14 @@ class SubToolRoot :
     def Active(self) :
         return self if self.activeSubTool == None else self.activeSubTool
 
-    def GetCursor(self) :
+    @classmethod
+    def GetCursor(cls) :
         return 'DEFAULT'
+
+    def CurrentCursor( self ) :
+        if self.activeSubTool is None :
+            return self.GetCursor()
+        return self.activeSubTool.CurrentCursor()
 
     def SetSubTool( self , subTool ) :
         if isinstance( subTool , list) :

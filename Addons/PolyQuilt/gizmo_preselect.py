@@ -109,12 +109,10 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         subtool = SubToolDefault
         if shift :
             subtool = SubToolBrush
-            PQ_GizmoGroup_Preselect.set_cursor('CROSSHAIR')
         elif ctrl and False :
             subtool = SubToolExtr
-            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
-        else :
-            PQ_GizmoGroup_Preselect.set_cursor('DEFAULT')
+
+        PQ_GizmoGroup_Preselect.set_cursor( subtool.GetCursor() )
 
         if PQ_Gizmo_Preselect.subtool != subtool :
             PQ_Gizmo_Preselect.subtool = subtool
@@ -152,7 +150,8 @@ class PQ_GizmoGroup_Preselect(bpy.types.GizmoGroup):
         else:
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
             return False
-        context.window.cursor_set( cls.cursor )        
+        if PQ_Gizmo_Preselect.run_operator == False :
+            context.window.cursor_set( cls.cursor )        
         return True
 
     def setup(self, context):

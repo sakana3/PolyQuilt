@@ -28,7 +28,7 @@ from ..utils.dpi import *
 class SubToolRelax(SubToolEx) :
     name = "RelaxTool"
 
-    def __init__(self, root) :
+    def __init__(self, event ,  root) :
         super().__init__(root)
         self.radius = self.preferences.brush_size * dpm()
         self.occlusion_tbl = {}
@@ -175,3 +175,7 @@ class SubToolRelax(SubToolEx) :
 #        self.bmo.obj.update_from_editmode()
 #        self.bmo.obj.update_tag()
         bmesh.update_edit_mesh(self.bmo.obj.data , loop_triangles = False,destructive = False )
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'CROSSHAIR'
