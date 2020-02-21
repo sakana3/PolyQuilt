@@ -28,7 +28,7 @@ from .subtool import SubToolEx
 class SubToolAutoQuad(SubToolEx) :
     name = "AutoQuadTool"
 
-    def __init__(self , root ) :
+    def __init__(self , event , root ) :
         super().__init__(root)
         is_x_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
 
