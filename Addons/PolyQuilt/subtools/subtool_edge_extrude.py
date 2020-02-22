@@ -50,16 +50,14 @@ class SubToolEdgeExtrude(SubTool) :
             self.ignoreEdges.extend(face.edges)
         self.ignoreEdges = set(self.ignoreEdges )
 
-        self.newEdge = [ self.bmo.local_to_world_pos( self.currentEdge.element.verts[0].co ) , self.bmo.local_to_world_pos( self.currentEdge.element.verts[1].co ) ]
+        self.newEdge = [ self.bmo.local_to_world_pos( v.co ) for v in self.currentEdge.element.verts ]
 
         # calc perpendicular
         view_matrix = bpy.context.region_data.view_matrix
         view_vector = bpy.context.region_data.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))                 
-        vp0 = view_matrix @ self.newEdge[0]
-        vp1 = view_matrix @ self.newEdge[1]
-        vs0 = mathutils.Vector(( vp0.x , vp0.y , 0.0))
-        vs1 = mathutils.Vector(( vp1.x , vp1.y , 0.0))
-        n = (vs1 - vs0).normalized()     
+        vp = [ view_matrix @ v for v in self.newEdge ]
+        vs = [ mathutils.Vector(( v.x , v.y , 0.0)) for v in vp ]
+        n = (vs[1] - vs[0]).normalized()     
         self.perpendicular = view_vector.cross( n.xyz ).normalized()
 
     @staticmethod
@@ -67,36 +65,36 @@ class SubToolEdgeExtrude(SubTool) :
         return target.element.is_boundary or target.element.is_manifold == False
 
     def CalcFin( self , context , v0 , v1 , move ) :
-            region = context.region
-            rv3d = context.region_data
-            view_matrix = rv3d.view_matrix
-            view_vector = rv3d.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))            
+        region = context.region
+        rv3d = context.region_data
+        view_matrix = rv3d.view_matrix
+        view_vector = rv3d.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))            
 
-            n = ( view_matrix.to_3x3() @ move ).xy.normalized()
-            r0 = math.atan2( n.y , n.x )
-            r1 = math.atan2( self.perpendicular.y , self.perpendicular.x )
+        n = ( view_matrix.to_3x3() @ move ).xy.normalized()
+        r0 = math.atan2( n.y , n.x )
+        r1 = math.atan2( self.perpendicular.y , self.perpendicular.x )
 
-            q0 = mathutils.Quaternion( view_vector , r0 )
-            q1 = mathutils.Quaternion( view_vector , r1 )
+        q0 = mathutils.Quaternion( view_vector , r0 )
+        q1 = mathutils.Quaternion( view_vector , r1 )
 
-            q = q0.rotation_difference(q1)
+        q = q0.rotation_difference(q1)
 
-            f0 = self.bmo.local_to_world_pos(v0.co) - self.startPos
-            f1 = self.bmo.local_to_world_pos(v1.co) - self.startPos
+        f0 = self.bmo.local_to_world_pos(v0.co) - self.startPos
+        f1 = self.bmo.local_to_world_pos(v1.co) - self.startPos
 
-            if self.operator.extrude_mode != 'PARALLEL' :
-                if self.operator.extrude_mode == 'BEND' :
-                    f0 = q.to_matrix() @ f0
-                    f1 = q.to_matrix() @ f1
-                else :
-                    f0 = q.to_matrix() @ q.to_matrix() @ f0
-                    f1 = q.to_matrix() @ q.to_matrix() @ f1
+        if self.operator.extrude_mode != 'PARALLEL' :
+            if self.operator.extrude_mode == 'BEND' :
+                f0 = q.to_matrix() @ f0
+                f1 = q.to_matrix() @ f1
+            else :
+                f0 = q.to_matrix() @ q.to_matrix() @ f0
+                f1 = q.to_matrix() @ q.to_matrix() @ f1
 
-            p0 = self.targetPos + f0
-            p1 = self.targetPos + f1
-            p0 = QSnap.view_adjust(p0)
-            p1 = QSnap.view_adjust(p1)
-            return [p0,p1]
+        p0 = self.targetPos + f0
+        p1 = self.targetPos + f1
+        p0 = QSnap.view_adjust(p0)
+        p1 = QSnap.view_adjust(p1)
+        return [p0,p1]
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
@@ -238,11 +236,11 @@ class SubToolEdgeExtrude(SubTool) :
         se0 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
         se1 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
         if (st0-se0).length + (st1-se1).length > (st0-se1).length + (st1-se0).length :
-            t0 = self.snapTarget.element.verts[1]
-            t1 = self.snapTarget.element.verts[0]
+            t0 = edge.verts[1]
+            t1 = edge.verts[0]
         else :
-            t0 = self.snapTarget.element.verts[0]
-            t1 = self.snapTarget.element.verts[1]
+            t0 = edge.verts[0]
+            t1 = edge.verts[1]
 
         return t0,t1
 
