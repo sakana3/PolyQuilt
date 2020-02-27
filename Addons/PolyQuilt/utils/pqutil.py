@@ -167,6 +167,8 @@ class Ray :
 
     def hit_to_line_pos( self , v0 , v1 ) :
         h0 , h1 , d = self.distance( Ray( v0 , (v1-v0) ) )
+        if h0 == None :
+            return None
         dt =  (v0-v1).length
         d0 = (v0-h1).length
         d1 = (v1-h1).length
