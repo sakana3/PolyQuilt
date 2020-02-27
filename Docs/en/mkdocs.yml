@@ -41,10 +41,12 @@ nav:
   - Download and Install: download.md
   - Manual :
     - Basic operation: manual/operation.md
-    - Draw Geometry: manual/geometry.md
+    - Make Geometry: manual/geometry.md
     - Remove Geometry: manual/remove.md
     - Face Cut: manual/facecut.md
-
+    - Insert Loop: manual/insert_loop.md
+    - Remove Loop: manual/remove_loop.md
+    - Brush Tools : manual/brush.md
 
 # Extensions
 markdown_extensions:
