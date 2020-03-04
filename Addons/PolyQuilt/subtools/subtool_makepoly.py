@@ -210,6 +210,7 @@ class SubToolMakePoly(SubTool) :
                         elif self.currentTarget.isEmpty :
                             self.pivot = self.calc_planned_construction_position()
                             vert = self.bmo.AddVertexWorld( self.pivot )
+                            self.bmo.UpdateMesh()                            
                             self.currentTarget = ElementItem( self.bmo ,vert , self.mouse_pos , self.pivot , 0.0 )
 
                         if self.currentTarget.isVert and self.mode != 'SPLITE' :

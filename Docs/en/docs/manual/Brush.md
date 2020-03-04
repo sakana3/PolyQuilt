@@ -1,5 +1,7 @@
 # Brush Tools
 
-## Change Size and Intensity
+## Change size and intensity
+
 ## Move Brush
+
 ## Relax Brush

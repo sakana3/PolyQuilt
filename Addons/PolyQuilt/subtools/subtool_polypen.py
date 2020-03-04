@@ -38,7 +38,7 @@ class SubToolPolyPen(SubTool) :
         self.startMousePos = copy.copy(target.coord)
 
         self.startEdge = target.element
-        self.startData = [ self.CalcStart( target.verts ) ]
+        self.startData = [ self.CalcHead( target.verts ) ]
         self.endData = None
 
     @staticmethod
@@ -57,7 +57,7 @@ class SubToolPolyPen(SubTool) :
                     v = ( self.mouse_pos - sd.Center )
                     pos = sd.Center + v.normalized() * min( sd.Witdh , v.length )
                     self.endData = self.CalcEnd( pos )
-                    self.ReCalcFin()
+                    self.ReCalcFin(pos)
                     if self.startData != None and self.endData != None :
                         if v.length >= sd.Witdh :
                             self.MakePoly()
@@ -72,7 +72,8 @@ class SubToolPolyPen(SubTool) :
         elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 if self.endData != None :
-                    self.MakePoly() 
+                    if (self.startData[-1].Center - self.mouse_pos).length / self.startData[-1].Witdh > 0.2 :
+                        self.MakePoly() 
                 return 'FINISHED'
         return 'RUNNING_MODAL'
 
@@ -83,13 +84,13 @@ class SubToolPolyPen(SubTool) :
         startData = self.startData[-1]
         if startData != None and self.endData != None :
             alpha = (startData.Center - self.mouse_pos).length / startData.Witdh
+            if alpha >= 0.2 :
+                verts = [ startData.WorldPos[0] , startData.WorldPos[1] , self.endData.WorldPos[1] , self.endData.WorldPos[0] ]
+                draw_util.draw_Poly3D( context , verts , color = self.color_create(alpha / 2) )
+                verts.append( verts[-1] )
+                draw_util.draw_lines3D(  context , verts , color = self.color_create(alpha ) , width = 2 )
 
-            verts = [ startData.WorldPos[0] , startData.WorldPos[1] , self.endData.WorldPos[1] , self.endData.WorldPos[0] ]
-            draw_util.draw_Poly3D( context , verts , color = self.color_create(alpha / 2) )
-            verts.append( verts[-1] )
-            draw_util.draw_lines3D(  context , verts , color = self.color_create(alpha ) , width = 2 )
-
-    def CalcStart( self , verts , center = None ) :
+    def CalcHead( self , verts , center = None ) :
         wpos = [ self.bmo.obj.matrix_world @ v.co for v in verts ]
         planes = [ pqutil.Plane.from_screen( bpy.context , v ) for v in wpos ]
         vpos = [ pqutil.location_3d_to_region_2d(v) for v in wpos ]
@@ -111,23 +112,7 @@ class SubToolPolyPen(SubTool) :
         start = self.startData[-1]
         context = bpy.context
 
-        vec = (mouse_pos - start.Center )
-        nrm = ( mouse_pos - start.Center ).normalized()
-
-        if vec.length <= sys.float_info.epsilon : 
-            return None
-        mouse_pos = start.Center + nrm * max( start.Witdh , vec.length )
-
-        r0 = math.atan2( nrm.x , nrm.y )
-        if nrm.dot(start.Perpendicular) > 0 :
-            r1 = math.atan2( start.Perpendicular.x , start.Perpendicular.y )
-        else :
-            r1 = math.atan2( -start.Perpendicular.x , -start.Perpendicular.y )
-
-        q0 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r0 )
-        q1 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r1 )            
-
-        q = q0.rotation_difference(q1)
+        q = self.CalcRot( start , mouse_pos )
 
         f = [ v - start.Center for v in start.ViewPos ]
         ft = [ q.to_matrix() @ v.to_3d() for v in f ]
@@ -139,24 +124,15 @@ class SubToolPolyPen(SubTool) :
         ret = Ret(WorldPos = vt , ViewPos = pt , Center = mouse_pos , Verts = [None,None] )
         return ret
 
-    def ReCalcFin( self ) :
+
+    def ReCalcFin( self , mouse_pos ) :
         if len( self.startData ) < 2 :
             return
         context = bpy.context
         finP = self.startData[-2]
         fin1 = self.startData[-1]
 
-        n = ( finP.Center - self.endData.Center ).normalized()
-        r0 = math.atan2( n.x , n.y )
-        if n.dot(finP.Perpendicular) > 0 :
-            r1 = math.atan2( finP.Perpendicular.x , finP.Perpendicular.y )
-        else :
-            r1 = math.atan2( -finP.Perpendicular.x , -finP.Perpendicular.y )
-
-        q0 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r0 )
-        q1 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r1 )            
-
-        q = q0.rotation_difference(q1)
+        q = self.CalcRot( finP , self.endData.Center )
 
         f = [ v - finP.Center for v in finP.ViewPos ]
         ft = [ q.to_matrix() @ v.to_3d() for v in f ]
@@ -175,7 +151,7 @@ class SubToolPolyPen(SubTool) :
                 self.bmo.set_positon( mirror , self.bmo.mirror_world_pos( p ) , is_world = True )
             self.bmo.UpdateMesh()
 
-        self.startData[-1] = self.CalcStart( fin1.Verts , fin1.Center )
+        self.startData[-1] = self.CalcHead( fin1.Verts , fin1.Center )
 
     def MakePoly( self ) :
         startData = self.startData[-1]        
@@ -199,7 +175,7 @@ class SubToolPolyPen(SubTool) :
         for e in face.edges :
             if set( e.verts ) == set( nv ) :
                 self.startEdge = e
-        self.startData.append( self.CalcStart( nv[::-1] ) )
+        self.startData.append( self.CalcHead( nv[::-1] ) )
         self.endData = None
 
 
@@ -220,3 +196,20 @@ class SubToolPolyPen(SubTool) :
         ret = Ret(WorldPos = [ v.co for v in wp] , ViewPos = vp , Center = (vp[0]+vp[1]) / 2 , Verts = wp )
 
         return ret
+
+    def CalcRot( self , start , v0 ) :
+        vec = (v0 - start.Center )
+        nrm = vec.normalized()
+
+        r0 = math.atan2( nrm.x , nrm.y )
+        if nrm.dot(start.Perpendicular) > 0 :
+            r1 = math.atan2( start.Perpendicular.x , start.Perpendicular.y )
+        else :
+            r1 = math.atan2( -start.Perpendicular.x , -start.Perpendicular.y )
+
+        q0 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r0 )
+        q1 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r1 )            
+
+        q = q0.rotation_difference(q1)
+
+        return q
