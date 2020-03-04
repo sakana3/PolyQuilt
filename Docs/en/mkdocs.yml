@@ -1,0 +1,83 @@
+# Project information
+site_name: 'PolyQuilt'
+site_description: 'Lowpoly modeling assist blender-addon PolyQuilt'
+site_author: 'sakana3'
+site_url: 'https://sakana3.github.io/PolyQuilt/'
+
+# Repository
+repo_name: 'sakana3/PolyQuilt'
+repo_url: 'https://github.com/sakana3/PolyQuilt'
+
+# Copyright
+copyright: 'Copyright &copy; 2016 - 2017 Martin Donath'
+
+# Configuration
+theme:
+  name: 'material'
+  language: 'en'
+  feature:
+    tabs: true  
+  palette:
+    primary: 'Teal'
+    accent: 'Red'
+  font:
+    text: 'Roboto'
+    code: 'Roboto Mono'
+
+# Customization
+extra:
+  manifest: 'manifest.webmanifest'
+  social:
+    - type: 'github'
+      link: 'https://github.com/sakana3/PolyQuilt'
+    - type: 'twitter'
+      link: 'https://twitter.com/sakanaya'
+    - type: 'globe'
+      link: 'https://blenderartists.org/t/polyquilt-addon-for-blender-2-8/1168918/'
+
+# Page tree
+nav:
+  - About: index.md
+  - Download and Install: download.md
+  - Manual :
+    - Basic operation: manual/operation.md
+    - Move and Snap : manual/move.md 
+    - Make Geometry: manual/geometry.md
+    - Remove Geometry: manual/remove.md
+    - Face Cut: manual/facecut.md
+    - Insert Loop: manual/insert_loop.md
+    - Remove Loop: manual/remove_loop.md
+    - Knife : manual/knife.md
+    - Brush Tools : manual/brush.md
+
+# Extensions
+markdown_extensions:
+  - markdown.extensions.admonition
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

@@ -296,7 +296,7 @@ class SubToolAutoQuad(SubToolEx) :
                         v1 = matrix @ edge.verts[0].co
                         v2 = matrix @ edge.verts[1].co        
                         wp = pqutil.Ray.from_screen( context , hit ).hit_to_line_pos( v1 , v2 )                                        
-                        if QSnap.is_target( wp ) :
+                        if wp != None and QSnap.is_target( wp ) :
                             return False
             return True
 

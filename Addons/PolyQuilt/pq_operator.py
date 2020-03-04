@@ -198,6 +198,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         return {ret}
 
     def invoke(self, context, event):
+
         from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
 
         self.preferences = context.preferences.addons[__package__].preferences
