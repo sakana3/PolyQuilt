@@ -38,20 +38,31 @@ class SubToolPolyPen(SubTool) :
         self.startMousePos = copy.copy(target.coord)
 
         self.startEdge = target.element
-        self.startData = self.CalcStart( target.verts )
+        self.startData = [ self.CalcStart( target.verts ) ]
         self.endData = None
 
     @staticmethod
     def Check( root ,target ) :
-        return target.isEdge and target.can_extrude() and False
+        return target.isEdge and target.can_extrude()
  
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            self.endData = self.CalcEnd( self.mouse_pos )
-            if self.startData != None and self.endData != None :
-#                print(( self.startData.Center - self.endData.Center ).length)
-                if ( self.startData.Center - self.endData.Center ).length > self.startData.Witdh :
-                    self.MakePoly()
+            dist = self.preferences.distance_to_highlight            
+            hitEdge = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'], ignore=[self.startEdge] )
+            if hitEdge.isEdge :
+                self.endData = self.AdsorptionEdge(  self.startData[-1].WorldPos[0] , self.startData[-1].WorldPos[1] , hitEdge.element )
+            else :
+                while( True ) :
+                    sd = self.startData[-1]
+                    v = ( self.mouse_pos - sd.Center )
+                    pos = sd.Center + v.normalized() * min( sd.Witdh , v.length )
+                    self.endData = self.CalcEnd( pos )
+                    self.ReCalcFin()
+                    if self.startData != None and self.endData != None :
+                        if v.length >= sd.Witdh :
+                            self.MakePoly()
+                            continue
+                    break
  
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
@@ -60,6 +71,8 @@ class SubToolPolyPen(SubTool) :
                 pass
         elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
+                if self.endData != None :
+                    self.MakePoly() 
                 return 'FINISHED'
         return 'RUNNING_MODAL'
 
@@ -67,57 +80,113 @@ class SubToolPolyPen(SubTool) :
         pass
 
     def OnDraw3D( self , context  ) :
-        if self.startData != None and self.endData != None :
-            verts = [ self.startData.WorldPos[0] , self.startData.WorldPos[1] , self.endData.WorldPos[0] , self.endData.WorldPos[1] ]
-            draw_util.draw_Poly3D( context , verts , color = self.color_create(0.5) )
+        startData = self.startData[-1]
+        if startData != None and self.endData != None :
+            alpha = (startData.Center - self.mouse_pos).length / startData.Witdh
+
+            verts = [ startData.WorldPos[0] , startData.WorldPos[1] , self.endData.WorldPos[1] , self.endData.WorldPos[0] ]
+            draw_util.draw_Poly3D( context , verts , color = self.color_create(alpha / 2) )
             verts.append( verts[-1] )
-            draw_util.draw_lines3D(  context , verts , color = self.color_create() , width = 2 )
+            draw_util.draw_lines3D(  context , verts , color = self.color_create(alpha ) , width = 2 )
 
-    def CalcStart( self , verts ) :
-        startVerts = verts[:]
-        startWPs = [ self.bmo.obj.matrix_world @ v.co for v in startVerts ]
-        startPlane = [ pqutil.Plane.from_screen( bpy.context , v ) for v in startWPs ]
-        startPos = [ pqutil.location_3d_to_region_2d(v) for v in startWPs ]
-        startCenetr = ( startPos[0] + startPos[1] ) / 2        
-        width = ( startPos[0] - startPos[1] ).length
+    def CalcStart( self , verts , center = None ) :
+        wpos = [ self.bmo.obj.matrix_world @ v.co for v in verts ]
+        planes = [ pqutil.Plane.from_screen( bpy.context , v ) for v in wpos ]
+        vpos = [ pqutil.location_3d_to_region_2d(v) for v in wpos ]
+        if center == None :
+            center = ( vpos[0] + vpos[1] ) / 2        
+        vec = ( vpos[0] - vpos[1] )
+        width = vec.length
+        nrm = vec.normalized()
 
-        Ret = namedtuple('Ret', ('Verts','WorldPos', 'Plane' , 'ViewPos' , 'Center' , 'Witdh'))
-        ret = Ret(Verts=startVerts,WorldPos=startWPs,Plane=startPlane, ViewPos = startPos , Center = startCenetr , Witdh = width  )
+        perpendicular = mathutils.Vector( (0,0,1) ).cross( mathutils.Vector( (nrm.x,nrm.y,0) ) ).normalized()
+
+        Ret = namedtuple('Ret', ('Verts','WorldPos', 'Plane' , 'ViewPos' , 'Center' , 'Witdh', 'Perpendicular' ))
+        ret = Ret(Verts=verts[:],WorldPos=wpos,Plane=planes, ViewPos = vpos , Center = center , Witdh = width , Perpendicular = perpendicular  )
         return ret
 
     def CalcEnd( self , mouse_pos ) :
-        if (self.startData.Center - mouse_pos).length <= sys.float_info.epsilon :
-            return None
+        Ret = namedtuple('Ret', ('WorldPos', 'ViewPos' , 'Center', 'Verts'  ))
 
+        start = self.startData[-1]
         context = bpy.context
-        start = self.startData 
-        p0 = mouse_pos + start.ViewPos[0] - start.Center
-        p1 = mouse_pos + start.ViewPos[1] - start.Center
-        lengh = (p0-mouse_pos).length
-        vec = mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ (mouse_pos - start.Center).normalized()
-        nrm = (start.ViewPos[0]-mouse_pos).normalized()
 
-        if  vec.dot(nrm) < 0 :
-            p0 = mouse_pos + vec * lengh
-            p1 = mouse_pos - vec * lengh
+        vec = (mouse_pos - start.Center )
+        nrm = ( mouse_pos - start.Center ).normalized()
+
+        if vec.length <= sys.float_info.epsilon : 
+            return None
+        mouse_pos = start.Center + nrm * max( start.Witdh , vec.length )
+
+        r0 = math.atan2( nrm.x , nrm.y )
+        if nrm.dot(start.Perpendicular) > 0 :
+            r1 = math.atan2( start.Perpendicular.x , start.Perpendicular.y )
         else :
-            p0 = mouse_pos - vec * lengh
-            p1 = mouse_pos + vec * lengh
+            r1 = math.atan2( -start.Perpendicular.x , -start.Perpendicular.y )
 
-        r0 = pqutil.Ray.from_screen( bpy.context , p0 )
-        r1 = pqutil.Ray.from_screen( bpy.context , p1 )
-        v0 = start.Plane[0].intersect_ray( r0 )
-        v1 = start.Plane[1].intersect_ray( r1 )
+        q0 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r0 )
+        q1 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r1 )            
 
-        Ret = namedtuple('Ret', ('WorldPos', 'ViewPos' , 'Center' ))
-        ret = Ret(WorldPos = [v0,v1]  , ViewPos = [p0,p1] , Center = mouse_pos  )
+        q = q0.rotation_difference(q1)
+
+        f = [ v - start.Center for v in start.ViewPos ]
+        ft = [ q.to_matrix() @ v.to_3d() for v in f ]
+        pt = [ mouse_pos + v.xy for v in ft ]
+        rt = [ pqutil.Ray.from_screen( context , v ) for v in pt ]
+        vt = [ p.intersect_ray( r ) for r,p in zip(rt , start.Plane) ]
+        vt = [ QSnap.view_adjust( p ) for p in vt ]
+
+        ret = Ret(WorldPos = vt , ViewPos = pt , Center = mouse_pos , Verts = [None,None] )
         return ret
 
+    def ReCalcFin( self ) :
+        if len( self.startData ) < 2 :
+            return
+        context = bpy.context
+        finP = self.startData[-2]
+        fin1 = self.startData[-1]
+
+        n = ( finP.Center - self.endData.Center ).normalized()
+        r0 = math.atan2( n.x , n.y )
+        if n.dot(finP.Perpendicular) > 0 :
+            r1 = math.atan2( finP.Perpendicular.x , finP.Perpendicular.y )
+        else :
+            r1 = math.atan2( -finP.Perpendicular.x , -finP.Perpendicular.y )
+
+        q0 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r0 )
+        q1 = mathutils.Quaternion( mathutils.Vector( (0,0,1) ) , r1 )            
+
+        q = q0.rotation_difference(q1)
+
+        f = [ v - finP.Center for v in finP.ViewPos ]
+        ft = [ q.to_matrix() @ v.to_3d() for v in f ]
+        pt = [ fin1.Center + v.xy for v in ft ]
+        rt = [ pqutil.Ray.from_screen( context , v ) for v in pt ]
+        vt = [ p.intersect_ray( r ) for r,p in zip(rt , finP.Plane) ]
+        vt = [ QSnap.view_adjust( p ) for p in vt ]
+
+        for v , p in zip( fin1.Verts , vt ) :
+            if self.bmo.is_mirror_mode :
+                mirror = self.bmo.find_mirror(v)
+
+            self.bmo.set_positon( v , p , is_world = True )
+
+            if self.bmo.is_mirror_mode and mirror != None :
+                self.bmo.set_positon( mirror , self.bmo.mirror_world_pos( p ) , is_world = True )
+            self.bmo.UpdateMesh()
+
+        self.startData[-1] = self.CalcStart( fin1.Verts , fin1.Center )
+
     def MakePoly( self ) :
-        verts = [ self.startData.Verts[0] , self.startData.Verts[1] ]
+        startData = self.startData[-1]        
+        verts = [ startData.Verts[0] , startData.Verts[1] ]
         nv = []
-        for p in self.endData.WorldPos :
-            v = self.bmo.AddVertexWorld( p )
+
+        for p , vt in zip( self.endData.WorldPos[::-1] , self.endData.Verts[::-1] ) :
+            if vt != None :
+                v = vt
+            else :
+                v = self.bmo.AddVertexWorld( p )
             verts.append( v )
             nv.append( v )
 
@@ -130,5 +199,24 @@ class SubToolPolyPen(SubTool) :
         for e in face.edges :
             if set( e.verts ) == set( nv ) :
                 self.startEdge = e
-        self.startData = self.CalcStart( nv ) 
+        self.startData.append( self.CalcStart( nv[::-1] ) )
         self.endData = None
+
+
+    def AdsorptionEdge( self , p0 , p1 , edge ) :
+        Ret = namedtuple('Ret', ('WorldPos', 'ViewPos' , 'Center' , 'Verts' ))
+
+        st0 = pqutil.location_3d_to_region_2d(p0)
+        st1 = pqutil.location_3d_to_region_2d(p1)
+        se0 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[0].co))
+        se1 = pqutil.location_3d_to_region_2d(self.bmo.local_to_world_pos(edge.verts[1].co))
+        if (st0-se0).length + (st1-se1).length > (st0-se1).length + (st1-se0).length :
+            wp = [ edge.verts[1] , edge.verts[0] ]
+        else :
+            wp = [ edge.verts[0] , edge.verts[1] ]
+
+        vp = [ pqutil.location_3d_to_region_2d(v.co) for v in wp ]
+
+        ret = Ret(WorldPos = [ v.co for v in wp] , ViewPos = vp , Center = (vp[0]+vp[1]) / 2 , Verts = wp )
+
+        return ret
