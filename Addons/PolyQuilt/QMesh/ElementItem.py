@@ -219,13 +219,13 @@ class ElementItem :
                     draw_util.draw_pivots3D( (v,) , 0.75 , div_col )                
                 draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
                 if marker and len(element.link_faces) <= 1 :
-                    self.draw_extrude_marker()
+                    self.draw_extrude_marker( preferences.marker_size )
 
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 draw_util.drawElementHilight3D( obj , self.mirror , size , width ,alpha , color )
 
-    def draw_extrude_marker( self ) :
+    def draw_extrude_marker( self , size ) :
         element = self.element    
         with draw_util.push_pop_projection2D() :
             p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
@@ -235,7 +235,7 @@ class ElementItem :
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
             norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
-            radius = min( [ length / 10 , dpm() * 4 ] )
+            radius = min( [ length / 10 * size , dpm() * 4 * size ] )
 
             tangents = []
             for face in element.link_faces :
@@ -269,6 +269,7 @@ class ElementItem :
     def can_extrude( self ) :
         element = self.element            
         if self.isEdge and len(element.link_faces) <= 1 :            
+            size = self.__qmesh.preferences.marker_size
             p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
             v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
             v1 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[1].co) )
@@ -276,7 +277,7 @@ class ElementItem :
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
             norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
-            radius = min( [ length / 10 , dpm() * 5 ] )
+            radius = min( [ length / 10 * size , dpm() * 5 * size ] )
 
             return (p1 - center).length <= radius
         return False
