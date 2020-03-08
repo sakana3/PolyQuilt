@@ -193,7 +193,7 @@ class SubToolPolyPen(SubTool) :
 
         vp = [ pqutil.location_3d_to_region_2d(v.co) for v in wp ]
 
-        ret = Ret(WorldPos = [ v.co for v in wp] , ViewPos = vp , Center = (vp[0]+vp[1]) / 2 , Verts = wp )
+        ret = Ret(WorldPos = [ self.bmo.obj.matrix_world @ v.co for v in wp] , ViewPos = vp , Center = (vp[0]+vp[1]) / 2 , Verts = wp )
 
         return ret
 
