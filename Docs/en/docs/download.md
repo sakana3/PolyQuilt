@@ -2,7 +2,13 @@
 
 ## Install
 
-Download the zip to your local storage and specify the zip you downloaded from Edit -> Preferences -> Add-ons -> Install.
+- [Download](##download) the zip to your local storage
+- Open Preferences form edit menu
+- Change to Add-ons Tab
+- Click Install and select zip
+- Activate PolyQuilt
+- Into Editmode and Select PolyQuilt from Toolbar
+- Enjoy!
 
 ## Update
 

@@ -3,8 +3,8 @@
 ## What is PolyQuilt?
 
 PolyQuilt is an add-on for Blender 2.8 that supports low-poly modeling.  
-In addition to the simple, easy, and old-school faceting functions, it supports polygon modeling by assigning various functions to mouse operations such as clicking, dragging, and holding to minimize tool switching.  
-It also works well with tablets and tablet PCs with digitizers, allowing you to modeling intuitively while reducing the amount of interaction.
+In addition to simple modeling capabilities, it supports fast and intuitive polygon modeling with minimal interaction by assigning various functions to mouse actions such as clicking, dragging and holding.
+It also works well with tablets and tablet PCs with digitizers.
 
 I hope this add-on will make your modeling life happy!
 
