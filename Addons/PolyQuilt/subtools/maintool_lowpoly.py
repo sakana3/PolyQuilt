@@ -70,18 +70,10 @@ class MainToolLowPoly(MainTool) :
         return None
 
     def OnDraw( self , context  ) :
-        if self.LMBEvent.isPresure :
-            if self.currentTarget.isNotEmpty :
-                self.LMBEvent.Draw( self.currentTarget.coord )
-            else:
-                self.LMBEvent.Draw( None )
+        pass
 
     def OnDraw3D( self , context  ) :
-        if self.currentTarget.isNotEmpty :
-            color = self.color_highlight()
-            if self.LMBEvent.is_hold :
-                color = self.color_delete()
-            self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
+        self.currentTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
 
     def OnExit( self ) :
         pass

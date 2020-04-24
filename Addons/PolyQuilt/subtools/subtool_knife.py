@@ -55,9 +55,6 @@ class SubToolKnife(SubTool) :
     def OnDraw( self , context  ) :
         draw_util.draw_lines2D( (self.startPos,self.endPos) , self.color_delete() , self.preferences.highlight_line_width )
 
-#        for pos in self.CutEdgePos :
-#            draw_util.draw_pivot2D( pos , 1 , self.color_delete() )
-
     def OnDraw3D( self , context  ) :
         if self.CutEdgePos3D :
             draw_util.draw_pivots3D( self.CutEdgePos3D , 1 , self.color_delete() )

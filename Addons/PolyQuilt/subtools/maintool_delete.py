@@ -65,14 +65,24 @@ class MainToolDelete(MainTool) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.delete_color , gizmo.preferences , False )
+            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.delete_color , gizmo.preferences , False , edge_pivot = False )
         return None
 
     def OnDraw( self , context  ) :
         pass
 
     def OnDraw3D( self , context  ) :
-        pass
+        if self.currentTarget.isNotEmpty :
+            self.currentTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , edge_pivot = False )
 
     def OnExit( self ) :
         pass
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'ERASER'
+
+    @staticmethod
+    def pick_element( qmesh , location , preferences ) :
+        element = qmesh.PickElement( location , preferences.distance_to_highlight )        
+        return element

@@ -72,9 +72,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.bmo.UpdateView(context)
         QSnap.update(context)
 
-        element = self.bmo.PickElement( location , self.preferences.distance_to_highlight )
-        element.set_snap_div( self.preferences.loopcut_division )
         if self.subtool != None :
+            element = self.subtool.pick_element( self.bmo , location , self.preferences )
+            element.set_snap_div( self.preferences.loopcut_division )
             if self.subtool.UpdateHighlight( self , element ) :
                 context.area.tag_redraw()
 

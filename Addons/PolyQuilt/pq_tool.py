@@ -118,6 +118,28 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
+class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_extrude"
+    bl_label = "PolyQuilt:Extrude"
+    bl_description = ( "Extrude Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_delete_icon")
+    bl_widget = "MESH_GGT_PQ_Delete"
+    bl_keymap = (
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'DELETE')]}),
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
+    )
+
+    def draw_settings(context, layout, tool):
+        reg = context.region.type
+        if reg == 'UI' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'WINDOW' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'TOOL_HEADER' :
+            draw_settings_toolheader( context , layout , tool )
+
 
 PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },

@@ -238,6 +238,17 @@ class MainTool(SubToolRoot) :
 
         return True
 
+    @classmethod
+    def UpdateHighlight( cls , gizmo , element ) :
+        return True
+
+    @staticmethod
+    def pick_element( qmesh , location , preferences ) :
+        element = qmesh.PickElement( location , preferences.distance_to_highlight )        
+        element.set_snap_div( preferences.loopcut_division )
+        return element
+
+
 class SubTool(SubToolRoot) :
     def __init__( self, op ) :
         super().__init__(op )        

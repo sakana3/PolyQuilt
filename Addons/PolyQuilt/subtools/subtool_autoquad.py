@@ -105,11 +105,13 @@ class SubToolAutoQuad(SubToolEx) :
                 rv = [ mat @ mathutils.Vector( ( -v.x,v.y,v.z )) for v in rv ]
                 rv.append( rv[0] )
 
+            draw_highlight = element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+
             def Draw() :
                 if element.isVert :
-                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+                    draw_highlight()
                 elif element.isEdge :
-                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+                    draw_highlight()
                 draw_util.draw_Poly3D( bpy.context , vs , col , 0.5 )
                 draw_util.draw_lines3D( bpy.context , vs , (col[0],col[1],col[2],col[3] * 1)  , 2 , 0 )
                 if gizmo.bmo.is_mirror_mode :

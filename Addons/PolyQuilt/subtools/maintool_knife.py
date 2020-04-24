@@ -45,16 +45,11 @@ class MainToolKnife(MainTool) :
 
         if event.type == MBEventType.Release :
             self.isExit = True
-        elif event.type == MBEventType.Click :
+        elif event.type == MBEventType.Click or event.type == MBEventType.LongClick:
             if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
                 self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
-        elif event.type == MBEventType.LongClick :
-            self.isExit = True
-        elif event.type == MBEventType.LongPressDrag :
-            self.isExit = True
-        elif event.type == MBEventType.Drag :
+        elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag:
             self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
-
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
@@ -63,18 +58,16 @@ class MainToolKnife(MainTool) :
         return None
 
     def OnDraw( self , context  ) :
-        if self.LMBEvent.isPresure :
-            if self.currentTarget.isNotEmpty :
-                self.LMBEvent.Draw( self.currentTarget.coord )
-            else:
-                self.LMBEvent.Draw( None )
+        pass
 
     def OnDraw3D( self , context  ) :
         if self.currentTarget.isNotEmpty :
             color = self.color_highlight()
-            if self.LMBEvent.is_hold :
-                color = self.color_delete()
             self.currentTarget.Draw( self.bmo.obj , color , self.preferences )
 
     def OnExit( self ) :
         pass
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'KNIFE'
