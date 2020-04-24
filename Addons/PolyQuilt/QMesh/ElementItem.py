@@ -205,25 +205,45 @@ class ElementItem :
         return ElementItem( qmesh ,e , p , co , 0.0 )
 
     def Draw( self , obj , color , preferences , marker = False ) :
+        func = self.DrawFunc( obj , color , preferences , marker )
+        func()
+
+    def DrawFunc( self , obj , color , preferences , marker = False ) :
+        funcs = []
+
         if self.is_valid :
             size = preferences.highlight_vertex_size
             width = preferences.highlight_line_width
             alpha = preferences.highlight_face_alpha
             element = self.element
-            draw_util.drawElementHilight3D( obj , element , size , width ,alpha, color )
+
+            funcs.append( draw_util.drawElementHilight3DFunc( obj , element , size , width ,alpha, color ) )
             if self.isEdge :
                 div_col = ( color[0] , color[1] , color[2] , color[3] * 0.5 )
                 for i in range(self.__div) :
                     r = (i+1.0) / (self.__div + 1.0)
                     v = self.__qmesh.local_to_world_pos( element.verts[0].co.lerp( element.verts[1].co , r) )
-                    draw_util.draw_pivots3D( (v,) , 0.75 , div_col )                
-                draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
+                    def draw0() :
+                        draw_util.draw_pivots3D( (v,) , 0.75 , div_col )                
+                    funcs.append( draw0() )
+                def draw1() :
+                    draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
+                funcs.append( draw1() )
                 if marker and len(element.link_faces) <= 1 :
-                    self.draw_extrude_marker( preferences.marker_size )
-
+                    def draw2() :
+                        self.draw_extrude_marker( preferences.marker_size )
+                    funcs.append( draw2() )
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
-                draw_util.drawElementHilight3D( obj , self.mirror , size , width ,alpha , color )
+                funcs.append( draw_util.drawElementHilight3DFunc( obj , self.mirror , size , width ,alpha , color ) )
+
+        def draw_all() :
+            for func in funcs :
+                if func :
+                    func()
+        
+        return draw_all
+
 
     def draw_extrude_marker( self , size ) :
         element = self.element    

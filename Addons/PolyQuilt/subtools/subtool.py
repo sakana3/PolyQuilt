@@ -20,9 +20,9 @@ from enum import Enum , auto
 import bpy_extras
 import collections
 from ..utils import pqutil
-from ..QMesh.QMesh import *
+from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 import time
-
+from ..QMesh import *
 
 class SubToolRoot :
     name = "None"
@@ -183,6 +183,60 @@ class SubToolRoot :
             if element.coord != gizmo.currentElement.coord :
                 return True
         return False
+
+class MainTool(SubToolRoot) :
+    def __init__(self,op,currentTarget, button , no_hold = False ) :
+        super().__init__(op, button)        
+        self.currentTarget = currentTarget
+        self.LMBEvent = ButtonEventUtil( button ,self, self.LMBEventCallback , op , True , no_hold )
+        self.isExit = False
+
+    def is_animated( self , context ) :
+        return self.LMBEvent.is_animated()
+
+    @staticmethod
+    def LMBEventCallback(self , event ):
+        pass
+
+    def OnUpdate( self , context , event ) :
+        if self.isExit :
+            return 'FINISHED'
+
+        self.LMBEvent.Update(context,event)
+
+        return 'RUNNING_MODAL'
+
+    def OnEnterSubTool( self ,context,subTool ):
+        self.currentTarget = ElementItem.Empty()
+        self.LMBEvent.Reset(context)
+
+    def OnExitSubTool( self ,context,subTool ):
+        self.currentTarget = ElementItem.Empty()
+
+    def do_empty_space( self , event ) :
+        if self.preferences.space_drag_op == "ORBIT" :
+            bpy.ops.view3d.rotate('INVOKE_DEFAULT', use_cursor_init=True)
+            return True
+        elif self.preferences.space_drag_op == "PAN" :
+            bpy.ops.view3d.move('INVOKE_DEFAULT', use_cursor_init=True)
+            return True
+        elif self.preferences.space_drag_op == "DOLLY" :
+            bpy.ops.view3d.zoom('INVOKE_DEFAULT', use_cursor_init=True)
+            return True
+        elif self.preferences.space_drag_op == "KNIFE" :
+            self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
+        elif self.preferences.space_drag_op == "SELECT_BOX" :
+            bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
+            bpy.ops.view3d.select_box('INVOKE_DEFAULT' ,wait_for_input=False, mode='SET')
+            bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
+            return True
+        elif self.preferences.space_drag_op == "SELECT_LASSO" :
+            bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
+            bpy.ops.view3d.select_lasso('INVOKE_DEFAULT' , path = [], mode='SET')
+            bpy.context.window.cursor_warp( event.event.mouse_prev_x ,event.event.mouse_prev_y )
+            return True
+
+        return True
 
 class SubTool(SubToolRoot) :
     def __init__( self, op ) :

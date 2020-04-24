@@ -24,18 +24,24 @@ from ..utils import pqutil
 
 class QSnap :
     instance = None
+    ref = 0
 
     @classmethod
-    def start( cls,context ) :
-        if cls.instance == None :
+    def add_ref( cls , context ) :
+        if cls.ref == 0 :
+            print("create QSnap")
             cls.instance = cls(context)
             cls.update(context)
+        cls.ref = cls.ref + 1
 
     @classmethod
-    def exit(cls) :
-        if cls.instance :
-            del cls.instance
-            cls.instance = None
+    def remove_ref( cls ) :            
+        cls.ref = cls.ref - 1
+        if cls.ref == 0 :
+            if cls.instance :
+                print("remove QSnap")
+                del cls.instance
+                cls.instance = None
 
     @classmethod
     def is_active( cls ) :

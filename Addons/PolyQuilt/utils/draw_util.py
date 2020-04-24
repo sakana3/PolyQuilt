@@ -315,6 +315,59 @@ def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1
     bgl.glDisable(bgl.GL_BLEND)  
     bgl.glDepthMask(bgl.GL_FALSE)
 
+def drawElementHilight3DFunc( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
+    matrix_world = copy.copy( obj.matrix_world )
+
+    if isinstance( element , bmesh.types.BMVert ) :
+        co = copy.copy(element.co)
+        def draw() :
+            bgl.glEnable(bgl.GL_BLEND)
+            bgl.glDisable(bgl.GL_DEPTH_TEST)
+            bgl.glDepthMask(bgl.GL_FALSE)
+            v = matrix_world @ co
+            draw_pivots3D( (v,) , radius , color )
+            bgl.glEnable(bgl.GL_BLEND)
+            bgl.glDisable(bgl.GL_DEPTH_TEST)
+            bgl.glDepthMask(bgl.GL_FALSE)
+        return draw
+
+    elif isinstance( element , bmesh.types.BMFace  ) :
+        vs = [ matrix_world @ v.vert.co for v in element.loops ]
+        polys = mathutils.geometry.tessellate_polygon( (vs,) )
+        def draw() :
+            bgl.glEnable(bgl.GL_BLEND)
+            bgl.glDisable(bgl.GL_DEPTH_TEST)
+            bgl.glDepthMask(bgl.GL_FALSE)
+
+            shader3D.bind()
+            shader3D.uniform_float("color",  (color[0],color[1],color[2],color[3] * alpha) )
+            batch_draw(shader3D, 'TRIS', {"pos": vs } , indices=polys )
+            bgl.glDisable(bgl.GL_BLEND)
+            bgl.glDisable(bgl.GL_DEPTH_TEST)
+            bgl.glDepthMask(bgl.GL_FALSE)
+        return draw
+
+    elif isinstance( element , bmesh.types.BMEdge ) :
+        verts = ( matrix_world @ element.verts[0].co ,  matrix_world @ element.verts[1].co )
+        def draw() :
+            bgl.glEnable(bgl.GL_BLEND)
+
+            bgl.glEnable(bgl.GL_LINE_SMOOTH)
+            bgl.glLineWidth(width)    
+            bgl.glDepthFunc(bgl.GL_ALWAYS)
+            bgl.glDepthMask(bgl.GL_FALSE)
+
+            shader3D.bind()
+            shader3D.uniform_float("color", color )
+            batch = batch_for_shader(shader3D, 'LINES', {"pos": verts} )
+            batch.draw(shader3D)
+            bgl.glLineWidth(1)
+            bgl.glDisable(bgl.GL_LINE_SMOOTH)    
+            bgl.glDisable(bgl.GL_BLEND)
+        return draw
+
+    return None
+
 
 def drawElementsHilight( obj , elements, radius , color = (1,1,1,1) ) :
     for element in elements :

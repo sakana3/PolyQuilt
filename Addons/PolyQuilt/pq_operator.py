@@ -25,16 +25,14 @@ from .utils.pqutil import *
 from .utils import draw_util
 from .utils.dpi import *
 from .pq_icon import *
-from .subtools.subtool_default import SubToolDefault
-from .subtools.subtool_extr import SubToolExtr
-from .subtools.subtool_brush import SubToolBrush
-from .subtools.subtool import SubTool
+from .subtools import *
 from .QMesh import *
+from .gizmo_preselect import PQ_GizmoGroup_Base            
 
 import os
 import bpy.utils.previews
 
-__all__ = ['MESH_OT_poly_quilt']
+__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_hold_lock' , 'MESH_OT_poly_quilt_daemon' , 'MESH_OT_poly_quilt_brush_size']
 
 if not __package__:
     __package__ = "poly_quilt"
@@ -69,10 +67,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     tool_mode : bpy.props.EnumProperty(
         name="Tool Mode",
         description="Tool Mode",
-        items=[('LOWPOLY' , "LowPoly", "" ),
+        items=[('MASTER' , "Master", "" ),
+               ('LOWPOLY' , "LowPoly", "" ),
                ('EXTRUDE' , "Extrude", "" ),
-               ('BRUSH' , "Brush", "" ) ],
-        default='LOWPOLY',
+               ('BRUSH' , "Brush", "" ),
+               ('KNIFE' , "Knife", "" ) ,
+               ('DELETE' , "delete", "" ) ,
+               ],
+        default='MASTER',
     )
 
     lock_hold : bpy.props.BoolProperty(
@@ -86,8 +88,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
               default = False ,
               description="Alternative",
             )
-
-
 
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
@@ -130,13 +130,11 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def modal(self, context, event):
-        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
         def Exit() :
             MESH_OT_poly_quilt.handle_remove()
             self.RemoveTimerEvent(context)
             self.bmo = None
-            PQ_Gizmo_Preselect.use(False)
-        PQ_Gizmo_Preselect.use(True)
+            PQ_GizmoGroup_Base.running_polyquilt = False
 
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
@@ -199,18 +197,15 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect
-
         self.preferences = context.preferences.addons[__package__].preferences
         if context.region == None :
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
 
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
-            self.preselect = PQ_GizmoGroup_Preselect.getGizmo( context.region_data )
+            self.preselect = PQ_GizmoGroup_Base.get_gizmo( context.region_data )
             if self.preselect == None or self.preselect.bmo  == None :
                 self.report({'WARNING'}, "Gizmo Error" )
-                PQ_Gizmo_Preselect.use(True)
                 return {'CANCELLED'}            
 
             if self.preselect.currentElement == None :
@@ -236,14 +231,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
 
-            if self.tool_mode == 'EXTRUDE' :
-                self.currentSubTool = SubToolExtr(self , element, event.type )
-            elif self.tool_mode == 'BRUSH' :
-                self.currentSubTool = SubToolBrush(self , element, event.type )
-            else :
-                self.currentSubTool = SubToolDefault(self , element, event.type )
+            self.currentSubTool = maintools[self.tool_mode](self , element, event.type )
             self.currentSubTool.OnInit(context )
-            self.currentSubTool.Update(context, event)
+#            self.currentSubTool.Update(context, event)
 
             if self.preferences.is_debug :
                 self.debugStr = "invoke"
@@ -255,8 +245,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             context.window_manager.modal_handler_add(self)
 #           MESH_OT_poly_quilt.handle_add(self,context)
             self.AddTimerEvent(context)
+            PQ_GizmoGroup_Base.running_polyquilt = True
             
-            return {'RUNNING_MODAL'}
+            return { self.currentSubTool.Update(context, event) }
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator" + event.type + "|" + event.value )
             return {'CANCELLED'}
@@ -347,38 +338,36 @@ class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MESH_OT_poly_quilt_key_check(bpy.types.Operator):
+class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""
-    bl_idname = "mesh.poly_quilt_key_check"
+    bl_idname = "mesh.poly_quilt_daemon"
     bl_label = "PolyQuiltKeyCheck"
 
-    is_runngin = False
+    is_running = False
 
     @classmethod
     def poll( cls , context ) :
-        return not MESH_OT_poly_quilt_key_check.is_runngin
+        return not MESH_OT_poly_quilt_daemon.is_running
 
     def modal(self, context, event):
         if event.type == 'TIMER' :
             return {'PASS_THROUGH'}
-        from .gizmo_preselect import PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect   
 
         # 自分を使っているツールを探す。
-        if context.mode != 'EDIT_MESH' or PQ_GizmoGroup_Preselect.bl_idname not in [ tool.widget for tool in context.workspace.tools ] :
-            MESH_OT_poly_quilt_key_check.is_runngin = False
+        if context.mode != 'EDIT_MESH' or not any( [ "mesh_tool.poly_quilt" in tool.idname for tool in context.workspace.tools ] ) :
+            MESH_OT_poly_quilt_daemon.is_running = False
+            QSnap.remove_ref()
             return {'CANCELLED'}
 
-        PQ_Gizmo_Preselect.check_modifier_key( context , event.shift ,event.ctrl , event.alt )
+        PQ_GizmoGroup_Base.check_modifier_key( event.shift ,event.ctrl , event.alt )
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-        MESH_OT_poly_quilt_key_check.is_runngin = True
+        if MESH_OT_poly_quilt_daemon.is_running :
+            return {'CANCELLED'}
+        QSnap.add_ref( context )
+        MESH_OT_poly_quilt_daemon.is_running = True
         context.window_manager.modal_handler_add(self)
-
-#        for keymap in bpy.context.window_manager.keyconfigs.addon.keymaps:
-#            for key in keymap.keymap_items:
- #               pass
-
         return {'RUNNING_MODAL'}
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):

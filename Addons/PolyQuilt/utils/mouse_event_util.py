@@ -33,7 +33,7 @@ class MBEventType(Enum) :
     Release = auto()
 
 class ButtonEventUtil :
-    def __init__( self , button : str , cls , func , op , use_hold_lock = False ) :
+    def __init__( self , button : str , cls , func , op , use_hold_lock = False , no_hold = False ) :
         self.op = op
         self.button : str = button
         self.eventFunc = func
@@ -49,6 +49,8 @@ class ButtonEventUtil :
         self.presureCompOnce = False
         self.preferences = op.preferences
         self.use_hold_lock = use_hold_lock
+        self.no_hold = no_hold
+
     @property
     def presureValue(self) -> float :  
         if self.use_hold_lock and self.op.lock_hold :
@@ -85,44 +87,53 @@ class ButtonEventUtil :
     def Update( self , context , event  ) :
         self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))                    
         if event.type == self.button:
-            if event.value == 'PRESS': 
+            if event.value == 'PRESS':
                 if self.Press is False :
-                    self.Press = True
-                    self.Presure = True
-                    self.presureCompOnce = False
+                    self.PressPos = self.mouse_pos                    
                     self.PressTime = time.time()
-                    self.PressPos = self.mouse_pos
-                    self.PressPrevPos = mathutils.Vector((event.mouse_prev_x, event.mouse_prev_y))  
+                    if not self.no_hold :
+                        self.Press = True
+                        self.Presure = True
+                        self.presureCompOnce = False
+                        self.PressPrevPos = mathutils.Vector((event.mouse_prev_x, event.mouse_prev_y))  
                     self.OnEvent( event , MBEventType.Down )
                 else :
                     self.OnEvent( event , MBEventType.Press )
             elif event.value == 'RELEASE':
-                if self.presureComplite :
-                    self.presureCompOnce = True
-                if self.Presure :
-                    if self.is_hold :
-                        self.OnEvent( event , MBEventType.LongClick )
-                    else :
-                        self.OnEvent( event , MBEventType.Click )
-                self.Presure = False
-                self.Press = False
+                if not self.no_hold :                
+                    if self.presureComplite :
+                        self.presureCompOnce = True
+                    if self.Presure :
+                        if self.is_hold :
+                            self.OnEvent( event , MBEventType.LongClick )
+                        else :
+                            self.OnEvent( event , MBEventType.Click )
+                    self.Presure = False
+                    self.Press = False
+                else :
+                    self.OnEvent( event , MBEventType.Click )
                 self.OnEvent( event , MBEventType.Release )
                 self.PressTime  = 0.0
                 self.presureCompOnce = False
         elif event.type == 'MOUSEMOVE':
-            if self.Press :
-                if self.presureComplite :
-                    self.presureCompOnce = True
-                drag_threshold = context.preferences.inputs.drag_threshold_mouse
-                if event.is_tablet : 
-                    drag_threshold = context.preferences.inputs.drag_threshold_tablet
+            drag_threshold = context.preferences.inputs.drag_threshold_mouse
+            if not self.no_hold :                        
+                if self.Press :
+                    if self.presureComplite :
+                        self.presureCompOnce = True
+                    if event.is_tablet : 
+                        drag_threshold = context.preferences.inputs.drag_threshold_tablet
+                    if (time.time()-self.PressTime ) > 0.15 and (self.mouse_pos-self.PressPos ).length > drag_threshold:
+                        self.Presure = False
+                    if self.Presure is False :
+                        if self.is_hold :
+                         self.OnEvent( event , MBEventType.LongPressDrag )
+                        else :
+                            self.OnEvent( event , MBEventType.Drag )
+            else :
                 if (time.time()-self.PressTime ) > 0.15 and (self.mouse_pos-self.PressPos ).length > drag_threshold:
-                   self.Presure = False
-                if self.Presure is False :
-                    if self.is_hold :
-                       self.OnEvent( event , MBEventType.LongPressDrag )
-                    else :
-                       self.OnEvent( event , MBEventType.Drag )
+                    self.OnEvent( event , MBEventType.Drag )
+
             self.OnEvent( event , MBEventType.Move )
         elif event.type == 'TIMER':
             if self.presureComplite :
@@ -135,7 +146,6 @@ class ButtonEventUtil :
             self.event = event
             self.eventFunc( self.eventClass , self)
             self.event = None
-        pass
 
     def Reset(self, context ) :
         self.Presure = False

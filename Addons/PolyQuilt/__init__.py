@@ -14,7 +14,7 @@
 bl_info = {
     "name" : "PolyQuilt",
     "author" : "Sakana3",
-    "version": (1, 2, 0),
+    "version": (1, 3, 0),
     "blender" : (2, 80, 0),
     "location": "View3D > Mesh > PolyQuilt",
     "description": "Lowpoly Tool",
@@ -25,27 +25,25 @@ bl_info = {
 
 import bpy
 from bpy.utils.toolsystem import ToolDef
-from .pq_operator import MESH_OT_poly_quilt , MESH_OT_poly_quilt_hold_lock , MESH_OT_poly_quilt_key_check , MESH_OT_poly_quilt_brush_size
+from .pq_operator import *
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
-from .pq_tool import ToolPolyQuilt , register_tools , unregister_tools , register_keymaps , unregister_keymaps, VIEW3D_PT_tools_polyquilt_options
-from .gizmo_preselect import PQ_GizmoGroup_Preselect , PQ_Gizmo_Preselect 
+from .pq_tool import PolyQuiltTools , VIEW3D_PT_tools_polyquilt_options
+from .gizmo_preselect import * 
 from .pq_preferences import *
 from .translation import pq_translation_dict
 
 classes = (
-    PQ_Gizmo_Preselect ,
-    PQ_GizmoGroup_Preselect ,
     MESH_OT_poly_quilt ,
     MESH_OT_poly_quilt_hold_lock ,
     MESH_OT_poly_quilt_brush_size ,
-    MESH_OT_poly_quilt_key_check ,
+    MESH_OT_poly_quilt_daemon ,
     PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
     PQ_OT_CheckAddonUpdate ,
     PQ_OT_UpdateAddon ,
     VIEW3D_PT_tools_polyquilt_options
-)
+) + gizmo_preselect.all_gizmos
 
 
 def register():
@@ -61,17 +59,15 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-#   bpy.utils.register_tool(ToolPolyQuilt , after={"builtin.poly_build"} )
-    register_tools()
-    register_keymaps()
+    for tool in PolyQuiltTools :
+        bpy.utils.register_tool(tool['tool'] ,  after = tool['after'] , group = tool['group'] )
 
 def unregister():
-#   bpy.utils.unregister_tool(ToolPolyQuilt)
-    unregister_keymaps()
-    unregister_tools()
+    for tool in PolyQuiltTools :
+        bpy.utils.unregister_tool(tool['tool'])
 
     for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+        bpy.utils.unregister_class(cls)        
 
     bpy.utils.unregister_class(pq_operator_add_empty_object.OBJECT_OT_add_object)
     bpy.utils.unregister_manual_map(pq_operator_add_empty_object.add_object_manual_map)
@@ -79,7 +75,6 @@ def unregister():
 
     unregister_icons()
     bpy.app.translations.unregister(__name__)
-
 
 if __name__ == "__main__":
     register()

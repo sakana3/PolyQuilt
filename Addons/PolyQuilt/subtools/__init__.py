@@ -12,11 +12,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = [
-    'subtool' ,
-    'subtool_default' ,
-    'subtool_edge_slice' ,
-    'subtool_knife'
-    'subtool_makepoly'
-    'subtool_move'
-]
+from .maintool_default import MainToolDefault
+from .maintool_extr import MainToolExtr
+from .maintool_brush import MainToolBrush
+from .maintool_lowpoly import MainToolLowPoly
+from .maintool_knife import MainToolKnife
+from .maintool_delete import MainToolDelete
+
+maintools = {
+    'MASTER'    : MainToolDefault ,
+    'LOWPOLY'   : MainToolLowPoly ,
+    'BRUSH'     : MainToolBrush ,
+    'EXTRUDE'   : MainToolExtr ,
+    'KNIFE'     : MainToolKnife ,
+    'DELETE'    : MainToolDelete ,
+}
