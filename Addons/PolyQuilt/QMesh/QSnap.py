@@ -29,7 +29,6 @@ class QSnap :
     @classmethod
     def add_ref( cls , context ) :
         if cls.ref == 0 :
-            print("create QSnap")
             cls.instance = cls(context)
             cls.update(context)
         cls.ref = cls.ref + 1
@@ -39,7 +38,6 @@ class QSnap :
         cls.ref = cls.ref - 1
         if cls.ref == 0 :
             if cls.instance :
-                print("remove QSnap")
                 del cls.instance
                 cls.instance = None
 

@@ -67,7 +67,7 @@ class MainToolDefault(MainTool) :
                     tools.append(SubToolPolyPen(self.operator,self.currentTarget))
                 else :
                     if len(self.currentTarget.element.link_faces) > 0 :
-                        tools.append(SubToolEdgeSlice(self.operator,self.currentTarget))
+                        tools.append(SubToolEdgeSlice(self.operator,self.currentTarget, self.mouse_pos))
                     if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
                         tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
                     if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 

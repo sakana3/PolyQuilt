@@ -33,7 +33,7 @@ class ToolPolyQuilt(ToolPolyQuiltBase):
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'MASTER')]}),
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True}, {"properties": [("lock_hold", True)]}),
-#       ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True}, {"properties": [("tool_mode", 'EXTRUDE')]}),
+#       ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True}, {"properties": [("tool_mode", 'HOLD')]}),
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
 #       ("mesh.poly_quilt", {"type": "MIDDLEMOUSE", "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("alternative",True)]}),
 #       ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
@@ -123,11 +123,61 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     bl_idname = "mesh_tool.poly_quilt_extrude"
     bl_label = "PolyQuilt:Extrude"
     bl_description = ( "Extrude Tool" )
-    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_delete_icon")
-    bl_widget = "MESH_GGT_PQ_Delete"
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_extrude_icon")
+    bl_widget = "MESH_GGT_PQ_Extrude"
     bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'DELETE')]}),
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'EXTRUDE')]}),
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
+    )
+
+    def draw_settings(context, layout, tool):
+        reg = context.region.type
+        if reg == 'UI' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'WINDOW' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'TOOL_HEADER' :
+            draw_settings_toolheader( context , layout , tool )
+
+class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_loopcut"
+    bl_label = "PolyQuilt:LoopCut"
+    bl_description = ( "LoopCut Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_loopcut_icon")
+    bl_widget = "MESH_GGT_PQ_LoopCut"
+    bl_keymap = (
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'LOOPCUT')]}),
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
+    )
+
+    def draw_settings(context, layout, tool):
+        reg = context.region.type
+        if reg == 'UI' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'WINDOW' :
+            draw_settings_ui( context , layout , tool )
+        elif reg == 'TOOL_HEADER' :
+            draw_settings_toolheader( context , layout , tool )
+
+
+
+class ToolPolyQuiltBrush(ToolPolyQuiltBase):
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_brush"
+    bl_label = "PolyQuilt:Brush"
+    bl_description = ( "Brush Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_brush_icon")
+    bl_widget = "MESH_GGT_PQ_Brush"
+    bl_keymap = (
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
         ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
     )
 
@@ -146,6 +196,9 @@ PolyQuiltTools = (
     { 'tool' : ToolPolyQuiltPoly  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltKnife  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltExtrude  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltLoopCut  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltBrush  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
 )
 
 

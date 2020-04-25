@@ -46,22 +46,15 @@ class MainToolLowPoly(MainTool) :
         if event.type == MBEventType.Release :
             self.isExit = True
 
-        elif event.type == MBEventType.Click :
+        elif event.type == MBEventType.Click or event.type == MBEventType.LongClick :
             if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
                 self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
 
-        elif event.type == MBEventType.LongClick :
-            self.isExit = True
-
-        elif event.type == MBEventType.LongPressDrag :
-            self.isExit = True
-
-        elif event.type == MBEventType.Drag :
+        elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isNotEmpty :
                 self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
             else :
                 self.isExit = self.do_empty_space(event)
-
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :

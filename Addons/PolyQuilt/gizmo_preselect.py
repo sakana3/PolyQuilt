@@ -51,6 +51,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.subtool = self.tool_table[0]
         self.region = context.region_data
         self.bmo = QMesh( context.active_object , self.preferences )
+        context.window.cursor_set( self.subtool.GetCursor() )
 
     def exit( self , context, cancel) :
         pass
@@ -204,5 +205,28 @@ class PQ_GizmoGroup_Delete(PQ_GizmoGroup_Base):
     def tool_table( self ) :
         return ['DELETE','BRUSH','DELETE','DELETE']
 
-all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete )
+class PQ_GizmoGroup_Extrude(PQ_GizmoGroup_Base):
+    bl_idname = "MESH_GGT_PQ_Extrude"
+    bl_label = "PolyQuilt Extrude Gizmo"
 
+    def tool_table( self ) :
+        return ['EXTRUDE','BRUSH','DELETE','DELETE']
+
+class PQ_GizmoGroup_LoopCut(PQ_GizmoGroup_Base):
+    bl_idname = "MESH_GGT_PQ_LoopCut"
+    bl_label = "PolyQuilt LoopCut Gizmo"
+
+    def tool_table( self ) :
+        return ['LOOPCUT','BRUSH','DELETE','DELETE']
+
+class PQ_GizmoGroup_Brush(PQ_GizmoGroup_Base):
+    bl_idname = "MESH_GGT_PQ_Brush"
+    bl_label = "PolyQuilt Brush Gizmo"
+
+    def tool_table( self ) :
+        return ['BRUSH','BRUSH','DELETE','DELETE']
+
+all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush )
+
+
+# ursor (enum in ['DEFAULT', 'NONE', 'WAIT', 'CROSSHAIR', 'MOVE_X', 'MOVE_Y', 'KNIFE', 'TEXT', 'PAINT_BRUSH', 'PAINT_CROSS', 'DOT', 'ERASER', 'HAND', 'SCROLL_X', 'SCROLL_Y', 'SCROLL_XY', 'EYEDROPPER'], (optional)) – cursor

@@ -187,6 +187,19 @@ class ElementItem :
             return self.__mirror.verts
 
     @property
+    def local_co( self ) -> Vector:
+        if self.isEmpty :
+            return []
+        elif self.isVert :
+            return [self.element.co]
+        else :
+            return [ v.co for v in self.element.verts ]
+
+    @property
+    def world_co( self ) -> Vector:
+        return [ self.__qmesh.local_to_world_pos(c) for c in self.local_co ]
+
+    @property
     def type(self):
         return self.__type
 

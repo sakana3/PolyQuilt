@@ -45,22 +45,21 @@ class MainToolDelete(MainTool) :
 
         if event.type == MBEventType.Release :
             self.isExit = True
-
         elif event.type == MBEventType.Click or event.type == MBEventType.LongClick:
-            if self.currentTarget.isVert :
-                self.bmo.dissolve_vert( self.currentTarget.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
-            elif self.currentTarget.isEdge :
-                self.bmo.dissolve_edge( self.currentTarget.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
-            elif self.currentTarget.isFace :
-                self.bmo.Remove( self.currentTarget.element )
-            self.bmo.UpdateMesh()
+            self.RemoveElement(self.currentTarget)
+            self.currentTarget = ElementItem.Empty()
+        elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
             self.currentTarget = ElementItem.Empty()
 
-        elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
-            if self.currentTarget.isNotEmpty :
-                self.SetSubTool( SubToolMove(self.operator,self.currentTarget , self.mouse_pos ) )
-            else :
-                self.isExit = self.do_empty_space(event)
+    def RemoveElement( self , element ) :
+        if element.isNotEmpty :
+            if element.isVert :
+                self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
+            elif element.isEdge :
+                self.bmo.dissolve_edge( element.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
+            elif element.isFace :
+                self.bmo.Remove( element.element )
+            self.bmo.UpdateMesh()
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :

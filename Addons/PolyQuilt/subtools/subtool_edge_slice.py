@@ -27,19 +27,70 @@ from .subtool import SubTool
 class SubToolEdgeSlice(SubTool) :
     name = "SliceTool"
 
-    def __init__(self,op, target ) :
+    def __init__(self,op, target , mouse_pos ) :
         super().__init__(op)
         self.currentEdge = target.element
         l0 = (self.bmo.local_to_world_pos(target.element.verts[0].co) - target.hitPosition).length
         l1 = (self.bmo.local_to_world_pos(target.element.verts[1].co) - target.hitPosition).length
         self.reference_point = 0 if l0 > l1 else 1
-        self.draw_deges = []
-        self.split_deges = []         
-        self.endTriangles = {}    
-        self.sliceRate = 0.5
         self.fixCenter = False
-        self.CalcSlice(self.currentEdge)
+        self.split_deges , self.draw_deges , self.endTriangles , self.fixCenter = self.CalcSlice( self.bmo , self.currentEdge)
         self.is_forcus = True
+        self.sliceRate = self.CalcSplitRate( bpy.context , mouse_pos , self.currentEdge )
+
+    def Check( root , target ) :
+        return target.isEdge
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , target : ElementItem ) :
+        if target != None and gizmo.bmo != None :
+            split_deges , draw_deges , endTriangles , fixCenter = cls.CalcSlice( gizmo.bmo , target.element )
+            co = target.world_co
+            sliceRate = ( co[0] - target.hitPosition ).length / ( co[0] - co[1] ).length
+            return cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
+            return target.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , False )
+
+        return None
+
+    @classmethod
+    def DrawFunc( cls , bmo , currentEdge , cut_deges , sliceRate : float , preferences  ) :
+        if sliceRate > 0 and sliceRate < 1 :
+            def color_split( alpha = 1.0 ):
+                col = preferences.split_color            
+                return (col[0],col[1],col[2],col[3] * alpha )
+            def calc_slice_rate( edge , refarence , rate ) :
+                return rate if refarence == 0 else 1.0 - rate
+
+            def Draw() :
+                size = preferences.highlight_vertex_size          
+                width = preferences.highlight_line_width
+                alpha = preferences.highlight_face_alpha
+                draw_util.drawElementHilight3D( bmo.obj , currentEdge, size , width , alpha , color_split(0.25) )
+                pos = currentEdge.verts[0].co + ( currentEdge.verts[1].co- currentEdge.verts[0].co) * sliceRate
+                pos = bmo.local_to_world_pos( pos )
+                draw_util.draw_pivots3D( (pos,) , preferences.highlight_vertex_size , color_split(0.25) )
+
+                if cut_deges :
+                    lines = []
+                    for cuts in cut_deges :
+                        v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , calc_slice_rate( cuts[0] , cuts[2] , sliceRate ) )
+                        v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , calc_slice_rate( cuts[1] , cuts[3] , sliceRate ) )
+                        v0 = bmo.local_to_world_pos( v0 )
+                        v1 = bmo.local_to_world_pos( v1 )
+                        lines.append(v0)
+                        lines.append(v1)
+                    draw_util.draw_lines3D( bpy.context , lines , color_split() , preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
+
+                for i in range( preferences.loopcut_division ) :
+                    r = (i+1.0) / ( preferences.loopcut_division + 1.0)
+                    v = bmo.local_to_world_pos( currentEdge.verts[0].co.lerp( currentEdge.verts[1].co , r) )
+                    draw_util.draw_pivots3D( (v,) , preferences.highlight_vertex_size / 2 , color_split(0.5) )
+            return Draw
+
+        def Noting() :
+            pass
+        return Noting
+
 
     def OnForcus( self , context , event  ) :
         if event.type == 'MOUSEMOVE':        
@@ -60,7 +111,6 @@ class SubToolEdgeSlice(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-
         if self.sliceRate > 0 and self.sliceRate < 1 :
             matrix = self.bmo.obj.matrix_world
             pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
@@ -131,22 +181,24 @@ class SubToolEdgeSlice(SubTool) :
 
         return d
 
-    def CalcSlice( self , startEdge ) :
+    @classmethod
+    def CalcSlice( cls , bmo , startEdge ) :
         check_edges = []
         draw_deges = []
         split_deges = []
+        endTriangles = {}
+        fixCenter = False
 
         startEdges = [ (startEdge,0) ]
 
-        if self.bmo.is_mirror_mode :
-            mirrorEdge = self.bmo.find_mirror(startEdge,False)
+        if bmo.is_mirror_mode :
+            mirrorEdge = bmo.find_mirror(startEdge,False)
             if mirrorEdge is not None :
                 if mirrorEdge != startEdge :
-                    mirrorVert = self.bmo.find_mirror(startEdge.verts[0])
+                    mirrorVert = bmo.find_mirror(startEdge.verts[0])
                     startEdges.append( (mirrorEdge, 0 if mirrorEdge.verts[0] == mirrorVert else 1 ) )
                 else :
-                    self.fixCenter = True
-
+                    fixCenter = True
 
         for startEdge in startEdges :
             if len(startEdge[0].link_faces) > 2 :
@@ -164,10 +216,10 @@ class SubToolEdgeSlice(SubTool) :
 
                     if len( face.loops ) != 4 :
                         if len( face.loops ) == 3 :
-                            if face not in self.endTriangles :
-                                self.endTriangles[face] = (edge.verts[0].index,edge.verts[1].index , [ v for v in face.verts if v not in edge.verts ][0].index )
+                            if face not in endTriangles :
+                                endTriangles[face] = (edge.verts[0].index,edge.verts[1].index , [ v for v in face.verts if v not in edge.verts ][0].index )
                             else :
-                                self.endTriangles[face] = None
+                                endTriangles[face] = None
                         break
 
                     opposite = loop.link_loop_next.link_loop_next
@@ -187,10 +239,7 @@ class SubToolEdgeSlice(SubTool) :
                     if startEdge[0].index == edge.index :
                         break
 
-
-        self.split_deges = split_deges 
-        self.draw_deges = draw_deges 
-
+        return split_deges , draw_deges , endTriangles , fixCenter
 
     def DoSlice( self , startEdge , sliceRate ) :
         edges = []
