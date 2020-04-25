@@ -39,7 +39,7 @@ class SubToolEdgeSlice(SubTool) :
         self.sliceRate = self.CalcSplitRate( bpy.context , mouse_pos , self.currentEdge )
 
     def Check( root , target ) :
-        return target.isEdge
+        return target.isEdge and ( target.world_co[0] - target.world_co[1] ).length > sys.float_info.epsilon
 
     @classmethod
     def DrawHighlight( cls , gizmo , target : ElementItem ) :
@@ -48,7 +48,6 @@ class SubToolEdgeSlice(SubTool) :
             co = target.world_co
             sliceRate = ( co[0] - target.hitPosition ).length / ( co[0] - co[1] ).length
             return cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
-            return target.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , False )
 
         return None
 
