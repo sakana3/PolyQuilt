@@ -126,8 +126,10 @@ class QMesh(QMeshOperators) :
                     if QSnap.is_target( hitFace.hitPosition ) :                
                         hitElement = hitFace
         elif hitVert.isNotEmpty and hitEdge.isNotEmpty :
-            v1 = matrix @ hitVert.hitPosition
-            v2 = matrix @ hitEdge.hitPosition
+            if hitVert.element in hitEdge.element.verts :
+                return hitVert
+            v1 = matrix @ hitVert.hitPosition.to_4d()
+            v2 = matrix @ hitEdge.hitPosition.to_4d()
             if v1.z <= v2.z :
                 hitElement = hitVert
             else :

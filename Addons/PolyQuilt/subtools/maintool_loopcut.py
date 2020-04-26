@@ -58,7 +58,7 @@ class MainToolLoopCut(MainTool) :
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
-        element = qmesh.PickElement( location , preferences.distance_to_highlight, edgering = False, elements = ['EDGE','VERT'] )        
+        element = qmesh.PickElement( location , preferences.distance_to_highlight, edgering = False, elements = ['EDGE'] )        
         element.set_snap_div( preferences.loopcut_division )
         return element
 

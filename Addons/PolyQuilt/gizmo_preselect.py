@@ -13,6 +13,7 @@
 
 import bpy
 import mathutils
+import time
 from .QMesh import *
 from .utils import draw_util
 from .subtools import *
@@ -73,15 +74,18 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.bmo.UpdateView(context)
         QSnap.update(context)
 
+
         if self.subtool != None :
             element = self.subtool.pick_element( self.bmo , location , self.preferences )
             element.set_snap_div( self.preferences.loopcut_division )
             if self.subtool.UpdateHighlight( self , element ) :
                 context.area.tag_redraw()
 
+
         self.currentElement = element
 
         self.DrawHighlight = self.subtool.DrawHighlight( self , self.currentElement )
+
         return -1
 
     def draw(self, context):

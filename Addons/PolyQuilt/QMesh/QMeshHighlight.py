@@ -23,6 +23,7 @@ import numpy as np
 from ..utils import pqutil
 from ..utils.dpi import *
 from .ElementItem import ElementItem
+import time
 
 __all__ = ['QMeshHighlight']
 
@@ -131,36 +132,38 @@ class QMeshHighlight :
 
     def UpdateView( self ,context , forced = False ):
         rv3d = context.region_data
-        matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
+        pj_matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
         self.checkDirty()
 
-        if forced == True or matrix != self.current_matrix :
+        if forced == True or pj_matrix != self.current_matrix :
             region = context.region
             halfW = region.width / 2.0
             halfH = region.height / 2.0
-            matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
-
-            verts = self.pqo.bm.verts
+            mat_scaleX = mathutils.Matrix.Scale( halfW , 4 , (1.0, 0.0, 0.0))
+            mat_scaleY = mathutils.Matrix.Scale( halfH , 4 , (0.0, 1.0, 0.0))
+            matrix = mat_scaleX @ mat_scaleY @ pj_matrix
+            halfWH = Vector( (halfW,halfH) )
 
             def ProjVert( vt ) :
                 pv = matrix @ vt.co.to_4d()
-                w = pv[3]
-                return Vector( (pv.x * halfW / w + halfW , pv.y * halfH / w + halfH ) )  if w > 0.0 else None
+                return pv.to_2d() / pv[3] + halfWH if pv[3] > 0.0 else None
 
+            verts = self.pqo.bm.verts
             viewPos = { p : ProjVert(p) for p in verts }
 
             edges = self.pqo.bm.edges
+            viewEdges = { e : [ viewPos[e.verts[0]] , viewPos[e.verts[1]] ] for e in edges if not e.hide }
 
-            self.__viewPosEdges = { e : [ p1 , p2 ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
+            self.__viewPosEdges = { e : v for e , v in viewEdges.items() if None not in v }
             self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
 
-            self.current_matrix = copy.copy(matrix)
+            self.current_matrix = pj_matrix
+
 
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
-        r = radius
         p = Vector( coord )
         viewPos = self.viewPosVerts
-        rr = Vector( (r,0) )
+        rr = Vector( (radius,0) )
         verts = self.pqo.bm.verts
         s = [ [v,s] for v,s in viewPos.items() if s - p <= rr and v in verts ]
         if edgering :
@@ -183,7 +186,11 @@ class QMeshHighlight :
         ray = pqutil.Ray.from_screen( bpy.context , coord )
         ray_distance = ray.distance
         location_3d_to_region_2d = pqutil.location_3d_to_region_2d
+        intersect_line_sphere_2d = geometry.intersect_line_sphere_2d
+        intersect_sphere_sphere_2d = geometry.intersect_sphere_sphere_2d
+        intersect_point_line = geometry.intersect_point_line
         matrix_world = self.pqo.obj.matrix_world      
+        rr = Vector( (radius,0) )
 
         def Conv( edge ) -> ElementItem :
             v1 = matrix_world @ edge.verts[0].co
@@ -192,12 +199,18 @@ class QMeshHighlight :
             c = location_3d_to_region_2d(h1)
             return ElementItem( self.pqo , edge , c , h1 , d )
 
-        intersect = geometry.intersect_line_sphere_2d
+        def intersect( p1 , p2 ) :
+            hit , pt = intersect_point_line( p , p1 , p2 )
+            if pt > 0 and pt < 1 :
+                if hit - p <= rr :
+                    return True
+
+            return False
         edges = self.pqo.bm.edges
         if edgering :        
-            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if len(e.link_faces) <= 1 and None not in intersect( p1 , p2 ,p,radius ) and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if len(e.link_faces) <= 1 and intersect( p1 , p2 ) and e not in ignore ]
         else :
-            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if None not in intersect( p1 , p2 ,p,radius ) and e in edges and e not in ignore ]
+            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if intersect( p1 , p2 ) and e in edges and e not in ignore ]
 
         if backface_culling :
             ray2 = ray.world_to_object( self.pqo.obj )
@@ -206,7 +219,6 @@ class QMeshHighlight :
                     i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray2.vector ) < 0 ]
         
         s = sorted( r , key=lambda i:(i.coord - p).length_squared )
-
         return s
 
 

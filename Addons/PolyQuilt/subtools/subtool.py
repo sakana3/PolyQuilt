@@ -171,9 +171,8 @@ class SubToolRoot :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            draw_util.begin_draw()
-            element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
-            draw_util.end_draw()
+            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences )
+        return None
 
     @classmethod
     def UpdateHighlight( cls , gizmo , element ) :

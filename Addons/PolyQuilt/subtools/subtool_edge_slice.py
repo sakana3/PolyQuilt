@@ -47,7 +47,11 @@ class SubToolEdgeSlice(SubTool) :
             split_deges , draw_deges , endTriangles , fixCenter = cls.CalcSlice( gizmo.bmo , target.element )
             co = target.world_co
             sliceRate = ( co[0] - target.hitPosition ).length / ( co[0] - co[1] ).length
-            return cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
+            func = cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
+            def draw() :
+                func()           
+#                draw_util.DrawFont( '{:.2f}'.format( sliceRate) , 10 , mathutils.Vector( (100,100))  , (0,2) )      
+            return draw
 
         return None
 
@@ -60,30 +64,33 @@ class SubToolEdgeSlice(SubTool) :
             def calc_slice_rate( edge , refarence , rate ) :
                 return rate if refarence == 0 else 1.0 - rate
 
+            size = preferences.highlight_vertex_size          
+            width = preferences.highlight_line_width
+            alpha = preferences.highlight_face_alpha
+            draw_util.drawElementHilight3D( bmo.obj , currentEdge, size , width , alpha , color_split(0.25) )
+            pos = currentEdge.verts[0].co + ( currentEdge.verts[1].co- currentEdge.verts[0].co) * sliceRate
+            pos = bmo.local_to_world_pos( pos )
+
+            lines = []
+            for cuts in cut_deges :
+                v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , calc_slice_rate( cuts[0] , cuts[2] , sliceRate ) )
+                v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , calc_slice_rate( cuts[1] , cuts[3] , sliceRate ) )
+                v0 = bmo.local_to_world_pos( v0 )
+                v1 = bmo.local_to_world_pos( v1 )
+                lines.append(v0)
+                lines.append(v1)
+            
+            snaps = []
+            for i in range( preferences.loopcut_division ) :
+                r = (i+1.0) / ( preferences.loopcut_division + 1.0)
+                snaps.append( bmo.local_to_world_pos( currentEdge.verts[0].co.lerp( currentEdge.verts[1].co , r) ) )
+
             def Draw() :
-                size = preferences.highlight_vertex_size          
-                width = preferences.highlight_line_width
-                alpha = preferences.highlight_face_alpha
-                draw_util.drawElementHilight3D( bmo.obj , currentEdge, size , width , alpha , color_split(0.25) )
-                pos = currentEdge.verts[0].co + ( currentEdge.verts[1].co- currentEdge.verts[0].co) * sliceRate
-                pos = bmo.local_to_world_pos( pos )
-                draw_util.draw_pivots3D( (pos,) , preferences.highlight_vertex_size , color_split(0.25) )
-
-                if cut_deges :
-                    lines = []
-                    for cuts in cut_deges :
-                        v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , calc_slice_rate( cuts[0] , cuts[2] , sliceRate ) )
-                        v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , calc_slice_rate( cuts[1] , cuts[3] , sliceRate ) )
-                        v0 = bmo.local_to_world_pos( v0 )
-                        v1 = bmo.local_to_world_pos( v1 )
-                        lines.append(v0)
-                        lines.append(v1)
+                draw_util.draw_pivots3D( (pos,) , preferences.highlight_vertex_size , color_split(0.5) )
+                if lines :
                     draw_util.draw_lines3D( bpy.context , lines , color_split() , preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
-
-                for i in range( preferences.loopcut_division ) :
-                    r = (i+1.0) / ( preferences.loopcut_division + 1.0)
-                    v = bmo.local_to_world_pos( currentEdge.verts[0].co.lerp( currentEdge.verts[1].co , r) )
-                    draw_util.draw_pivots3D( (v,) , preferences.highlight_vertex_size / 2 , color_split(0.5) )
+                if snaps :
+                    draw_util.draw_pivots3D( snaps , 0.75 , color_split(0.25) )
             return Draw
 
         def Noting() :
@@ -118,30 +125,8 @@ class SubToolEdgeSlice(SubTool) :
             draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , pos , (0,2) )                    
 
     def OnDraw3D( self , context  ) :
-        if self.sliceRate > 0 and self.sliceRate < 1 :
-            size = self.preferences.highlight_vertex_size          
-            width = self.preferences.highlight_line_width
-            alpha = self.preferences.highlight_face_alpha
-            draw_util.drawElementHilight3D( self.bmo.obj , self.currentEdge, size , width , alpha , self.color_split(0.25) )
-            pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
-            pos = self.bmo.local_to_world_pos( pos )
-            draw_util.draw_pivots3D( (pos,) , self.preferences.highlight_vertex_size , self.color_split(0.25) )
-
-            if self.draw_deges :
-                lines = []
-                for cuts in self.draw_deges :
-                    v0 = cuts[0].verts[0].co.lerp( cuts[0].verts[1].co , self.calc_slice_rate( cuts[0] , cuts[2] , self.sliceRate ) )
-                    v1 = cuts[1].verts[0].co.lerp( cuts[1].verts[1].co , self.calc_slice_rate( cuts[1] , cuts[3] , self.sliceRate ) )
-                    v0 = self.bmo.local_to_world_pos( v0 )
-                    v1 = self.bmo.local_to_world_pos( v1 )
-                    lines.append(v0)
-                    lines.append(v1)
-                draw_util.draw_lines3D( context , lines , self.color_split() , self.preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
-
-            for i in range(self.preferences.loopcut_division ) :
-                r = (i+1.0) / (self.preferences.loopcut_division + 1.0)
-                v = self.bmo.local_to_world_pos( self.currentEdge.verts[0].co.lerp( self.currentEdge.verts[1].co , r) )
-                draw_util.draw_pivots3D( (v,) , self.preferences.highlight_vertex_size / 2 , self.color_split(0.5) )
+        func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentEdge , self.draw_deges , self.sliceRate , self.preferences )
+        func()
 
     def calc_slice_rate( self , edge , refarence , rate ) :
         if self.operator.loopcut_mode == 'EVEN' :
