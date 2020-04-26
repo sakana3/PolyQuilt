@@ -23,6 +23,15 @@ class ToolPolyQuiltBase(WorkSpaceTool):
     bl_context_mode='EDIT_MESH'
     is_polyquilt = True
 
+    default_keymap = (
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
+        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
+        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
+    )
+
 class ToolPolyQuilt(ToolPolyQuiltBase):
     # The prefix of the idname should be your add-on name.
     bl_idname = "mesh_tool.poly_quilt"
@@ -63,9 +72,7 @@ class ToolPolyQuiltPoly(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Lowpoly"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'LOWPOLY')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    ) + ToolPolyQuiltBase.default_keymap
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
@@ -83,9 +90,7 @@ class ToolPolyQuiltKnife(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Knife"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'KNIFE')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    ) + ToolPolyQuiltBase.default_keymap
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
@@ -105,9 +110,7 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Delete"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'DELETE')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    ) + ToolPolyQuiltBase.default_keymap
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
@@ -127,9 +130,7 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Extrude"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'EXTRUDE')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    ) + ToolPolyQuiltBase.default_keymap
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
@@ -149,9 +150,7 @@ class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_LoopCut"
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'LOOPCUT')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    ) + ToolPolyQuiltBase.default_keymap
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
@@ -189,7 +188,6 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
             draw_settings_ui( context , layout , tool )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
-
 
 PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },
