@@ -170,13 +170,17 @@ class QMeshOperators :
         else :
             self.mesh = None
             self.bm = None
-        self.current_matrix = None            
+        self.current_matrix = None
+        self.reload_tree()            
+
+    def reload_tree( self ) :
         if self.__btree :
             del self.__btree
             self.__btree = None
         if self.__kdtree :
             del self.__kdtree
             self.__kdtree = None
+
 
     def UpdateMesh( self ) :
         self.ensure_lookup_table()
@@ -292,13 +296,20 @@ class QMeshOperators :
             self.Remove( vert , is_mirror )
         else :
             verts = [vert,]
-            other_verts = [ e.other_vert(vert) for e in  vert.link_edges ]
             if self.check_mirror(is_mirror) :
                 mirror = self.find_mirror( vert )
                 if mirror != None :
-                    verts.append(mirror)
+                    verts = [vert,mirror]
+
+            other_verts = set()
+            for vt in verts : 
+                for e in vt.link_edges : 
+                    ov = e.other_vert(vt)
+                    if ov not in verts and len(ov.link_edges) > 2 :
+                        other_verts.add( ov )
             bmesh.ops.dissolve_verts( self.bm , verts  = verts , use_face_split = use_face_split , use_boundary_tear = use_boundary_tear )
-            self.dissolve_limit_verts(other_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = is_mirror )
+            other_verts = self.calc_limit_verts( other_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = False )
+            bmesh.ops.dissolve_verts( self.bm , verts  = other_verts , use_face_split = use_face_split , use_boundary_tear = use_boundary_tear )
 
     def dissolve_edge( self , edge , use_verts = False , use_face_split = False , dissolve_vert_angle = 180 , is_mirror = None  ) :
         if len( edge.link_faces ) <= 1 :
@@ -325,11 +336,16 @@ class QMeshOperators :
             verts.add( e.verts[0] )
             verts.add( e.verts[1] )
 
+
         new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
-        self.dissolve_limit_verts( verts , dissolve_vert_angle , False )
+        dissolve_verts = [ v for v in verts if v.is_valid ]
+        dissolve_verts = self.calc_limit_verts( dissolve_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = False )
+        if len(dissolve_verts) > 0 :
+            bmesh.ops.dissolve_verts( self.bm , verts  = dissolve_verts , use_face_split = use_face_split , use_boundary_tear = False  )
 
-    def dissolve_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
+    def calc_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
+        removes = set()
         for vert in [ v for v in verts if v.is_valid and len(v.link_edges) == 2 ] :
             n0 = (vert.link_edges[0].other_vert(vert).co - vert.co).normalized()
             n1 = (vert.link_edges[1].other_vert(vert).co - vert.co).normalized()
@@ -337,12 +353,18 @@ class QMeshOperators :
             r = math.acos(r)
             r = math.ceil(math.degrees(r))
             if r > dissolve_vert_angle :
-                removes = [vert]
+                removes.add(vert)
                 if self.check_mirror(is_mirror) :
                     mirror = self.find_mirror( vert )
                     if mirror != None :
-                        removes.append(mirror)                
-                bmesh.ops.dissolve_verts( self.bm , verts  = removes , use_face_split = False , use_boundary_tear = False )
+                        removes.add(mirror)                
+        return list(removes)
+
+
+    def dissolve_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
+        removes = self.calc_limit_verts(verts , dissolve_vert_angle  , is_mirror = None)
+        if removes :          
+            bmesh.ops.dissolve_verts( self.bm , verts  = removes , use_face_split = False , use_boundary_tear = False )
 
     def dissolve_faces( self , fades , use_verts = False ) :
         return bmesh.ops.dissolve_faces( self.bm , fades = fades , use_verts = use_verts )

@@ -79,8 +79,6 @@ class SubToolDelete(SubToolEx) :
                 mirrors = [ self.bmo.find_mirror(m) for m in self.removes ]
                 mirrors = [ m for m in mirrors if m ]
                 if mirrors :
-                    print(self.removes)
-                    print(mirrors)
                     draw_util.drawElementsHilight3D( self.bmo.obj , mirrors , vertex_size , width , alpha * 0.5 , color )
                 
 
