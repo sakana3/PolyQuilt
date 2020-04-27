@@ -112,7 +112,7 @@ class SubToolDelete(SubToolEx) :
                 else :
                     self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif element.isEdge :
-                dissolve_edges( edges )
+                dissolve_edges( self.removes )
             elif element.isFace :
                 self.bmo.delete_faces( self.removes )                    
             self.bmo.UpdateMesh()
