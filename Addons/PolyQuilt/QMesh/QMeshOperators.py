@@ -312,14 +312,7 @@ class QMeshOperators :
             bmesh.ops.dissolve_verts( self.bm , verts  = other_verts , use_face_split = use_face_split , use_boundary_tear = use_boundary_tear )
 
     def dissolve_edge( self , edge , use_verts = False , use_face_split = False , dissolve_vert_angle = 180 , is_mirror = None  ) :
-        if len( edge.link_faces ) <= 1 :
-            self.Remove( edge , is_mirror )
-        else :
-            verts = edge.verts[:]
-            faces = [ f for f in edge.link_faces if len(f.verts) == 3 ]
-            self.dissolve_edges( edges = (edge,) , use_verts = use_verts , use_face_split = use_face_split, is_mirror = is_mirror )
-            if len(faces) != 2:
-                self.dissolve_limit_verts(verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = is_mirror )
+        self.dissolve_edges( [edge,] , use_verts , use_face_split, dissolve_vert_angle , is_mirror )
 
     def dissolve_edges( self , edges , use_verts = False , use_face_split = False, dissolve_vert_angle = 180 , is_mirror = None ) :
         if self.check_mirror(is_mirror) :
