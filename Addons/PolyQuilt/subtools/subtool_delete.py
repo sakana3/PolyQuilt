@@ -90,13 +90,16 @@ class SubToolDelete(SubToolEx) :
             if element.isVert :
                 edges = [ r for r in self.removes if isinstance( r , bmesh.types.BMEdge )  ]
                 if edges :
-                    self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
+                    faces = set()
+                    for e in edges :
+                        for f in e.link_faces :
+                            faces.add(f)
+                    self.bmo.delete_faces( list(faces) )
                 else :
                     self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif element.isEdge :
                 self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif element.isFace :
-                print(self.removes)
                 self.bmo.delete_faces( self.removes )                    
             self.bmo.UpdateMesh()
 

@@ -249,6 +249,7 @@ class SubToolEdgeSlice(SubTool) :
              use_sphere = False 
         )
 
+        bpy.ops.mesh.select_all(action='DESELECT')
         for e in ret['geom_inner'] :
             e.select_set(True)
 

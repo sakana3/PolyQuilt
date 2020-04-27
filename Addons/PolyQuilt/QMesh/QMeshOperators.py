@@ -316,6 +316,10 @@ class QMeshOperators :
             mirror_edges = {edge for edge in mirror_edges if edge is not None }
             edges = list( set(edges) | mirror_edges )
 
+        if all( e.is_boundary for e in edges ) :
+            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
+            return
+
         verts = set()
         for e in edges :
             verts.add( e.verts[0] )
@@ -324,8 +328,6 @@ class QMeshOperators :
         new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
         self.dissolve_limit_verts( verts , dissolve_vert_angle , False )
-
-        return new_face
 
     def dissolve_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
         for vert in [ v for v in verts if v.is_valid and len(v.link_edges) == 2 ] :
