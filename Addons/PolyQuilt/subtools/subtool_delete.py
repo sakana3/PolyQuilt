@@ -96,6 +96,7 @@ class SubToolDelete(SubToolEx) :
             elif element.isEdge :
                 self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif element.isFace :
+                print(self.removes)
                 self.bmo.delete_faces( self.removes )                    
             self.bmo.UpdateMesh()
 
@@ -103,7 +104,7 @@ class SubToolDelete(SubToolEx) :
         if isinstance( start , bmesh.types.BMFace ) :
             for edge in start.edges :
                 if end in edge.link_faces :
-                    return [edge]
+                    return [start,end]
         elif isinstance( start , bmesh.types.BMEdge ) :
             for vert in start.verts :
                 if end in vert.link_edges :
@@ -111,7 +112,7 @@ class SubToolDelete(SubToolEx) :
         elif isinstance( start , bmesh.types.BMVert ) :
             for edge in start.link_edges :
                 if end in edge.verts :
-                    return [start,end]
+                    return [edge]
 
 
         bpy.ops.mesh.select_all(action='DESELECT')
