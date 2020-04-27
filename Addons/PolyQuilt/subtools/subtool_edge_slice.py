@@ -91,6 +91,10 @@ class SubToolEdgeSlice(SubTool) :
                     draw_util.draw_lines3D( bpy.context , lines , color_split() , preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
                 if snaps :
                     draw_util.draw_pivots3D( snaps , 0.75 , color_split(0.25) )
+
+                with draw_util.push_pop_projection2D() :
+                    draw_util.DrawFont( '{:.2f}'.format(sliceRate) , 10 , currentEdge.coord , (0,2) )           
+
             return Draw
 
         def Noting() :
@@ -117,12 +121,7 @@ class SubToolEdgeSlice(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        if self.sliceRate > 0 and self.sliceRate < 1 :
-            matrix = self.bmo.obj.matrix_world
-            pos = self.currentEdge.verts[0].co + (self.currentEdge.verts[1].co-self.currentEdge.verts[0].co) * self.sliceRate
-            pos = self.bmo.local_to_world_pos( pos )
-            pos = pqutil.location_3d_to_region_2d( pos )            
-            draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , pos , (0,2) )                    
+        pass
 
     def OnDraw3D( self , context  ) :
         func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentEdge , self.draw_deges , self.sliceRate , self.preferences )

@@ -120,7 +120,7 @@ class SubToolAutoQuad(SubToolEx) :
             return Draw
         def Dummy() :
             pass
-        return Dummy()
+        return Dummy
 
     def OnUpdate( self , context , event ) :
         return 'FINISHED'

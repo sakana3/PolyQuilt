@@ -203,6 +203,16 @@ class ElementItem :
     def type(self):
         return self.__type
 
+    @property
+    def type_name(self)  :
+        if isinstance( self.__element , bmesh.types.BMVert ) :
+            return 'VERT'
+        elif isinstance( self.__element , bmesh.types.BMEdge ) :
+            return 'EDGE'
+        elif isinstance( self.__element , bmesh.types.BMFace ) :
+            return 'FACE'
+        return ''
+
     @staticmethod
     def Empty():
         return ElementItem( None , EmptyElement() , None , None , 0.0 )

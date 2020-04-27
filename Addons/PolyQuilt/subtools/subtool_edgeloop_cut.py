@@ -127,6 +127,7 @@ class SubToolEdgeloopCut(SubTool) :
 
 
     def DoEdgeLoopCut( self , edges , verts ) :
+        bpy.ops.mesh.select_all(action='DESELECT')
         bmesh.ops.dissolve_edges( self.bmo.bm , edges = edges , use_verts = False , use_face_split = False )  
         vs = [ v for v in verts if v.is_valid ]
         bmesh.ops.dissolve_verts( self.bmo.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        

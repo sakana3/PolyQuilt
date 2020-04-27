@@ -124,8 +124,8 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
 class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     # The prefix of the idname should be your add-on name.
     bl_idname = "mesh_tool.poly_quilt_extrude"
-    bl_label = "PolyQuilt:Extrude"
-    bl_description = ( "Extrude Tool" )
+    bl_label = "PolyQuilt:EdgeExtrude"
+    bl_description = ( "Edge Extrude Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_extrude_icon")
     bl_widget = "MESH_GGT_PQ_Extrude"
     bl_keymap = (
@@ -192,10 +192,10 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
 PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },
     { 'tool' : ToolPolyQuiltPoly  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
-    { 'tool' : ToolPolyQuiltKnife  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
-    { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltExtrude  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltLoopCut  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltKnife  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltBrush  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
 )
 

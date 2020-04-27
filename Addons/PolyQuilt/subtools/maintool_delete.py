@@ -23,15 +23,10 @@ from ..utils import draw_util
 from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
-from .subtool_makepoly import *
 from .subtool_knife import *
 from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
-from .subtool_edge_extrude import *
-from .subtool_vert_extrude import *
-from .subtool_move import *
-from .subtool_fin_slice import *
-from .subtool_polypen import *
+from .subtool_delete import *
 
 class MainToolDelete(MainTool) :
     name = "DeleteTool"
@@ -45,27 +40,14 @@ class MainToolDelete(MainTool) :
 
         if event.type == MBEventType.Release :
             self.isExit = True
-        elif event.type == MBEventType.Click or event.type == MBEventType.LongClick:
-            self.RemoveElement(self.currentTarget)
-            self.currentTarget = ElementItem.Empty()
+        elif event.type == MBEventType.Down or event.type == MBEventType.Click or event.type == MBEventType.LongClick:
+            self.SetSubTool(SubToolDelete( self , self.currentTarget))
         elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
-            self.currentTarget = ElementItem.Empty()
-
-    def RemoveElement( self , element ) :
-        if element.isNotEmpty :
-            if element.isVert :
-                self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
-            elif element.isEdge :
-                self.bmo.dissolve_edge( element.element , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
-            elif element.isFace :
-                self.bmo.Remove( element.element )
-            self.bmo.UpdateMesh()
+            self.SetSubTool(SubToolDelete( self , self.currentTarget))
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        if element != None and gizmo.bmo != None :
-            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.delete_color , gizmo.preferences , False , edge_pivot = False )
-        return None
+        return SubToolDelete.DrawHighlight( gizmo , element )
 
     def OnDraw( self , context  ) :
         pass
