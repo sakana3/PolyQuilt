@@ -228,7 +228,7 @@ class ElementItem :
         return ElementItem( qmesh ,e , p , co , 0.0 )
 
     def Draw( self , obj , color , preferences , marker = False , edge_pivot = True ) :
-        func = self.DrawFunc( obj , color , preferences , marker )
+        func = self.DrawFunc( obj , color , preferences , marker , edge_pivot )
         func()
 
     def DrawFunc( self , obj , color , preferences , marker = False , edge_pivot = True ) :

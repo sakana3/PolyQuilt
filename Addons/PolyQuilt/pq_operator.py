@@ -248,6 +248,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 #           MESH_OT_poly_quilt.handle_add(self,context)
             self.AddTimerEvent(context)
             PQ_GizmoGroup_Base.running_polyquilt = True
+            QSnap.update(context)
             
             return { self.currentSubTool.Update(context, event) }
         else:
@@ -359,6 +360,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
         if context.mode != 'EDIT_MESH' or not any( [ "mesh_tool.poly_quilt" in tool.idname for tool in context.workspace.tools ] ) :
             MESH_OT_poly_quilt_daemon.is_running = False
             QSnap.remove_ref()
+            context.window.cursor_set( 'DEFAULT' )
             return {'CANCELLED'}
 
         PQ_GizmoGroup_Base.check_modifier_key( event.shift ,event.ctrl , event.alt )

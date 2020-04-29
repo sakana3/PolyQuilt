@@ -524,45 +524,58 @@ class QMeshOperators :
                 vert = None
         return edges , verts
 
-    @staticmethod
-    def findEdgeLoop( srcEdge ) :
-        edges = [srcEdge]
-        verts_tbl = {}
+    def calc_edge_loop( self , startEdge ) :
+        edges = []
+        verts = []
 
-        def find_each_other_edge( face , vert , edge ) :
-            edges = [ e for e in vert.link_edges if e != edge and e in face.edges ]
-            if len(edges) == 1 :
-                return edges[0]
-            return None
+        def append( lst , geom ) :
+            if geom not in lst :
+                lst.append(geom)
+                if self.is_mirror_mode :
+                    mirror =self.find_mirror( geom )
+                    if mirror :
+                        lst.append( mirror )
 
-        def find_share_edge( faces , vert , edge , edges ) :
-            if len(faces) == 1 :
-                tmp = [ e for e in faces[0].edges if vert in e.verts and e != edge and e not in edges ]
-                if len(tmp) == 1 :
-                    return tmp[0]
-            elif len(edges) == 2 :
-                se = set( e for e in faces[0].edges ) & set( e for e in faces[1].edges )
-                if len(se) == 1 :
-                    return list(se)[0]
-            return None
+        for vert in startEdge.verts :
+            preEdge = startEdge
+            currentV = vert
+            while currentV != None :
+                append(edges , preEdge)
 
-        for vert in [ srcEdge.verts[0] , srcEdge.other_vert(srcEdge.verts[0]) ] :
-            current_edge = srcEdge            
-            links_faces = current_edge.link_faces
-            v = vert
-            while( v != None ) :
-                t = None
-                target_edges = [ find_each_other_edge(f,v,current_edge) for f in links_faces ]
-                verts_tbl[v] = target_edges[:]
-                target_faces = [ [ f for f in e.link_faces if v in f.verts and f not in links_faces ] for e in target_edges ]
-                target_faces = [ None if len(f) != 1 else f[0] for f in target_faces ]
-                if None not in target_faces :
-                    share_edge = find_share_edge(target_faces,v,current_edge,target_edges)
-                    if share_edge != None :
-                        current_edge = share_edge
-                        if current_edge not in edges and len(current_edge.link_faces) == len(srcEdge.link_faces) :
-                            edges.append(current_edge)
-                            links_faces = target_faces[:]
-                            t = current_edge.other_vert(v)
-                v = t
-        return edges , verts_tbl
+                if currentV.is_boundary :
+                    if len( currentV.link_faces )== 2 :
+                        if not any( [ len(f.verts) == 3 for f in currentV.link_faces ] ):
+                            if currentV not in verts :
+                                append(verts , currentV)
+                    break
+
+                if len(currentV.link_faces) == 4 :
+                    faces = set(currentV.link_faces ) ^ set(preEdge.link_faces )
+                    if len( faces ) != 2 :
+                        break
+                    faces = list(faces)
+                    share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
+                    if len(share_edges) != 1 :
+                        break
+                    preEdge = list(share_edges)[0]
+
+                    if currentV not in verts :
+                        append(verts , currentV)
+
+                elif len(currentV.link_faces) == 2 :
+                    share_edges = [ e for e in currentV.link_edges if e != preEdge ]
+                    if len(share_edges) != 1 :
+                        break
+                    preEdge = share_edges[0]
+                else :
+                    break
+                currentV = preEdge.other_vert(currentV)
+                if currentV == vert:
+                    break
+        return edges , verts
+
+    def do_edge_loop_cut( self , edges , verts ) :
+        bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = False , use_face_split = False )  
+        vs = [ v for v in verts if v.is_valid ]
+        bmesh.ops.dissolve_verts( self.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        
+  

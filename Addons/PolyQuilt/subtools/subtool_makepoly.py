@@ -223,7 +223,7 @@ class SubToolMakePoly(SubTool) :
             if self.vert_array.vert_count <= 1 and self.currentTarget.isVert and self.vert_array.get(-1) != self.currentTarget.element :
                 edge = self.bmo.edges.get( (self.vert_array.get(0) , self.currentTarget.element) )
                 if edge != None and self.EdgeLoops == None :
-                    self.EdgeLoops , self.VertLoops = self.SelectEdgeLoops( edge )
+                    self.EdgeLoops , self.VertLoops = self.bmo.calc_edge_loop( edge )
         elif event.type == MBEventType.LongClick :
             if self.vert_array.vert_count <= 1 :
                 self.mode = 'EDGE'
@@ -421,57 +421,6 @@ class SubToolMakePoly(SubTool) :
 #               same_edges = [] if v1 in v0.link_edges else [v1]
                 same_faces = list( set(v0.link_faces) & set(v1.link_faces) )
         return same_edges , same_faces
-
-    def SelectEdgeLoops( self , startEdge ) :
-        edges = []
-        verts = []
-
-        def append( lst , geom ) :
-            if geom not in lst :
-                lst.append(geom)
-                if self.bmo.is_mirror_mode :
-                    mirror =self.bmo.find_mirror( geom )
-                    if mirror :
-                        lst.append( mirror )
-
-        for vert in startEdge.verts :
-            preEdge = startEdge
-            currentV = vert
-            while currentV != None :
-                append(edges , preEdge)
-
-                if currentV.is_boundary :
-                    if len( currentV.link_faces )== 2 :
-                        if not any( [ len(f.verts) == 3 for f in currentV.link_faces ] ):
-                            if currentV not in verts :
-                                append(verts , currentV)
-                    break
-
-                if len(currentV.link_faces) == 4 :
-                    faces = set(currentV.link_faces ) ^ set(preEdge.link_faces )
-                    if len( faces ) != 2 :
-                        break
-                    faces = list(faces)
-                    share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
-                    if len(share_edges) != 1 :
-                        break
-                    preEdge = list(share_edges)[0]
-
-                    if currentV not in verts :
-                        append(verts , currentV)
-
-                elif len(currentV.link_faces) == 2 :
-                    share_edges = [ e for e in currentV.link_edges if e != preEdge ]
-                    if len(share_edges) != 1 :
-                        break
-                    preEdge = share_edges[0]
-                else :
-                    break
-                currentV = preEdge.other_vert(currentV)
-                if currentV == vert:
-                    break
-        return edges , verts
-
 
     def DoEdgeLoopsRemove( self , edges , verts ) :
         bmesh.ops.dissolve_edges( self.bmo.bm , edges = edges , use_verts = False , use_face_split = False )  

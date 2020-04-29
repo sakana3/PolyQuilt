@@ -32,7 +32,7 @@ class SubToolDelete(SubToolEx) :
         super().__init__( root )
         self.currentTarget = currentTarget
         self.startTarget = currentTarget
-        self.removes = [currentTarget.element]
+        self.removes = ( [ currentTarget.element ] , [] )
 
     @staticmethod
     def Check( root , target ) :
@@ -42,14 +42,28 @@ class SubToolDelete(SubToolEx) :
         if event.type == 'MOUSEMOVE':
             preTarget = self.currentTarget
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = [self.startTarget.type_name]  )
-                
-            if self.currentTarget.isNotEmpty and preTarget != self.currentTarget.element:
+            if self.startTarget.element == self.currentTarget.element :
+                self.startTarget = self.currentTarget
+
+            vt = None
+            if self.startTarget.isEdge :
+                vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+            ed = None
+            if self.startTarget.isFace :
+                ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+            if vt :
+                 e , v = self.bmo.calc_edge_loop( self.startTarget.element )
+                 self.removes = (e,v)
+                 self.currentTarget = self.startTarget
+            elif ed :
+                self.removes = ( self.calc_loop_face(ed) , [] )
+            elif self.currentTarget.isNotEmpty and preTarget != self.currentTarget.element:
                 if self.startTarget.element != self.currentTarget.element and self.startTarget.type == self.currentTarget.type :
                     self.removes = self.calc_shortest_pass( self.startTarget.element , self.currentTarget.element )
                 else :
-                    self.removes = [self.startTarget.element]
+                    self.removes = ([self.startTarget.element],[])
             else :
-                self.removes = [self.startTarget.element]
+                self.removes = ([self.startTarget.element],[])
         elif event.type == self.rootTool.buttonType : 
             if event.value == 'RELEASE' :
                 self.RemoveElement(self.currentTarget )
@@ -62,30 +76,32 @@ class SubToolDelete(SubToolEx) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.delete_color , gizmo.preferences , False , edge_pivot = False )
+            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.delete_color , gizmo.preferences , marker = False , edge_pivot = False )
         return None
 
     def OnDraw( self , context  ) :
         pass
 
     def OnDraw3D( self , context  ) :
-        if self.removes :
+        if self.removes[0] :
             alpha = self.preferences.highlight_face_alpha
             vertex_size = self.preferences.highlight_vertex_size        
             width = self.preferences.highlight_line_width        
             color = self.preferences.delete_color 
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.removes , vertex_size , width , alpha , color )
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.removes[0] , vertex_size , width , alpha , color )
             if self.bmo.is_mirror_mode :
-                mirrors = [ self.bmo.find_mirror(m) for m in self.removes ]
+                mirrors = [ self.bmo.find_mirror(m) for m in self.removes[0] ]
                 mirrors = [ m for m in mirrors if m ]
                 if mirrors :
                     draw_util.drawElementsHilight3D( self.bmo.obj , mirrors , vertex_size , width , alpha * 0.5 , color )
-                
 
-        self.startTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , edge_pivot = False )
+        if self.startTarget.element == self.currentTarget.element :
+            self.startTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , marker = False , edge_pivot = True )
+        else :
+            self.startTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , marker = False , edge_pivot = False )
         if self.currentTarget.isNotEmpty :
             if self.startTarget.element != self.currentTarget.element :
-                self.currentTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , edge_pivot = False )
+                self.currentTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , marker = False , edge_pivot = False )
 
     @classmethod
     def GetCursor(cls) :
@@ -103,32 +119,34 @@ class SubToolDelete(SubToolEx) :
                 self.bmo.dissolve_edges( edges , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
 
         if element.isNotEmpty :
-            if element.isVert :
-                edges = [ r for r in self.removes if isinstance( r , bmesh.types.BMEdge )  ]
+            if self.removes[0] and self.removes[1] :
+                self.bmo.do_edge_loop_cut( self.removes[0] , self.removes[1] )
+            elif element.isVert :
+                edges = [ r for r in self.removes[0] if isinstance( r , bmesh.types.BMEdge )  ]
                 if edges :
                     dissolve_edges( edges )
                 else :
                     self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif element.isEdge :
-                dissolve_edges( self.removes )
+                dissolve_edges( self.removes[0] )
             elif element.isFace :
-                self.bmo.delete_faces( self.removes )                    
+                self.bmo.delete_faces( self.removes[0] )                    
             self.bmo.UpdateMesh()
+
 
     def calc_shortest_pass( self , start : ElementItem , end : ElementItem  ) :
         if isinstance( start , bmesh.types.BMFace ) :
             for edge in start.edges :
                 if end in edge.link_faces :
-                    return [start,end]
+                    return ([start,end],[])
         elif isinstance( start , bmesh.types.BMEdge ) :
             for vert in start.verts :
                 if end in vert.link_edges :
-                    return [start,end]
+                    return ([start,end],[])
         elif isinstance( start , bmesh.types.BMVert ) :
             for edge in start.link_edges :
                 if end in edge.verts :
-                    return [edge]
-
+                    return ([edge],[])
 
         bpy.ops.mesh.select_all(action='DESELECT')
         start.select = True
@@ -149,4 +167,33 @@ class SubToolDelete(SubToolEx) :
 
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.context.tool_settings.mesh_select_mode = bk
-        return removes
+        return ( removes , [] )
+
+    @staticmethod
+    def calc_loop_face( edge ) :
+        chk = []
+        def opposite_side( loop , edge ) :
+            while( loop ) :
+                loop = loop.link_loop_next
+                if loop.edge == edge :
+                    break
+            loop = loop.link_loop_next
+            loop = loop.link_loop_next
+            return loop.edge if loop.edge not in chk else None
+
+        loops = []
+        def step( edge ) :
+            chk.append(edge)
+            nLinkFace = len(edge.link_faces)
+            if nLinkFace > 2 or nLinkFace <= 0 :
+                return []
+            quads = [ f for f in edge.link_faces if len( f.edges ) == 4 and f not in loops ]
+            loops.extend( quads )
+            opposite = [ opposite_side( q.loops[0] , edge ) for q in quads ]
+            return [ o for o in opposite if o ]
+
+        edges = step(edge)
+        while( edges ) :
+            edges = [ step( e ) for e in edges ]
+            edges = [ e for e in sum(edges, []) if e ]
+        return loops

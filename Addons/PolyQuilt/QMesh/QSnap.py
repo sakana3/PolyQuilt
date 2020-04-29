@@ -161,6 +161,8 @@ class QSnap :
                 else :
                     ray2 = pqutil.Ray( hit + ray.vector * dist , ray.vector )
                     hit2 , normal2 , face2 = cls.instance.__raycast( ray2 )
+                    if not hit2 :
+                        return False
                     h2h = ( ray2.origin - hit2 ).length
                     w2h0 = ( ray2.origin - world_pos ).length
                     w2h1 = ( world_pos - hit2 ).length

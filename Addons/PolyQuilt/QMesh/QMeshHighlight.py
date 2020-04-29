@@ -241,3 +241,52 @@ class QMeshHighlight :
 
         return ElementItem.Empty()
 
+
+    def check_hit_element_vert( self , element , mouse_pos ,radius ) :
+        rv3d = bpy.context.region_data
+        region = bpy.context.region
+        halfW = region.width / 2.0
+        halfH = region.height / 2.0
+        mat_scaleX = mathutils.Matrix.Scale( halfW , 4 , (1.0, 0.0, 0.0))
+        mat_scaleY = mathutils.Matrix.Scale( halfH , 4 , (0.0, 1.0, 0.0))
+        matrix = mat_scaleX @ mat_scaleY @ rv3d.perspective_matrix @ self.pqo.obj.matrix_world
+        halfWH = Vector( (halfW,halfH) )        
+        def ProjVert( vt ) :
+            pv = matrix @ vt.co.to_4d()
+            return pv.to_2d() / pv[3] + halfWH if pv[3] > 0.0 else None
+
+        for v in element.verts :
+            co = ProjVert( v )
+            if ( mouse_pos - co ).length <= radius :
+                return v
+
+        return None
+
+    def check_hit_element_edge( self , element , mouse_pos ,radius ) :
+        rv3d = bpy.context.region_data
+        region = bpy.context.region
+        halfW = region.width / 2.0
+        halfH = region.height / 2.0
+        mat_scaleX = mathutils.Matrix.Scale( halfW , 4 , (1.0, 0.0, 0.0))
+        mat_scaleY = mathutils.Matrix.Scale( halfH , 4 , (0.0, 1.0, 0.0))
+        matrix = mat_scaleX @ mat_scaleY @ rv3d.perspective_matrix @ self.pqo.obj.matrix_world
+        halfWH = Vector( (halfW,halfH) )        
+        def ProjVert( vt ) :
+            pv = matrix @ vt.co.to_4d()
+            return pv.to_2d() / pv[3] + halfWH if pv[3] > 0.0 else None
+
+        intersect_point_line = geometry.intersect_point_line
+        rr = Vector( (radius,0) )
+        def intersect( p1 , p2 ) :
+            hit , pt = intersect_point_line( mouse_pos , p1 , p2 )
+            if pt > 0 and pt < 1 :
+                if hit - mouse_pos <= rr :
+                    return True
+
+        for e in element.edges :
+            co0 = ProjVert( e.verts[0] )
+            co1 = ProjVert( e.verts[1] )
+            if intersect(co0,co1) :
+                return e
+
+        return None
