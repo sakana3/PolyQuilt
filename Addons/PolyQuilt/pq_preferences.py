@@ -38,7 +38,8 @@ __all__ = [
 
 def enum_brush_type_callback(scene, context):
         items=(('SMOOTH' , "Smooth", "" , custom_icon("icon_brush_relax") , 0),
-               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 1 ) )
+               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 1 ) ,
+               ('DELETE' , "Delete", "" , custom_icon("icon_brush_delete") , 2 ) )
         return items
 
 class PQ_OT_CheckAddonUpdate(bpy.types.Operator):

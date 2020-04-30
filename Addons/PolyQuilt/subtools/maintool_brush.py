@@ -32,6 +32,7 @@ from .subtool_edge_extrude import *
 from .subtool_brush_relax import *
 from .subtool_brush_size import *
 from .subtool_brush_move import *
+from .subtool_brush_delete import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 from .subtool_autoquad import *
@@ -45,13 +46,22 @@ class MainToolBrush(MainTool) :
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button)        
         brush_type = self.preferences.brush_type
+        if op.brush_override != "NONE" :
+            brush_type = op.brush_override
+
+        brush_tbl = {
+            'SMOOTH' : SubToolBrushRelax ,
+            'MOVE' : SubToolBrushMove ,
+            'DELETE' : SubToolBrushDelete ,
+        }
+
         if op.alternative :
             self.callback = { 
                 MBEventType.Release         : [] ,
                 MBEventType.Click           : [] ,
                 MBEventType.LongClick       : [] ,
                 MBEventType.LongPressDrag   : [] ,
-                MBEventType.Drag            : [SubToolBrushMove] if brush_type == 'SMOOTH' else [SubToolRelax] ,
+                MBEventType.Drag            : [brush_tbl[brush_type]] ,
             }
         else :
             self.callback = { 
@@ -59,7 +69,7 @@ class MainToolBrush(MainTool) :
                 MBEventType.Click           : [SubToolAutoQuad] ,
                 MBEventType.LongClick       : [] ,
                 MBEventType.LongPressDrag   : [SubToolBrushSize] ,
-                MBEventType.Drag            : [SubToolRelax] if brush_type == 'SMOOTH' else [SubToolBrushMove] ,
+                MBEventType.Drag            : [brush_tbl[brush_type]] ,
             }
 
     @staticmethod

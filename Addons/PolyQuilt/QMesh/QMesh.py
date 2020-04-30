@@ -154,7 +154,7 @@ class SelectStack :
         self.edge_selection = [ e.select for e in self.bm.edges ]
         self.select_history = self.bm.select_history[:]
 
-    def select_mode( self , vert , face , edge ) :
+    def select_mode( self , vert , edge , face ) :
         self.context.tool_settings.mesh_select_mode = (vert , edge , face)
 
 

@@ -79,6 +79,18 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='MASTER',
     )
 
+    brush_override : bpy.props.EnumProperty(
+        name="Brush Override",
+        description="Brush Override",
+        items=[('NONE'  , "None", "" ),
+               ('RELAX'    , "Relax", "" ),
+               ('MOVE'     , "Move", "" ),
+               ('DELETE'   , "Delete", "" ),
+               ],
+        default='NONE',
+    )
+
+
     lock_hold : bpy.props.BoolProperty(
               name = "Lock Hold" ,
               default = False ,

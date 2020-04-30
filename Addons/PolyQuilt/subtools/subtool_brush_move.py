@@ -57,6 +57,16 @@ class SubToolBrushMove(SubToolEx) :
 
         return 'RUNNING_MODAL'
 
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        def Draw() :
+            radius = gizmo.preferences.brush_size * dpm()
+            strength = gizmo.preferences.brush_strength  
+            with draw_util.push_pop_projection2D() :
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
+        return Draw
+
     def OnDraw( self , context  ) :
         draw_util.draw_circle2D( self.startMousePos , self.radius , color = (0.75,0.75,1,1), fill = False , subdivide = 64 , dpi= False , width = 1.0 )
 

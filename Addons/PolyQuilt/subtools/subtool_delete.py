@@ -45,21 +45,23 @@ class SubToolDelete(SubToolEx) :
             if self.startTarget.element == self.currentTarget.element :
                 self.startTarget = self.currentTarget
 
-            vt = None
-            if self.startTarget.isEdge :
-                vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
-            ed = None
-            if self.startTarget.isFace :
-                ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
-            if vt :
-                 e , v = self.bmo.calc_edge_loop( self.startTarget.element )
-                 self.removes = (e,v)
-                 self.currentTarget = self.startTarget
-            elif ed :
-                self.removes = ( self.calc_loop_face(ed) , [] )
+                vt = None
+                if self.startTarget.isEdge :
+                    vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+                ed = None
+                if self.startTarget.isFace :
+                    ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+                if vt :
+                    e , v = self.bmo.calc_edge_loop( self.startTarget.element )
+                    self.removes = (e,v)
+                    self.currentTarget = self.startTarget
+                elif ed :
+                    self.removes = (  self.bmo.calc_loop_face(ed) , [] )
+                else :
+                    self.removes = ([self.startTarget.element],[])
             elif self.currentTarget.isNotEmpty and preTarget != self.currentTarget.element:
-                if self.startTarget.element != self.currentTarget.element and self.startTarget.type == self.currentTarget.type :
-                    self.removes = self.calc_shortest_pass( self.startTarget.element , self.currentTarget.element )
+                if self.startTarget.type == self.currentTarget.type :
+                    self.removes = self.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
                 else :
                     self.removes = ([self.startTarget.element],[])
             else :
@@ -134,7 +136,8 @@ class SubToolDelete(SubToolEx) :
             self.bmo.UpdateMesh()
 
 
-    def calc_shortest_pass( self , start : ElementItem , end : ElementItem  ) :
+    @staticmethod
+    def calc_shortest_pass( bm , start : ElementItem , end : ElementItem  ) :
         if isinstance( start , bmesh.types.BMFace ) :
             for edge in start.edges :
                 if end in edge.link_faces :
@@ -157,43 +160,14 @@ class SubToolDelete(SubToolEx) :
 
         removes = []
         if isinstance( start , bmesh.types.BMFace ) :
-            removes = [ f for f in self.bmo.bm.faces if f.select ]
+            removes = [ f for f in bm.faces if f.select ]
         elif isinstance( start , bmesh.types.BMEdge ) :
-            removes = [ f for f in self.bmo.bm.edges if f.select ]
+            removes = [ f for f in bm.edges if f.select ]
         elif isinstance( start , bmesh.types.BMVert ) :
-            removes = [ f for f in self.bmo.bm.edges if f.select ]
+            removes = [ f for f in bm.edges if f.select ]
             if not removes :
-                removes = [ f for f in self.bmo.bm.verts if f.select ]
+                removes = [ f for f in bm.verts if f.select ]
 
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.context.tool_settings.mesh_select_mode = bk
         return ( removes , [] )
-
-    @staticmethod
-    def calc_loop_face( edge ) :
-        chk = []
-        def opposite_side( loop , edge ) :
-            while( loop ) :
-                loop = loop.link_loop_next
-                if loop.edge == edge :
-                    break
-            loop = loop.link_loop_next
-            loop = loop.link_loop_next
-            return loop.edge if loop.edge not in chk else None
-
-        loops = []
-        def step( edge ) :
-            chk.append(edge)
-            nLinkFace = len(edge.link_faces)
-            if nLinkFace > 2 or nLinkFace <= 0 :
-                return []
-            quads = [ f for f in edge.link_faces if len( f.edges ) == 4 and f not in loops ]
-            loops.extend( quads )
-            opposite = [ opposite_side( q.loops[0] , edge ) for q in quads ]
-            return [ o for o in opposite if o ]
-
-        edges = step(edge)
-        while( edges ) :
-            edges = [ step( e ) for e in edges ]
-            edges = [ e for e in sum(edges, []) if e ]
-        return loops

@@ -579,3 +579,32 @@ class QMeshOperators :
         vs = [ v for v in verts if v.is_valid ]
         bmesh.ops.dissolve_verts( self.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        
   
+
+    @staticmethod
+    def calc_loop_face( edge ) :
+        chk = []
+        def opposite_side( loop , edge ) :
+            while( loop ) :
+                loop = loop.link_loop_next
+                if loop.edge == edge :
+                    break
+            loop = loop.link_loop_next
+            loop = loop.link_loop_next
+            return loop.edge if loop.edge not in chk else None
+
+        loops = []
+        def step( edge ) :
+            chk.append(edge)
+            nLinkFace = len(edge.link_faces)
+            if nLinkFace > 2 or nLinkFace <= 0 :
+                return []
+            quads = [ f for f in edge.link_faces if len( f.edges ) == 4 and f not in loops ]
+            loops.extend( quads )
+            opposite = [ opposite_side( q.loops[0] , edge ) for q in quads ]
+            return [ o for o in opposite if o ]
+
+        edges = step(edge)
+        while( edges ) :
+            edges = [ step( e ) for e in edges ]
+            edges = [ e for e in sum(edges, []) if e ]
+        return loops

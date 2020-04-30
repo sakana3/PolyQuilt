@@ -20,7 +20,7 @@ __all__ = ['register_icons','unregister_icons','custom_icon']
 icons = [   "icon_geom_vert" , "icon_geom_edge" , "icon_geom_triangle" , "icon_geom_quad" , "icon_geom_polygon" , 
             "icon_move_free" , "icon_move_x" , "icon_move_y" , "icon_move_z" , "icon_move_normal", "icon_move_tangent" ,
             "icon_opt_backcull" , "icon_opt_mirror" , "icon_opt_x0" ,
-            "icon_brush_move" , "icon_brush_relax" ]
+            "icon_brush_move" , "icon_brush_relax", "icon_brush_delete" ]
 
 custom_icons = {}
 
