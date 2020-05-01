@@ -117,7 +117,8 @@ class SubToolEdgeSlice(SubTool) :
             if event.value == 'RELEASE' :
                 if self.sliceRate > 0 and self.sliceRate < 1 :
                     self.DoSlice(self.currentEdge , self.sliceRate )
-                return 'FINISHED'
+                    return 'FINISHED'
+                return 'CANCELLED'
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :

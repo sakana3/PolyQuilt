@@ -223,7 +223,7 @@ class MainTool(SubToolRoot) :
             bpy.ops.view3d.zoom('INVOKE_DEFAULT', use_cursor_init=True)
             return True
         elif self.preferences.space_drag_op == "KNIFE" :
-            self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )
+            self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )
         elif self.preferences.space_drag_op == "SELECT_BOX" :
             bpy.context.window.cursor_warp( event.PressPrevPos.x , event.PressPrevPos.y )
             bpy.ops.view3d.select_box('INVOKE_DEFAULT' ,wait_for_input=False, mode='SET')

@@ -11,6 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import bpy
 import bgl
 import blf
@@ -61,13 +62,20 @@ class Plane :
         return x
 
     def intersect_line( self , p0 :Vector , p1 : Vector ) :
-        d0 = mathutils.geometry.distance_point_to_plane(p0 , self.origin , self.vector )
-        d1 = mathutils.geometry.distance_point_to_plane(p1 , self.origin , self.vector )
+        origin = self.origin
+        vector = self.vector
+        v = mathutils.geometry.intersect_line_plane( p0 , p1 , origin , vector , False )
 
-        if ( d0 > 0 and d1 > 0 ) or ( d0 < 0 and d1 < 0 ):
+        if v == None :
             return None
 
-        v = mathutils.geometry.intersect_line_plane( p0 , p1 , self.origin , self.vector , False )
+        epsilon = 0.001
+        d0 = mathutils.geometry.distance_point_to_plane(p0 , origin , vector )
+        d1 = mathutils.geometry.distance_point_to_plane(p1 , origin , vector )
+
+        if ( d0 > epsilon and d1 > epsilon ) or ( d0 < -epsilon and d1 < -epsilon ):
+            return None
+
         return  v
 
     def distance_point( self , pt :Vector ) :

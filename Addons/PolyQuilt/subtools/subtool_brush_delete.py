@@ -35,6 +35,10 @@ class SubToolBrushDelete(SubToolEx) :
         self.mirror_tbl = {}
         matrix = self.bmo.obj.matrix_world        
         self.remove_faces = self.collect_faces( bpy.context , self.startMousePos )
+        if self.bmo.is_mirror_mode :
+            mirror = { self.bmo.find_mirror( f ) for f in self.remove_faces }
+            mirror = { m for m in mirror if m != None }
+            self.remove_faces  = self.remove_faces  | mirror
 
     @staticmethod
     def Check( root , target ) :
@@ -42,12 +46,20 @@ class SubToolBrushDelete(SubToolEx) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            self.remove_faces  = self.remove_faces  | self.collect_faces( context , self.mouse_pos )
-        elif event.type == self.rootTool.buttonType : 
+            faces = self.collect_faces( context , self.mouse_pos )
+            if self.bmo.is_mirror_mode :
+                mirror = { self.bmo.find_mirror( f ) for f in faces if f not in self.remove_faces }
+                mirror = { m for m in mirror if m != None }
+                self.remove_faces  = self.remove_faces  | mirror
+            self.remove_faces = self.remove_faces | faces
+
+        elif event.type == self.rootTool.buttonType :
             if event.value == 'RELEASE' :
-                self.bmo.delete_faces( list( self.remove_faces ) )
-                self.bmo.UpdateMesh()
-                return 'FINISHED'
+                if self.remove_faces :
+                    self.bmo.delete_faces( list( self.remove_faces ) )
+                    self.bmo.UpdateMesh()
+                    return 'FINISHED'
+                return 'CANCELLED'
         elif event.value == 'RELEASE' :
             self.repeat = False
 
@@ -63,7 +75,6 @@ class SubToolBrushDelete(SubToolEx) :
         width = self.preferences.highlight_line_width        
         color = self.preferences.delete_color 
         draw_util.drawElementsHilight3D( self.bmo.obj , self.remove_faces , vertex_size , width , alpha , color )
-
 
     def collect_faces( self , context , coord ) :
         radius = self.radius

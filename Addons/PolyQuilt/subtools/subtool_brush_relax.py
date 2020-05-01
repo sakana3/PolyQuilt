@@ -33,6 +33,7 @@ class SubToolBrushRelax(SubToolEx) :
         self.radius = self.preferences.brush_size * dpm()
         self.occlusion_tbl = {}
         self.mirror_tbl = {}
+        self.dirty = False
         if self.currentTarget.isEmpty or ( self.currentTarget.isEdge and self.currentTarget.element.is_boundary ) :
             self.effective_boundary = True
         else :
@@ -57,8 +58,10 @@ class SubToolBrushRelax(SubToolEx) :
             self.DoRelax( context ,self.mouse_pos )
         elif event.type == self.rootTool.buttonType : 
             if event.value == 'RELEASE' :
-                self.bmo.UpdateMesh()
-                return 'FINISHED'
+                if self.dirty  :
+                    self.bmo.UpdateMesh()
+                    return 'FINISHED'
+                return 'CANCELLED'
         elif event.value == 'RELEASE' :
             self.repeat = False
 
@@ -142,6 +145,8 @@ class SubToolBrushRelax(SubToolEx) :
     def DoRelax( self , context , coord ) :
         is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
         coords = self.CollectVerts( context, coord  )
+        if coords :
+            self.dirty = True
         if self.bmo.is_mirror_mode :
             mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }
 

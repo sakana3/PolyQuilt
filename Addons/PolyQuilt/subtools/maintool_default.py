@@ -80,7 +80,7 @@ class MainToolDefault(MainTool) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
-                self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
+                self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 
         elif event.type == MBEventType.Drag :
             if self.currentTarget.isEdge :

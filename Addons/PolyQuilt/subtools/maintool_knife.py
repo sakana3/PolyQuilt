@@ -49,7 +49,7 @@ class MainToolKnife(MainTool) :
             if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
                 self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
         elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag:
-            self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
+            self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :

@@ -78,7 +78,7 @@ class MainToolHold(MainTool) :
                 if tools :
                     self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
-                self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
+                self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 
         elif event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
@@ -96,7 +96,7 @@ class MainToolHold(MainTool) :
                     tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
-                self.SetSubTool( SubToolKnife(self.operator, self.LMBEvent.PressPos ) )   
+                self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 
 
 

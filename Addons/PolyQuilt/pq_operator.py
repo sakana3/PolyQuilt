@@ -38,22 +38,26 @@ if not __package__:
     __package__ = "poly_quilt"
 
 def enum_geometry_type_callback(scene, context):
-        items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
-               ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
-               ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
-               ('QUAD', "Quad" , "", custom_icon("icon_geom_quad") , 0),
-               ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
-        return items
+    items=(('VERT', "Vertex", "" , custom_icon("icon_geom_vert") , 1),
+            ('EDGE', "Edge", "", custom_icon("icon_geom_edge") , 2),
+            ('TRI' , "Triangle", "", custom_icon("icon_geom_triangle") , 3 ),
+            ('QUAD', "Quad" , "", custom_icon("icon_geom_quad") , 0),
+            ('POLY', "Polygon", "", custom_icon("icon_geom_polygon") , 4))
+    return items
 
 def enum_move_type_callback(scene, context):
-        items=(('FREE', "Free", "" , custom_icon("icon_move_free") , 0),
-               ('X', "X", "" , custom_icon("icon_move_x") , 1),
-               ('Y' , "Y", ""  , custom_icon("icon_move_y") , 2),
-               ('Z', "Z", "" , custom_icon("icon_move_z") , 3),
-               ('NORMAL', "Normal", "" , custom_icon("icon_move_normal") , 4) ,
-               ('TANGENT', "Tangent", "" , custom_icon("icon_move_tangent") , 5)
-            )
-        return items
+    items=(('FREE', "Free", "" , custom_icon("icon_move_free") , 0),
+            ('X', "X", "" , custom_icon("icon_move_x") , 1),
+            ('Y' , "Y", ""  , custom_icon("icon_move_y") , 2),
+            ('Z', "Z", "" , custom_icon("icon_move_z") , 3),
+            ('NORMAL', "Normal", "" , custom_icon("icon_move_normal") , 4) ,
+            ('TANGENT', "Tangent", "" , custom_icon("icon_move_tangent") , 5)
+        )
+    return items
+
+def enum_tool_callback(scene, context):
+    return ( ( tool , tool , "" ) for tool in maintools )
+
 
 class MESH_OT_poly_quilt(bpy.types.Operator):
     """Draw Polygons with the mouse"""
@@ -67,29 +71,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     tool_mode : bpy.props.EnumProperty(
         name="Tool Mode",
         description="Tool Mode",
-        items=[('MASTER'  , "Master", "" ),
-               ('HOLD'    , "Hold", "" ),
-               ('LOWPOLY' , "LowPoly", "" ),
-               ('BRUSH'   , "Brush", "" ),
-               ('KNIFE'   , "Knife", "" ) ,
-               ('DELETE'  , "delete", "" ) ,
-               ('EXTRUDE' , "Extrude", "" ) ,
-               ('LOOPCUT' , "LoopCut", "" ) ,
-               ],
-        default='MASTER',
+        items=enum_tool_callback,
     )
-
-    brush_override : bpy.props.EnumProperty(
-        name="Brush Override",
-        description="Brush Override",
-        items=[('NONE'  , "None", "" ),
-               ('RELAX'    , "Relax", "" ),
-               ('MOVE'     , "Move", "" ),
-               ('DELETE'   , "Delete", "" ),
-               ],
-        default='NONE',
-    )
-
 
     lock_hold : bpy.props.BoolProperty(
               name = "Lock Hold" ,

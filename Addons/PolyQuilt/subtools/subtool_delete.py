@@ -156,7 +156,7 @@ class SubToolDelete(SubToolEx) :
         end.select = True
         bk = bpy.context.tool_settings.mesh_select_mode[0:3]
         bpy.context.tool_settings.mesh_select_mode = ( isinstance( start , bmesh.types.BMVert ) , isinstance( start , bmesh.types.BMEdge ) , isinstance( start , bmesh.types.BMFace ) )        
-        bpy.ops.mesh.shortest_path_select( edge_mode = 'SELECT' , use_face_step = False , use_topology_distance = True , use_fill = False )
+        bpy.ops.mesh.shortest_path_select( edge_mode = 'SELECT' , use_face_step = False , use_topology_distance = False , use_fill = False )
 
         removes = []
         if isinstance( start , bmesh.types.BMFace ) :

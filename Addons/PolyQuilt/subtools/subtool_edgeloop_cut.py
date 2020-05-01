@@ -63,7 +63,8 @@ class SubToolEdgeloopCut(SubTool) :
                     self.bmo.do_edge_loop_cut( self.EdgeLoops , self.VertLoops )
                     self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem.Empty() 
-                return 'FINISHED'
+                    return 'FINISHED'
+                return 'CANCELLED'
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :

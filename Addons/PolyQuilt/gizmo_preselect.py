@@ -207,7 +207,7 @@ class PQ_GizmoGroup_Delete(PQ_GizmoGroup_Base):
     bl_label = "PolyQuilt Delete Gizmo"
 
     def tool_table( self ) :
-        return ['DELETE','BRUSH','DELETE','DELETE']
+        return ['DELETE','BRUSH_DELETE','DELETE','DELETE']
 
 class PQ_GizmoGroup_Extrude(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Extrude"

@@ -14,7 +14,7 @@
 
 from .maintool_default import MainToolDefault
 from .maintool_hold import MainToolHold
-from .maintool_brush import MainToolBrush
+from .maintool_brush import *
 from .maintool_lowpoly import MainToolLowPoly
 from .maintool_knife import MainToolKnife
 from .maintool_delete import MainToolDelete
@@ -22,12 +22,13 @@ from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
 
 maintools = {
-    'MASTER'    : MainToolDefault ,
-    'HOLD'      : MainToolHold ,
-    'LOWPOLY'   : MainToolLowPoly ,
-    'BRUSH'     : MainToolBrush ,
-    'EXTRUDE'   : MainToolExtrude ,
-    'KNIFE'     : MainToolKnife ,
-    'DELETE'    : MainToolDelete ,
-    'LOOPCUT'   : MainToolLoopCut ,
+    'MASTER'        : MainToolDefault ,
+    'HOLD'          : MainToolHold ,
+    'LOWPOLY'       : MainToolLowPoly ,
+    'BRUSH'         : MainToolBrush ,
+    'BRUSH_DELETE'  : MainToolBrushDelete ,
+    'EXTRUDE'       : MainToolExtrude ,
+    'KNIFE'         : MainToolKnife ,
+    'DELETE'        : MainToolDelete ,
+    'LOOPCUT'       : MainToolLoopCut ,
 }

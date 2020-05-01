@@ -50,8 +50,10 @@ class SubToolBrushMove(SubToolEx) :
             self.UpdateVerts(context)
         elif event.type == self.rootTool.buttonType : 
             if event.value == 'RELEASE' :
-                self.bmo.UpdateMesh()
-                return 'FINISHED'
+                if self.verts :
+                    self.bmo.UpdateMesh()
+                    return 'FINISHED'
+                return 'CANCELLED'
         elif event.value == 'RELEASE' :
             self.repeat = False
 
@@ -68,11 +70,14 @@ class SubToolBrushMove(SubToolEx) :
         return Draw
 
     def OnDraw( self , context  ) :
+        radius = self.preferences.brush_size * dpm()
+        strength = self.preferences.brush_strength  
+
+        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
         draw_util.draw_circle2D( self.startMousePos , self.radius , color = (0.75,0.75,1,1), fill = False , subdivide = 64 , dpi= False , width = 1.0 )
 
     def OnDraw3D( self , context  ) :
         pass
-
 
     def CollectVerts( self , context , coord ) :
         rv3d = context.region_data

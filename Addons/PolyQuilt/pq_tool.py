@@ -99,7 +99,7 @@ class ToolPolyQuiltKnife(ToolPolyQuiltBase):
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
         elif reg == 'TOOL_HEADER' :
-            draw_settings_toolheader( context , layout , tool )
+            draw_settings_toolheader( context , layout , tool , ui = ['BRUSH','OPTION'] )
 
 class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     # The prefix of the idname should be your add-on name.
@@ -111,7 +111,7 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     bl_keymap = (
         ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode" , 'DELETE')]}),
 
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("brush_override",'DELETE')]}),
+        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH_DELETE')]}),
         ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
         ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
         ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
@@ -126,7 +126,7 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
         elif reg == 'TOOL_HEADER' :
-            draw_settings_toolheader( context , layout , tool )
+            draw_settings_toolheader( context , layout , tool , ui = ['OPTION'] )
 
 class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     # The prefix of the idname should be your add-on name.
@@ -254,20 +254,23 @@ def draw_settings_ui(context, layout, tool):
 #       layout.prop(tool_settings, "double_threshold")
 #       layout.prop(tool_settings, "edge_path_mode")
 
-def draw_settings_toolheader(context, layout, tool):
+def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTION']  ):
     props = tool.operator_properties("mesh.poly_quilt")
 
-    row = layout.row( align=True)
-    row.label( text = "Geom" )
-    row.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = True  )
+    if 'GEOM' in ui :
+        row = layout.row( align=True)
+        row.label( text = "Geom" )
+        row.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = True  )
 
-    row = layout.row( align=True)
-    row.label( text = "Brush" )
-    row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
+    if 'BRUSH' in ui :
+        row = layout.row( align=True)
+        row.label( text = "Brush" )
+        row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
 
-    # Expand panels from the side-bar as popovers.
-    popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
-    layout.popover_group(context=".poly_quilt_option", **popover_kw)
+    if 'OPTION' in ui :
+        # Expand panels from the side-bar as popovers.
+        popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
+        layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
