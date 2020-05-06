@@ -183,6 +183,10 @@ class SubToolRoot :
                 return True
         return False
 
+    @classmethod
+    def recive_event( cls , gizmo , context , event ) :
+        pass
+
 class MainTool(SubToolRoot) :
     def __init__(self,op,currentTarget, button , no_hold = False ) :
         super().__init__(op, button)        

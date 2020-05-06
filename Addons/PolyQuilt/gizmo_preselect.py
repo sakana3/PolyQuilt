@@ -39,6 +39,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.region = None
         self.subtool = None
         self.tool_table = [None,None,None,None]
+        self.tool_header = 'master_tool'
 
     def __del__(self) :
         pass
@@ -47,12 +48,14 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.bmo = None        
         self.currentElement = ElementItem.Empty()
 
-    def init( self , context , tools ) :
-        self.tool_table = [ maintools[t] for t in tools ]
-        self.subtool = self.tool_table[0]
+    def init( self , context , main_tool , tool_header ) :
+        self.tool_header = tool_header
+        self.maintool = maintools[main_tool]
+        self.subtool = self.maintool
         self.region = context.region_data
         self.bmo = QMesh( context.active_object , self.preferences )
-        context.window.cursor_set( self.subtool.GetCursor() )
+        if self.subtool :
+            context.window.cursor_set( self.subtool.GetCursor() )
 
     def exit( self , context, cancel) :
         pass
@@ -80,11 +83,15 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             element.set_snap_div( self.preferences.loopcut_division )
             if self.subtool.UpdateHighlight( self , element ) :
                 context.area.tag_redraw()
-
+        else :
+            element = ElementItem.Empty()
 
         self.currentElement = element
 
-        self.DrawHighlight = self.subtool.DrawHighlight( self , self.currentElement )
+        if self.subtool != None :
+            self.DrawHighlight = self.subtool.DrawHighlight( self , self.currentElement )
+        else :
+            self.DrawHighlight = None
 
         return -1
 
@@ -101,18 +108,32 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.currentElement = ElementItem.Empty()
             self.DrawHighlight = None
 
-    def check_modifier_key( self , shift , ctrl , alt ) :
-        subtool = self.tool_table[0]
-        if shift and self.tool_table[1] :
-            subtool = self.tool_table[1]
-        elif ctrl and self.tool_table[2] and False :
-            subtool = self.tool_table[2]
+    def recive_event( self , context , event ) :
+        subtool = self.maintool
 
-        PQ_GizmoGroup_Base.set_cursor( subtool.GetCursor() )
+        modifier = ""
+        if event.oskey :
+            modifier = modifier +  '_os'
+        if event.shift :
+            modifier = modifier +  '_shift'
+        if event.ctrl :
+            modifier = modifier +  '_ctrl'
+        if event.alt :
+            modifier = modifier +  '_alt'
+
+        if hasattr( self.preferences, self.tool_header + modifier) :
+            subtool = maintools[ getattr(self.preferences, self.tool_header + modifier) ]
 
         if self.subtool != subtool :
             self.subtool = subtool
             bpy.context.area.tag_redraw()
+        if self.subtool :
+            PQ_GizmoGroup_Base.set_cursor( subtool.GetCursor() )
+        else :
+            PQ_GizmoGroup_Base.set_cursor( )
+
+        if context.region_data == self.region and self.subtool:
+            self.subtool.recive_event( self , context , event )
 
 class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     bl_idname = "MESH_GGT_PQ_Preselect"
@@ -157,7 +178,8 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     def setup(self, context):
         QSnap.add_ref(context)
         self.gizmo = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)
-        self.gizmo.init(context , self.tool_table() )
+        maintool , tool_header = self.tool_table()
+        self.gizmo.init(context , maintool , tool_header )
         PQ_GizmoGroup_Base.child_gizmos.append(self.gizmo)
 
     def refresh( self , context ) :
@@ -165,7 +187,7 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
             self.gizmo.refresh(context)
 
     @classmethod
-    def set_cursor(cls, cursor ):
+    def set_cursor(cls, cursor = 'DEFAULT' ):
         cls.cursor = cursor
 
     @classmethod
@@ -176,61 +198,61 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
         return None
 
     @classmethod
-    def check_modifier_key( cls , shift , ctrl , alt ) :
+    def recive_event( cls , context , event ) :
         for gizmo in cls.child_gizmos :
-            gizmo.check_modifier_key( shift , ctrl , alt )
-
+            gizmo.recive_event( context , event)
 
 class PQ_GizmoGroup_Preselect(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Preselect"
     bl_label = "PolyQuilt Preselect Gizmo"
 
     def tool_table( self ) :
-        return ['MASTER','BRUSH' ,'EXTRUDE','MASTER']
+        return 'MASTER','master_tool'
 
 class PQ_GizmoGroup_Lowpoly(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Lowpoly"
     bl_label = "PolyQuilt Lowpoly Gizmo"
 
     def tool_table( self ) :
-        return ['LOWPOLY','BRUSH','LOWPOLY','LOWPOLY']
+        return 'LOWPOLY','lowpoly_tool'
 
 class PQ_GizmoGroup_Knife(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Knife"
     bl_label = "PolyQuilt Knife Gizmo"
 
     def tool_table( self ) :
-        return ['KNIFE','BRUSH','KNIFE','KNIFE']
+        return 'KNIFE','knife_tool'
 
 class PQ_GizmoGroup_Delete(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Delete"
     bl_label = "PolyQuilt Delete Gizmo"
 
     def tool_table( self ) :
-        return ['DELETE','BRUSH_DELETE','DELETE','DELETE']
+        return 'DELETE','delete_tool'
 
 class PQ_GizmoGroup_Extrude(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Extrude"
     bl_label = "PolyQuilt Extrude Gizmo"
 
     def tool_table( self ) :
-        return ['EXTRUDE','BRUSH','DELETE','DELETE']
+        return 'EXTRUDE','extrude_tool'
 
 class PQ_GizmoGroup_LoopCut(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_LoopCut"
     bl_label = "PolyQuilt LoopCut Gizmo"
 
     def tool_table( self ) :
-        return ['LOOPCUT','BRUSH','DELETE','DELETE']
+        return 'LOOPCUT','loopcut_tool'
 
 class PQ_GizmoGroup_Brush(PQ_GizmoGroup_Base):
     bl_idname = "MESH_GGT_PQ_Brush"
     bl_label = "PolyQuilt Brush Gizmo"
 
     def tool_table( self ) :
-        return ['BRUSH','BRUSH','DELETE','DELETE']
+        return 'BRUSH','brush_tool'
 
 all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush )
 
 
 # ursor (enum in ['DEFAULT', 'NONE', 'WAIT', 'CROSSHAIR', 'MOVE_X', 'MOVE_Y', 'KNIFE', 'TEXT', 'PAINT_BRUSH', 'PAINT_CROSS', 'DOT', 'ERASER', 'HAND', 'SCROLL_X', 'SCROLL_Y', 'SCROLL_XY', 'EYEDROPPER'], (optional)) – cursor
+

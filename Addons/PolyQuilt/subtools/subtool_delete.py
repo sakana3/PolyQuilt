@@ -42,9 +42,7 @@ class SubToolDelete(SubToolEx) :
         if event.type == 'MOUSEMOVE':
             preTarget = self.currentTarget
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = [self.startTarget.type_name]  )
-            if self.startTarget.element == self.currentTarget.element :
-                self.startTarget = self.currentTarget
-
+            if self.currentTarget.isNotEmpty :
                 vt = None
                 if self.startTarget.isEdge :
                     vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
@@ -57,11 +55,11 @@ class SubToolDelete(SubToolEx) :
                     self.currentTarget = self.startTarget
                 elif ed :
                     self.removes = (  self.bmo.calc_loop_face(ed) , [] )
-                else :
-                    self.removes = ([self.startTarget.element],[])
-            elif self.currentTarget.isNotEmpty and preTarget != self.currentTarget.element:
-                if self.startTarget.type == self.currentTarget.type :
-                    self.removes = self.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
+                elif preTarget != self.currentTarget.element :
+                    if self.startTarget.type == self.currentTarget.type :
+                        self.removes = self.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
+                    else :
+                        self.removes = ([self.startTarget.element],[])
                 else :
                     self.removes = ([self.startTarget.element],[])
             else :

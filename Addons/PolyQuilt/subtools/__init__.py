@@ -22,6 +22,7 @@ from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
 
 maintools = {
+    'NONE'          : None ,
     'MASTER'        : MainToolDefault ,
     'HOLD'          : MainToolHold ,
     'LOWPOLY'       : MainToolLowPoly ,
@@ -32,3 +33,7 @@ maintools = {
     'DELETE'        : MainToolDelete ,
     'LOOPCUT'       : MainToolLoopCut ,
 }
+
+
+def enum_tool_callback(scene, context ):
+    return ( ( tool , tool , "" ) for tool in maintools )

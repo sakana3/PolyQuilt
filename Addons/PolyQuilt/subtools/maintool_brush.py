@@ -115,6 +115,25 @@ class MainToolBrush(MainTool) :
     def GetCursor(cls) :
         return 'CROSSHAIR'
 
+    @classmethod
+    def recive_event( cls , gizmo , context , event ) :
+        if event.type == 'WHEELUPMOUSE' :
+            cls.change_brush_size( gizmo.preferences , context ,-50 , 0 )
+
+        if event.type == 'WHEELDOWNMOUSE' :
+            cls.change_brush_size( gizmo.preferences , context , 50 , 0 )
+
+        return {'PASS_THROUGH'}
+
+    @classmethod
+    def change_brush_size( cls , preferences , context , brush_size_value , brush_strong_value ):
+        if context.area.type == 'VIEW_3D' :
+            a = (preferences.brush_size * preferences.brush_size) / 40000.0 + 0.1
+            preferences.brush_size = preferences.brush_size + brush_size_value * a       
+            strength = min( max( 0 , preferences.brush_strength + brush_strong_value ) , 1 )
+            preferences.brush_strength = strength
+            context.area.tag_redraw()
+
 class MainToolBrushDelete(MainToolBrush) :
     name = "BrushDeleteSubTool"
 
@@ -141,3 +160,4 @@ class MainToolBrushDelete(MainToolBrush) :
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = color, fill = False , subdivide = 64 , dpi= False )
         return Draw
+

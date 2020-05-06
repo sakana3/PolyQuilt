@@ -19,6 +19,10 @@ pq_translation_dict = {
             ("*", "Empty Mesh Object") : "空メッシュ" ,
             ("*", "Brush Strength") : "ブラシ強度" ,
             ("*", "Flex") : "自由" ,
+            ("*", "Lowpoly") : "ローポリ" ,
+            ("*", "Knife") : "ナイフ" ,
+            ("*", "LoopCut") : "ループカット" ,
+            ("*", "Brush_Delete") : "削除ブラシ" ,
             ("*", "Space Drag Operation") : "スペースでドラッグした時の操作" ,
         }
 }

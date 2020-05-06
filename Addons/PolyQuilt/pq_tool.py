@@ -23,14 +23,39 @@ class ToolPolyQuiltBase(WorkSpaceTool):
     bl_context_mode='EDIT_MESH'
     is_polyquilt = True
 
-    default_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    @staticmethod
+    def subtool_keymaps( tool_header ) :
+        return (
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [('tool_prop' , tool_header + "_shift" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS', "alt": True}, {"properties": [('tool_prop' , tool_header + "_alt" ) ]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_shift_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_shift_alt" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_ctrl_alt" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "shift": True},  {"properties": [('tool_prop' , tool_header + "_os_shift" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_os_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_os_alt" )]}),
+
+            ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
+        )
+
+    @staticmethod
+    def tool_keymaps( main_tool , tool_header ) :
+        return (
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", main_tool )]}),            
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [('tool_prop' , tool_header + "_shift" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS', "alt": True}, {"properties": [('tool_prop' , tool_header + "_alt" ) ]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_shift_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_shift_alt" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_ctrl_alt" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "shift": True},  {"properties": [('tool_prop' , tool_header + "_os_shift" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_os_ctrl" )]}),
+            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_os_alt" )]}),
+
+            ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
+        )
+
 
 class ToolPolyQuilt(ToolPolyQuiltBase):
     # The prefix of the idname should be your add-on name.
@@ -39,26 +64,16 @@ class ToolPolyQuilt(ToolPolyQuiltBase):
     bl_description = ( "Lowpoly Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_icon")
     bl_widget = "MESH_GGT_PQ_Preselect"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'MASTER')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True}, {"properties": [("lock_hold", True)]}),
-#       ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True}, {"properties": [("tool_mode", 'HOLD')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-#       ("mesh.poly_quilt", {"type": "MIDDLEMOUSE", "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH'),("alternative",True)]}),
-#       ("mesh.poly_quilt_hold_lock", {"type": 'LEFT_ALT', "value": 'DOUBLE_CLICK' } , {} ),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True, "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True , "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
-    )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'MASTER' , 'master_tool' )
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'master_tool' , 'Master Tool' , tool )
         elif reg == 'WINDOW' :
-            draw_settings_ui( context , layout , tool )
+            draw_settings_ui( context , layout.column().box() , tool )
+            draw_sub_tool( layout , 'master_tool' , 'Master Tool' , tool )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -70,14 +85,13 @@ class ToolPolyQuiltPoly(ToolPolyQuiltBase):
     bl_description = ( "Lowpoly Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_poly_icon")
     bl_widget = "MESH_GGT_PQ_Lowpoly"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'LOWPOLY')]}),
-    ) + ToolPolyQuiltBase.default_keymap
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'LOWPOLY' , 'lowpoly_tool' )
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' or reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'lowpoly_tool' , 'LowPoly Tool' , tool )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -88,16 +102,16 @@ class ToolPolyQuiltKnife(ToolPolyQuiltBase):
     bl_description = ( "Quick Knife Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_knife_icon")
     bl_widget = "MESH_GGT_PQ_Knife"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'KNIFE')]}),
-    ) + ToolPolyQuiltBase.default_keymap
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'KNIFE' , 'knife_tool' )    
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'knife_tool' , 'Knife Tool' , tool )            
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'knife_tool' , 'Knife Tool' , tool )            
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool , ui = ['BRUSH','OPTION'] )
 
@@ -108,23 +122,16 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     bl_description = ( "Quick Delete Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_delete_icon")
     bl_widget = "MESH_GGT_PQ_Delete"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode" , 'DELETE')]}),
-
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH_DELETE')]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
-    )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'DELETE' , 'delete_tool' )    
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'delete_tool' , 'Delete Tool' , tool )            
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'delete_tool' , 'Delete Tool' , tool )            
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool , ui = ['OPTION'] )
 
@@ -135,16 +142,16 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     bl_description = ( "Edge Extrude Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_extrude_icon")
     bl_widget = "MESH_GGT_PQ_Extrude"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'EXTRUDE')]}),
-    ) + ToolPolyQuiltBase.default_keymap
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'EXTRUDE' , 'extrude_tool' )        
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'extrude_tool' , 'Extrude Tool' , tool )                       
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'extrude_tool' , 'Extrude Tool' , tool )                       
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -155,16 +162,16 @@ class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     bl_description = ( "LoopCut Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_loopcut_icon")
     bl_widget = "MESH_GGT_PQ_LoopCut"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'LOOPCUT')]}),
-    ) + ToolPolyQuiltBase.default_keymap
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'LOOPCUT' , 'loopcut_tool' )            
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'loopcut_tool' , 'Loop Cut Tool' , tool )                 
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'loopcut_tool' , 'Loop Cut Tool' , tool )                 
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -177,22 +184,16 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     bl_description = ( "Brush Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_brush_icon")
     bl_widget = "MESH_GGT_PQ_Brush"
-    bl_keymap = (
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [("tool_mode", 'BRUSH')]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",-50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "shift": True }, {"properties": [("brush_size_value",50)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELUPMOUSE', "value": 'PRESS', "ctrl": True }, {"properties": [("brush_strong_value",-0.05)]}),
-        ("mesh.poly_quilt_brush_size", {"type": 'WHEELDOWNMOUSE', "value": 'PRESS', "ctrl": True}, {"properties": [("brush_strong_value",0.05)]}),
-        ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),
-    )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( 'BRUSH' , 'brush_tool' )            
 
     def draw_settings(context, layout, tool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'brush_tool' , 'Brush Tool' , tool )                 
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , 'brush_tool' , 'Brush Tool' , tool )                 
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -272,6 +273,59 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
         layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
+def draw_sub_tool( _layout , name , text , tool ) :
+    preferences = bpy.context.preferences.addons[__package__].preferences
+
+    column = _layout.box().column()    
+    row = column.row()
+    row.prop( preferences, "keymap_setting_expanded", text="",
+        icon='TRIA_DOWN' if preferences.keymap_setting_expanded else 'TRIA_RIGHT')
+
+    row.label(text =text + " Setting")
+
+    if preferences.keymap_setting_expanded :
+        _box = column.row()
+        _box.label(icon = 'EVENT_SHIFT')
+        _box.prop(preferences, name + "_shift" , text = "" )
+        _box = column.row()
+        _box.label(icon = 'EVENT_CTRL')            
+        _box.prop(preferences, name + "_ctrl" , text = "" )
+        _box = column.row()
+        _box.label(icon = 'EVENT_ALT')            
+        _box.prop(preferences, name + "_alt" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_SHIFT')
+        _box.label(icon = 'EVENT_CTRL')
+        _box.prop(preferences, name + "_shift_ctrl" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_SHIFT')
+        _box.label(icon = 'EVENT_ALT')
+        _box.prop(preferences, name + "_shift_alt" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_CTRL')
+        _box.label(icon = 'EVENT_ALT')
+        _box.prop(preferences, name + "_ctrl_alt" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_OS')            
+        _box.label(icon = 'EVENT_SHIFT') 
+        _box.prop(preferences, name + "_os_shift" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_OS')            
+        _box.label(icon = 'EVENT_CTRL') 
+        _box.prop(preferences, name + "_os_ctrl" , text = "" )
+
+        _box = column.row()
+        _box.label(icon = 'EVENT_OS')            
+        _box.label(icon = 'EVENT_ALT') 
+        _box.prop(preferences, name + "_os_alt" , text = "" )
+
+
+
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_space_type = 'VIEW_3D'
@@ -293,6 +347,7 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         # -----------
         from bl_ui.space_toolsystem_common import ToolSelectPanelHelper
         tool = ToolSelectPanelHelper.tool_active_from_context(context)
+#       print(tool.idname)
         props = tool.operator_properties("mesh.poly_quilt")
         preferences = bpy.context.preferences.addons[__package__].preferences
 
