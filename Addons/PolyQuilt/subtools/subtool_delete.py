@@ -55,11 +55,8 @@ class SubToolDelete(SubToolEx) :
                     self.currentTarget = self.startTarget
                 elif ed :
                     self.removes = (  self.bmo.calc_loop_face(ed) , [] )
-                elif preTarget != self.currentTarget.element :
-                    if self.startTarget.type == self.currentTarget.type :
-                        self.removes = self.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
-                    else :
-                        self.removes = ([self.startTarget.element],[])
+                elif self.startTarget.element != self.currentTarget.element and self.startTarget.type == self.currentTarget.type :
+                    self.removes = self.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
                 else :
                     self.removes = ([self.startTarget.element],[])
             else :
