@@ -28,6 +28,8 @@ maintools = {
     'LOWPOLY'       : MainToolLowPoly ,
     'BRUSH'         : MainToolBrush ,
     'BRUSH_DELETE'  : MainToolBrushDelete ,
+    'BRUSH_RELAX'   : MainToolBrushRelax ,
+    'BRUSH_MOVE'    : MainToolBrushMove ,
     'EXTRUDE'       : MainToolExtrude ,
     'KNIFE'         : MainToolKnife ,
     'DELETE'        : MainToolDelete ,

@@ -156,6 +156,8 @@ class QMeshHighlight :
 
             self.__viewPosEdges = { e : v for e , v in viewEdges.items() if None not in v }
             self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
+            self.__boundaryViewPosEdges = None
+            self.__boundaryViewPosVerts = None
 
             self.current_matrix = pj_matrix
 

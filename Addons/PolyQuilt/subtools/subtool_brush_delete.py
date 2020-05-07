@@ -44,6 +44,17 @@ class SubToolBrushDelete(SubToolEx) :
     def Check( root , target ) :
         return True
 
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        def Draw() :
+            radius = gizmo.preferences.brush_size * dpm()
+            strength = gizmo.preferences.brush_strength  
+            color = gizmo.preferences.delete_color
+            with draw_util.push_pop_projection2D() :
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
+                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = color, fill = False , subdivide = 64 , dpi= False )
+        return Draw
+
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             faces = self.collect_faces( context , self.mouse_pos )

@@ -152,12 +152,44 @@ class MainToolBrushDelete(MainToolBrush) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        def Draw() :
-            radius = gizmo.preferences.brush_size * dpm()
-            strength = gizmo.preferences.brush_strength  
-            color = gizmo.preferences.delete_color
-            with draw_util.push_pop_projection2D() :
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = color, fill = False , subdivide = 64 , dpi= False )
-        return Draw
+        return SubToolBrushDelete.DrawHighlight(gizmo,element)
 
+class MainToolBrushRelax(MainToolBrush) :
+    name = "BrushRelaxSubTool"
+
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op,currentTarget, button)        
+        self.callback = { 
+            MBEventType.Release         : [] ,
+            MBEventType.Click           : [] ,
+            MBEventType.LongClick       : [] ,
+            MBEventType.LongPressDrag   : [SubToolBrushSize] ,
+            MBEventType.Drag            : [SubToolBrushRelax] ,
+        }
+
+    def OnDraw3D( self , context  ) :
+        pass
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        return SubToolBrushRelax.DrawHighlight(gizmo,element)
+
+class MainToolBrushMove(MainToolBrush) :
+    name = "BrushMoveSubTool"
+
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op,currentTarget, button)        
+        self.callback = { 
+            MBEventType.Release         : [] ,
+            MBEventType.Click           : [] ,
+            MBEventType.LongClick       : [] ,
+            MBEventType.LongPressDrag   : [SubToolBrushSize] ,
+            MBEventType.Drag            : [SubToolBrushMove] ,
+        }
+
+    def OnDraw3D( self , context  ) :
+        pass
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        return SubToolBrushMove.DrawHighlight(gizmo,element)

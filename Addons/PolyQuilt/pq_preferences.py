@@ -284,8 +284,10 @@ class PolyQuiltPreferences(AddonPreferences):
                ('HOLD' , "Hold", "" ),
                ('LOWPOLY' , "Lowpoly", "" ) ,
                ('BRUSH' , "Brush", "" ) ,
-               ('BRUSH_DELETE' , "Brush_Delete", "" ) ,
-               ('EXTRUDE' , "Extrude", "" ) ,
+               ('BRUSH_RELAX' , "Brush::Relax", "" ) ,
+               ('BRUSH_MOVE' , "Brush::Move", "" ) ,
+               ('BRUSH_DELETE' , "Brush::Delete", "" ) ,
+               ('EXTRUDE' , "Edge Extrude", "" ) ,
                ('KNIFE' , "Knife", "" ),
                ('DELETE' , "Delete", "" ),
                ('LOOPCUT' , "LoopCut", "" )

@@ -28,7 +28,8 @@ from bpy.utils.toolsystem import ToolDef
 from .pq_operator import *
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
-from .pq_tool import PolyQuiltTools , VIEW3D_PT_tools_polyquilt_options
+from .pq_tool import PolyQuiltTools
+from .pq_tool_ui import VIEW3D_PT_tools_polyquilt_options
 from .gizmo_preselect import * 
 from .pq_preferences import *
 from .translation import pq_translation_dict
