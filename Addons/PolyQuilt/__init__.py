@@ -36,7 +36,6 @@ from .translation import pq_translation_dict
 
 classes = (
     MESH_OT_poly_quilt ,
-    MESH_OT_poly_quilt_hold_lock ,
     MESH_OT_poly_quilt_brush_size ,
     MESH_OT_poly_quilt_daemon ,
     PQ_OT_SetupUnityLikeKeymap ,

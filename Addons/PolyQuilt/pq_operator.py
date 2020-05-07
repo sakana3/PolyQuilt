@@ -32,7 +32,7 @@ from .gizmo_preselect import PQ_GizmoGroup_Base
 import os
 import bpy.utils.previews
 
-__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_hold_lock' , 'MESH_OT_poly_quilt_daemon' , 'MESH_OT_poly_quilt_brush_size']
+__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' , 'MESH_OT_poly_quilt_brush_size']
 
 if not __package__:
     __package__ = "poly_quilt"
@@ -55,6 +55,18 @@ def enum_move_type_callback(scene, context):
         )
     return items
 
+def enum_brush_type_callback(scene, context):
+        items=(('SMOOTH' , "Smooth", "" , custom_icon("icon_brush_relax") , 0),
+               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 1 ) ,
+               ('DELETE' , "Delete", "" , custom_icon("icon_brush_delete") , 2 ) )
+        return items
+
+def enum_override_brush_type_callback(scene, context):
+        items=(('NONE' , "None", "" , 'DOT' , 0),
+               ('SMOOTH' , "Smooth", "" , custom_icon("icon_brush_relax") , 1),
+               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 2 ) ,
+               ('DELETE' , "Delete", "" , custom_icon("icon_brush_delete") , 3 ) )
+        return items
 
 class MESH_OT_poly_quilt(bpy.types.Operator):
     """Draw Polygons with the mouse"""
@@ -70,18 +82,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         description="Tool Mode",
         items=enum_tool_callback,
     )
-
-    lock_hold : bpy.props.BoolProperty(
-              name = "Lock Hold" ,
-              default = False ,
-              description="Lock HOLD",
-            )
-
-    alternative : bpy.props.BoolProperty(
-              name = "Alternative" ,
-              default = False ,
-              description="Alternative",
-            )
 
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
@@ -120,7 +120,19 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         default='PARALLEL',
     )
 
-    tool_prop : bpy.props.StringProperty( name = 'tool prop' )
+
+    brush_type : bpy.props.EnumProperty(
+        name="Brush Type",
+        description="Brush Type.",
+        items=enum_brush_type_callback,
+    )
+
+#    brush_override : bpy.props.EnumProperty(
+#        name="Override Brush Type",
+#        description="Override Brush Type.",
+#        items=enum_override_brush_type_callback,
+#    )
+    
 
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
@@ -199,13 +211,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             return {'CANCELLED'}            
 
         tool_mode = self.tool_mode
-        if self.tool_prop :
-            if hasattr( self.preferences , self.tool_prop ) :
-                tool_mode = getattr( self.preferences , self.tool_prop )
-                if tool_mode == 'NONE' :
-                    return {'PASS_THROUGH'}
-            else :
-                return {'PASS_THROUGH'}
+        if self.tool_mode == 'NONE' :
+            return {'PASS_THROUGH'}
 
         if context.area.type == 'VIEW_3D' and context.mode == 'EDIT_MESH' :
             self.preselect = PQ_GizmoGroup_Base.get_gizmo( context.region_data )
@@ -236,7 +243,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
 
-            self.currentSubTool = maintools[tool_mode](self , element, event.type )
+            self.currentSubTool = maintools[self.tool_mode](self , element, event.type )
             self.currentSubTool.OnInit(context )
 #            self.currentSubTool.Update(context, event)
 
@@ -320,14 +327,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             context.window_manager.event_timer_remove(cls.__timer_handle)
             cls.__timer_handle = None
 
-    is_lock_hold = False
-    def is_hold(self , hold : bool ) -> bool :
-        if self.is_lock_hold :
-            return True
-        if self.lock_hold :
-            return True
-        return hold
-
 class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""
     bl_idname = "mesh.poly_quilt_daemon"
@@ -360,22 +359,6 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
         MESH_OT_poly_quilt_daemon.is_running = True
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
-
-class MESH_OT_poly_quilt_hold_lock(bpy.types.Operator):
-    """PolyQuilt hold lock"""
-    bl_idname = "mesh.poly_quilt_hold_lock"
-    bl_label = "PolyQuiltHoldLock"
-    bl_options = {'REGISTER' }
-
-    def invoke(self, context, event):
-        if MESH_OT_poly_quilt.is_lock_hold :
-            MESH_OT_poly_quilt.is_lock_hold = False
-            self.report({'INFO'}, "Unlock Hold" )            
-        else :
-            MESH_OT_poly_quilt.is_lock_hold = True
-            self.report({'INFO'}, "Lock Hold" )            
-        return {'FINISHED'}
-
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
     """Change Brush Size"""

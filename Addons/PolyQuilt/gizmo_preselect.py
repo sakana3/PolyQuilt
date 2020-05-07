@@ -17,16 +17,9 @@ import time
 from .QMesh import *
 from .utils import draw_util
 from .subtools import *
+from .pq_tool import *
 
-__all__ = ['PQ_Gizmo_Preselect','PQ_GizmoGroup_Preselect','PQ_GizmoGroup_Lowpoly']
 
-
-def is_running_poly_quilt_operator():
-    operators = bpy.context.window_manager.operators
-    op = operators[-1] if operators else None
-    if op != None and "poly_quilt" in op.bl_idname :
-        return False
-    return False
 
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
@@ -39,7 +32,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.region = None
         self.subtool = None
         self.tool_table = [None,None,None,None]
-        self.tool_header = 'master_tool'
+        self.tool = None
 
     def __del__(self) :
         pass
@@ -48,9 +41,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.bmo = None        
         self.currentElement = ElementItem.Empty()
 
-    def init( self , context , main_tool , tool_header ) :
-        self.tool_header = tool_header
-        self.maintool = maintools[main_tool]
+    def init( self , context , tool ) :
+        self.tool = tool
+        self.maintool = maintools[tool.pq_main_tool]
         self.subtool = self.maintool
         self.region = context.region_data
         self.bmo = QMesh( context.active_object , self.preferences )
@@ -111,18 +104,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def recive_event( self , context , event ) :
         subtool = self.maintool
 
-        modifier = ""
-        if event.oskey :
-            modifier = modifier +  '_os'
-        if event.shift :
-            modifier = modifier +  '_shift'
-        if event.ctrl :
-            modifier = modifier +  '_ctrl'
-        if event.alt :
-            modifier = modifier +  '_alt'
-
-        if hasattr( self.preferences, self.tool_header + modifier) :
-            subtool = maintools[ getattr(self.preferences, self.tool_header + modifier) ]
+        keyitem = self.get_keyitem( event )
+        if keyitem and hasattr( keyitem.properties , "tool_mode" ) :
+            subtool = maintools[ keyitem.properties.tool_mode ]
 
         if self.subtool != subtool :
             self.subtool = subtool
@@ -135,13 +119,28 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         if context.region_data == self.region and self.subtool:
             self.subtool.recive_event( self , context , event )
 
+    def get_keyitem( self , event ) :
+        keyitems = self.get_keyitems( self.tool )
+        for item in keyitems :
+            if [ item.shift , item.ctrl , item.alt,  item.oskey ] == [ event.shift , event.ctrl , event.alt,  event.oskey ] :
+                if item.active :
+                    return item
+        return None
+
+    def get_keyitems( self , tool ) :
+        for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
+            if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(tool.bl_label) :
+                return [ item for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' ]
+        return []
+
 class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
+    my_tool = ToolPolyQuiltBase
     bl_idname = "MESH_GGT_PQ_Preselect"
     bl_label = "PolyQuilt Preselect Gizmo"
     bl_options = {'3D'}    
     bl_region_type = 'WINDOW'
     bl_space_type = 'VIEW_3D'
- 
+    bl_idname = my_tool.bl_widget
     child_gizmos = []
     cursor = 'DEFAULT'
 
@@ -155,9 +154,6 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
             PQ_GizmoGroup_Base.child_gizmos.remove( self.gizmo )
         if not PQ_GizmoGroup_Base.child_gizmos :
             QSnap.remove_ref()
-
-    def tool_table( self ) :
-        return ['MASTER','BRUSH' ,'EXTRUDE','MASTER']
 
     @classmethod
     def poll(cls, context):
@@ -178,8 +174,7 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     def setup(self, context):
         QSnap.add_ref(context)
         self.gizmo = self.gizmos.new(PQ_Gizmo_Preselect.bl_idname)
-        maintool , tool_header = self.tool_table()
-        self.gizmo.init(context , maintool , tool_header )
+        self.gizmo.init(context , self.my_tool )
         PQ_GizmoGroup_Base.child_gizmos.append(self.gizmo)
 
     def refresh( self , context ) :
@@ -203,53 +198,40 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
             gizmo.recive_event( context , event)
 
 class PQ_GizmoGroup_Preselect(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Preselect"
+    my_tool = ToolPolyQuilt
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Preselect Gizmo"
 
-    def tool_table( self ) :
-        return 'MASTER','master_tool'
-
 class PQ_GizmoGroup_Lowpoly(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Lowpoly"
+    my_tool = ToolPolyQuiltPoly
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Lowpoly Gizmo"
 
-    def tool_table( self ) :
-        return 'LOWPOLY','lowpoly_tool'
-
 class PQ_GizmoGroup_Knife(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Knife"
+    my_tool = ToolPolyQuiltKnife
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Knife Gizmo"
 
-    def tool_table( self ) :
-        return 'KNIFE','knife_tool'
-
 class PQ_GizmoGroup_Delete(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Delete"
+    my_tool = ToolPolyQuiltDelete
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Delete Gizmo"
 
-    def tool_table( self ) :
-        return 'DELETE','delete_tool'
-
 class PQ_GizmoGroup_Extrude(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Extrude"
+    my_tool = ToolPolyQuiltExtrude
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Extrude Gizmo"
 
-    def tool_table( self ) :
-        return 'EXTRUDE','extrude_tool'
-
 class PQ_GizmoGroup_LoopCut(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_LoopCut"
+    my_tool = ToolPolyQuiltLoopCut
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt LoopCut Gizmo"
 
-    def tool_table( self ) :
-        return 'LOOPCUT','loopcut_tool'
-
 class PQ_GizmoGroup_Brush(PQ_GizmoGroup_Base):
-    bl_idname = "MESH_GGT_PQ_Brush"
+    my_tool = ToolPolyQuiltBrush
+    bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Brush Gizmo"
 
-    def tool_table( self ) :
-        return 'BRUSH','brush_tool'
 
 all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush )
 

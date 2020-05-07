@@ -37,12 +37,6 @@ __all__ = [
     "register_updater"
 ]
 
-def enum_brush_type_callback(scene, context):
-        items=(('SMOOTH' , "Smooth", "" , custom_icon("icon_brush_relax") , 0),
-               ('MOVE' , "Move", "" , custom_icon("icon_brush_move") , 1 ) ,
-               ('DELETE' , "Delete", "" , custom_icon("icon_brush_delete") , 2 ) )
-        return items
-
 class PQ_OT_CheckAddonUpdate(bpy.types.Operator):
     bl_idname = "mesh.pq_ot_check_addon_update"
     bl_label = "Check Update"
@@ -227,12 +221,6 @@ class PolyQuiltPreferences(AddonPreferences):
         default=0,
     )
 
-    brush_type : bpy.props.EnumProperty(
-        name="Brush Type",
-        description="Brush Type",
-        items=enum_brush_type_callback
-    )    
-
     brush_size : bpy.props.FloatProperty(
         name="Brush Size",
         description="Brush Size",
@@ -279,90 +267,6 @@ class PolyQuiltPreferences(AddonPreferences):
         default=False
     )
 
-    tools_enum = [('NONE' , "None", "" ),
-               ('MASTER' , "Master", "" ),
-               ('HOLD' , "Hold", "" ),
-               ('LOWPOLY' , "Lowpoly", "" ) ,
-               ('BRUSH' , "Brush", "" ) ,
-               ('BRUSH_RELAX' , "Brush::Relax", "" ) ,
-               ('BRUSH_MOVE' , "Brush::Move", "" ) ,
-               ('BRUSH_DELETE' , "Brush::Delete", "" ) ,
-               ('EXTRUDE' , "Edge Extrude", "" ) ,
-               ('KNIFE' , "Knife", "" ),
-               ('DELETE' , "Delete", "" ),
-               ('LOOPCUT' , "LoopCut", "" )
-        ]
-
-    master_tool_shift       : bpy.props.EnumProperty( name="MasterTool::Shift" , items=tools_enum,  default='BRUSH', )
-    master_tool_ctrl        : bpy.props.EnumProperty( name="MasterTool::ctrl"  , items=tools_enum, default='EXTRUDE', )
-    master_tool_alt         : bpy.props.EnumProperty( name="MasterTool::alt"   , items=tools_enum, default='NONE', )
-    master_tool_shift_ctrl  : bpy.props.EnumProperty( name="MasterTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    master_tool_shift_alt   : bpy.props.EnumProperty( name="MasterTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    master_tool_ctrl_alt    : bpy.props.EnumProperty( name="MasterTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    master_tool_os_shift    : bpy.props.EnumProperty( name="MasterTool::os+Shift"  , items=tools_enum, default='NONE', )
-    master_tool_os_ctrl     : bpy.props.EnumProperty( name="MasterTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    master_tool_os_alt      : bpy.props.EnumProperty( name="MasterTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    delete_tool_shift       : bpy.props.EnumProperty( name="DeleteTool::Shift" , items=tools_enum,  default='BRUSH_DELETE', )
-    delete_tool_ctrl        : bpy.props.EnumProperty( name="DeleteTool::ctrl"  , items=tools_enum, default='NONE', )
-    delete_tool_alt         : bpy.props.EnumProperty( name="DeleteTool::alt"   , items=tools_enum, default='NONE', )
-    delete_tool_shift_ctrl  : bpy.props.EnumProperty( name="DeleteTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    delete_tool_shift_alt   : bpy.props.EnumProperty( name="DeleteTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    delete_tool_ctrl_alt    : bpy.props.EnumProperty( name="DeleteTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    delete_tool_os_shift    : bpy.props.EnumProperty( name="DeleteTool::os+Shift"  , items=tools_enum, default='NONE', )
-    delete_tool_os_ctrl     : bpy.props.EnumProperty( name="DeleteTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    delete_tool_os_alt      : bpy.props.EnumProperty( name="DeleteTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    lowpoly_tool_shift       : bpy.props.EnumProperty( name="DeleteTool::Shift" , items=tools_enum,  default='BRUSH', )
-    lowpoly_tool_ctrl        : bpy.props.EnumProperty( name="DeleteTool::ctrl"  , items=tools_enum, default='EXTRUDE', )
-    lowpoly_tool_alt         : bpy.props.EnumProperty( name="DeleteTool::alt"   , items=tools_enum, default='NONE', )
-    lowpoly_tool_shift_ctrl  : bpy.props.EnumProperty( name="DeleteTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    lowpoly_tool_shift_alt   : bpy.props.EnumProperty( name="DeleteTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    lowpoly_tool_ctrl_alt    : bpy.props.EnumProperty( name="DeleteTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    lowpoly_tool_os_shift    : bpy.props.EnumProperty( name="DeleteTool::os+Shift"  , items=tools_enum, default='NONE', )
-    lowpoly_tool_os_ctrl     : bpy.props.EnumProperty( name="DeleteTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    lowpoly_tool_os_alt      : bpy.props.EnumProperty( name="DeleteTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    knife_tool_shift       : bpy.props.EnumProperty( name="KnifeTool::Shift" , items=tools_enum,  default='BRUSH', )
-    knife_tool_ctrl        : bpy.props.EnumProperty( name="KnifeTool::ctrl"  , items=tools_enum, default='LOOPCUT', )
-    knife_tool_alt         : bpy.props.EnumProperty( name="KnifeTool::alt"   , items=tools_enum, default='NONE', )
-    knife_tool_shift_ctrl  : bpy.props.EnumProperty( name="KnifeTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    knife_tool_shift_alt   : bpy.props.EnumProperty( name="KnifeTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    knife_tool_ctrl_alt    : bpy.props.EnumProperty( name="KnifeTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    knife_tool_os_shift    : bpy.props.EnumProperty( name="KnifeTool::os+Shift"  , items=tools_enum, default='NONE', )
-    knife_tool_os_ctrl     : bpy.props.EnumProperty( name="KnifeTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    knife_tool_os_alt      : bpy.props.EnumProperty( name="KnifeTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    loopcut_tool_shift       : bpy.props.EnumProperty( name="LoopCutTool::Shift" , items=tools_enum,  default='BRUSH', )
-    loopcut_tool_ctrl        : bpy.props.EnumProperty( name="LoopCutTool::ctrl"  , items=tools_enum, default='NONE', )
-    loopcut_tool_alt         : bpy.props.EnumProperty( name="LoopCutTool::alt"   , items=tools_enum, default='NONE', )
-    loopcut_tool_shift_ctrl  : bpy.props.EnumProperty( name="LoopCutTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    loopcut_tool_shift_alt   : bpy.props.EnumProperty( name="LoopCutTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    loopcut_tool_ctrl_alt    : bpy.props.EnumProperty( name="LoopCutTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    loopcut_tool_os_shift    : bpy.props.EnumProperty( name="LoopCutTool::os+Shift"  , items=tools_enum, default='NONE', )
-    loopcut_tool_os_ctrl     : bpy.props.EnumProperty( name="LoopCutTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    loopcut_tool_os_alt      : bpy.props.EnumProperty( name="LoopCutTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    extrude_tool_shift       : bpy.props.EnumProperty( name="ExtrudeTool::Shift" , items=tools_enum,  default='BRUSH', )
-    extrude_tool_ctrl        : bpy.props.EnumProperty( name="ExtrudeTool::ctrl"  , items=tools_enum, default='NONE', )
-    extrude_tool_alt         : bpy.props.EnumProperty( name="ExtrudeTool::alt"   , items=tools_enum, default='NONE', )
-    extrude_tool_shift_ctrl  : bpy.props.EnumProperty( name="ExtrudeTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    extrude_tool_shift_alt   : bpy.props.EnumProperty( name="ExtrudeTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    extrude_tool_ctrl_alt    : bpy.props.EnumProperty( name="ExtrudeTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    extrude_tool_os_shift    : bpy.props.EnumProperty( name="ExtrudeTool::os+Shift"  , items=tools_enum, default='NONE', )
-    extrude_tool_os_ctrl     : bpy.props.EnumProperty( name="ExtrudeTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    extrude_tool_os_alt      : bpy.props.EnumProperty( name="ExtrudeTool::os+Alt"  , items=tools_enum, default='NONE', )
-
-    brush_tool_shift       : bpy.props.EnumProperty( name="ExtrudeTool::Shift" , items=tools_enum,  default='NONE', )
-    brush_tool_ctrl        : bpy.props.EnumProperty( name="ExtrudeTool::ctrl"  , items=tools_enum, default='NONE', )
-    brush_tool_alt         : bpy.props.EnumProperty( name="ExtrudeTool::alt"   , items=tools_enum, default='NONE', )
-    brush_tool_shift_ctrl  : bpy.props.EnumProperty( name="ExtrudeTool::Shift+Ctrl" , items=tools_enum,  default='NONE', )
-    brush_tool_shift_alt   : bpy.props.EnumProperty( name="ExtrudeTool::Shift+Alt"  , items=tools_enum, default='NONE', )
-    brush_tool_ctrl_alt    : bpy.props.EnumProperty( name="ExtrudeTool::Ctrl+Alt"  , items=tools_enum, default='NONE', )
-    brush_tool_os_shift    : bpy.props.EnumProperty( name="ExtrudeTool::os+Shift"  , items=tools_enum, default='NONE', )
-    brush_tool_os_ctrl     : bpy.props.EnumProperty( name="ExtrudeTool::OS+Ctrl"  , items=tools_enum, default='NONE', )
-    brush_tool_os_alt      : bpy.props.EnumProperty( name="ExtrudeTool::os+Alt"  , items=tools_enum, default='NONE', )
-
     def draw(self, context):
         layout = self.layout
 
@@ -399,25 +303,6 @@ class PolyQuiltPreferences(AddonPreferences):
         box.row().prop(self, "makepoly_color" , text = "MakePolyColor")
         box.row().prop(self, "split_color" , text = "SplitColor" )
         box.row().prop(self, "delete_color" , text = "DeleteColor")
-
-        def draw_tool( _layout , name , text ) :
-            _grp = _layout.box()
-            _row = _grp.row()
-            _row.box().label(text=text)
-            _box = _row.box().row()
-            _box.label(icon = 'EVENT_SHIFT')
-            _box.prop(self, name + "_shift" , text = "" )
-            _box = _row.box().row()
-            _box.label(icon = 'EVENT_CTRL')            
-            _box.prop(self, name + "_ctrl" , text = "" )
-            _box = _row.box().row()
-            _box.label(icon = 'EVENT_ALT')            
-            _box.prop(self, name + "_alt" , text = "" )
-
-#        column = layout.box().column()
-#        draw_tool( column , "master_tool" , "Master Tool" )
-#        draw_tool( column , "delete_tool" , "Delete Tool" )
-       
 
         layout.prop( self, "extra_setting_expanded", text="Extra Settings",
             icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded

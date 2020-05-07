@@ -48,14 +48,11 @@ class ButtonEventUtil :
         self.PressPrevPos = mathutils.Vector((0.0,0.0))
         self.presureCompOnce = False
         self.preferences = op.preferences
-        self.use_hold_lock = use_hold_lock
         self.no_hold = no_hold
 
     @property
     def presureValue(self) -> float :  
-        if self.use_hold_lock and self.op.lock_hold :
-            return 0.0
-        elif self.Presure == False :
+        if self.Presure == False :
             return 0.0
         else :
             lpt = self.preferences.longpress_time
@@ -75,8 +72,6 @@ class ButtonEventUtil :
     @property
     def is_hold(self) -> bool :
         hold = self.presureCompOnce
-        if self.use_hold_lock :
-            hold = self.op.is_hold(hold)
         return hold
 
     def is_animated( self ) :

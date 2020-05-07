@@ -16,6 +16,7 @@ import bpy
 from bpy.types import WorkSpaceTool , Panel
 from bpy.utils.toolsystem import ToolDef
 from .pq_icon import *
+import inspect
 
 def draw_settings_ui(context, layout, tool):
     props = tool.operator_properties("mesh.poly_quilt")
@@ -51,7 +52,7 @@ def draw_settings_ui(context, layout, tool):
 
     layout.separator()
     col = layout.column(align=True)
-    col.prop( preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
+    col.prop( props, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
 
     col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
     col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
@@ -76,14 +77,14 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
     if 'BRUSH' in ui :
         row = layout.row( align=True)
         row.label( text = "Brush" )
-        row.prop( bpy.context.preferences.addons[__package__].preferences, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
+        row.prop( props , "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
 
     if 'OPTION' in ui :
         # Expand panels from the side-bar as popovers.
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
         layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
-def draw_sub_tool( _layout , name , text , tool ) :
+def draw_sub_tool( _layout , text , tool ) :
     preferences = bpy.context.preferences.addons[__package__].preferences
 
     column = _layout.box().column()    
@@ -94,48 +95,31 @@ def draw_sub_tool( _layout , name , text , tool ) :
     row.label(text =text + " Setting")
 
     if preferences.keymap_setting_expanded :
-        _box = column.row()
-        _box.label(icon = 'EVENT_SHIFT')
-        _box.prop(preferences, name + "_shift" , text = "" )
-        _box = column.row()
-        _box.label(icon = 'EVENT_CTRL')            
-        _box.prop(preferences, name + "_ctrl" , text = "" )
-        _box = column.row()
-        _box.label(icon = 'EVENT_ALT')            
-        _box.prop(preferences, name + "_alt" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_SHIFT')
-        _box.label(icon = 'EVENT_CTRL')
-        _box.prop(preferences, name + "_shift_ctrl" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_SHIFT')
-        _box.label(icon = 'EVENT_ALT')
-        _box.prop(preferences, name + "_shift_alt" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_CTRL')
-        _box.label(icon = 'EVENT_ALT')
-        _box.prop(preferences, name + "_ctrl_alt" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_OS')            
-        _box.label(icon = 'EVENT_SHIFT') 
-        _box.prop(preferences, name + "_os_shift" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_OS')            
-        _box.label(icon = 'EVENT_CTRL') 
-        _box.prop(preferences, name + "_os_ctrl" , text = "" )
-
-        _box = column.row()
-        _box.label(icon = 'EVENT_OS')            
-        _box.label(icon = 'EVENT_ALT') 
-        _box.prop(preferences, name + "_os_alt" , text = "" )
-
-
-
+        kl = column.column_flow( columns=1 )
+        for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
+            if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(tool.bl_label) :
+                it = kl.row()
+                for item in reversed(keymap.keymap_items) :
+                    if True in (item.oskey,item.shift,item.ctrl,item.alt) :
+                        it = kl.row( align = True )
+    #                   it.prop(item , "active" , text = "" )
+                        if item.idname == 'mesh.poly_quilt' :
+                            if item.oskey :
+                                it.label(icon = 'EVENT_OS')
+                            if item.shift :
+                                it.label(icon = 'EVENT_SHIFT') 
+                            if item.ctrl :
+                                it.label(icon = 'EVENT_CTRL') 
+                            if item.alt :
+                                it.label(icon = 'EVENT_ALT') 
+                            it = it.split( align = True )
+                            it = it.row(align = True)
+                            it.prop(item.properties, "tool_mode" , text = "" )
+                            if( item.properties.tool_mode == 'BRUSH' ) :
+                                it = it.row()
+                                it.active = item.properties.is_property_set("brush_type")
+                                it.prop(item.properties, "brush_type" , text = "" , emboss = True )
+#                               op = it.operator("ui.unset_property_button", text="", icon='X')
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_space_type = 'VIEW_3D'

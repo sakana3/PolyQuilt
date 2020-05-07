@@ -52,7 +52,8 @@ class MainToolBrush(MainTool) :
             'DELETE' : SubToolBrushDelete ,
         }
 
-        brush_type = brush_tbl[ self.preferences.brush_type ]
+        brush = op.brush_type
+        brush_type = brush_tbl[ brush ]
 
         self.callback = { 
             MBEventType.Release         : [] ,

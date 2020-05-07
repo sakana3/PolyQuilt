@@ -21,25 +21,33 @@ from .pq_tool_ui import *
 
 class ToolPolyQuiltBase(WorkSpaceTool):
     pq_main_tool = 'MASTER'
-    pq_prop_name = 'master_tool'
     pq_description = 'Master Tool'
 
     bl_space_type='VIEW_3D'
     bl_context_mode='EDIT_MESH'
-    
+    bl_widget = "MESH_GGT_PQ_Preselect"
+
     @staticmethod
-    def tool_keymaps( main_tool , tool_header ) :
+    def tool_keymaps( main_tool , shift = ["NONE"] , ctrl = ["NONE"] , alt = ["NONE"] ) :
+        def keyitem( mods , tool ) :
+            key = {"type": 'LEFTMOUSE', "value": 'PRESS', "shift" : 's' in mods  , "ctrl" : 'c' in mods , "alt" : 'a' in mods , "oskey": 'o' in mods }
+            prop = {"properties": [("tool_mode", tool[0] )]}
+            if len(tool) > 1 and tool[0] == 'BRUSH' :
+                prop["properties"].append( ('brush_type' ,  tool[1] ) )
+            item = ("mesh.poly_quilt", key , prop )
+            return item
+
         return (
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS'}, {"properties": [("tool_mode", main_tool )]}),            
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True},  {"properties": [('tool_prop' , tool_header + "_shift" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_ctrl" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS', "alt": True}, {"properties": [('tool_prop' , tool_header + "_alt" ) ]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_shift_ctrl" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "shift": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_shift_alt" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "ctrl": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_ctrl_alt" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "shift": True},  {"properties": [('tool_prop' , tool_header + "_os_shift" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "ctrl": True},  {"properties": [('tool_prop' , tool_header + "_os_ctrl" )]}),
-            ("mesh.poly_quilt", {"type": 'LEFTMOUSE', "value": 'PRESS' , "oskey": True, "alt": True},  {"properties": [('tool_prop' , tool_header + "_os_alt" )]}),
+            keyitem( ""  , main_tool ) ,  
+            keyitem( "s" , shift ) ,  
+            keyitem( "c" , ctrl ) ,  
+            keyitem( "a" , alt ) ,  
+            keyitem( "sc" , ['NONE'] ) ,  
+            keyitem( "sa" , ['NONE'] ) ,  
+            keyitem( "ca" , ['NONE'] ) ,  
+            keyitem( "os" , ['NONE'] ) ,  
+            keyitem( "oa" , ['NONE'] ) ,  
+            keyitem( "oc" , ['NONE'] ) ,  
 
             ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
         )
@@ -51,14 +59,12 @@ class ToolPolyQuiltBase(WorkSpaceTool):
             draw_settings_ui( context , layout , tool )
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
-            draw_sub_tool( layout , cls.pq_prop_name , cls.pq_description , tool )
+            draw_sub_tool( layout , cls.pq_description , cls )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
-
 class ToolPolyQuilt(ToolPolyQuiltBase):
     pq_main_tool = 'MASTER'
-    pq_prop_name = 'master_tool'
     pq_description = 'Master Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -67,11 +73,10 @@ class ToolPolyQuilt(ToolPolyQuiltBase):
     bl_description = ( "Lowpoly Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_icon")
     bl_widget = "MESH_GGT_PQ_Preselect"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
 
 class ToolPolyQuiltPoly(ToolPolyQuiltBase):
     pq_main_tool = 'LOWPOLY'
-    pq_prop_name = 'lowpoly_tool'
     pq_description = 'LowPoly Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -80,11 +85,10 @@ class ToolPolyQuiltPoly(ToolPolyQuiltBase):
     bl_description = ( "Lowpoly Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_poly_icon")
     bl_widget = "MESH_GGT_PQ_Lowpoly"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
 
 class ToolPolyQuiltKnife(ToolPolyQuiltBase):
     pq_main_tool = 'KNIFE'
-    pq_prop_name = 'knife_tool'
     pq_description = 'Knife Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -93,12 +97,11 @@ class ToolPolyQuiltKnife(ToolPolyQuiltBase):
     bl_description = ( "Quick Knife Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_knife_icon")
     bl_widget = "MESH_GGT_PQ_Knife"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
 
 
 class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     pq_main_tool = 'DELETE'
-    pq_prop_name = 'delete_tool'
     pq_description = 'Delete Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -107,11 +110,10 @@ class ToolPolyQuiltDelete(ToolPolyQuiltBase):
     bl_description = ( "Quick Delete Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_delete_icon")
     bl_widget = "MESH_GGT_PQ_Delete"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH','DELETE'] )
 
 class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     pq_main_tool = 'EXTRUDE'
-    pq_prop_name = 'extrude_tool'
     pq_description = 'Extrude Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -120,11 +122,10 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     bl_description = ( "Edge Extrude Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_extrude_icon")
     bl_widget = "MESH_GGT_PQ_Extrude"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name ) 
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] ) 
 
 class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     pq_main_tool = 'LOOPCUT'
-    pq_prop_name = 'loopcut_tool'
     pq_description = 'LoopCut Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -133,12 +134,11 @@ class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     bl_description = ( "LoopCut Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_loopcut_icon")
     bl_widget = "MESH_GGT_PQ_LoopCut"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name ) 
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH']) 
 
 
 class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     pq_main_tool = 'BRUSH'
-    pq_prop_name = 'brush_tool'
     pq_description = 'Brush Tool'
 
     # The prefix of the idname should be your add-on name.
@@ -147,7 +147,7 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     bl_description = ( "Brush Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_brush_icon")
     bl_widget = "MESH_GGT_PQ_Brush"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( pq_main_tool , pq_prop_name ) 
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] ) 
 
 
 PolyQuiltTools = (
