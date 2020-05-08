@@ -82,9 +82,37 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
     if 'OPTION' in ui :
         # Expand panels from the side-bar as popovers.
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
-        layout.popover_group(context=".poly_quilt_option", **popover_kw)
+        op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
+
+def draw_tool_keymap( layout , name ) :
+    for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
+        if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(name) :
+            for item in reversed(keymap.keymap_items) :
+                if True in (item.oskey,item.shift,item.ctrl,item.alt) :
+                    it = layout.row( align = True )
+#                   it.prop(item , "active" , text = "" )
+                    if item.idname == 'mesh.poly_quilt' :
+                        if item.oskey :
+                            it.label(icon = 'EVENT_OS')
+                        if item.shift :
+                            it.label(icon = 'EVENT_SHIFT') 
+                        if item.ctrl :
+                            it.label(icon = 'EVENT_CTRL') 
+                        if item.alt :
+                            it.label(icon = 'EVENT_ALT') 
+                        it.prop(item.properties, "tool_mode" , text = "" )
+                        if( item.properties.tool_mode == 'BRUSH' ) :
+#                            for m in inspect.getmembers(item.properties):
+#                                print(m)
+
+                            it = it.row()
+                            it.active = item.properties.is_property_set("brush_type")
+                            it.prop(item.properties, "brush_type" , text = "" , emboss = True )
+#                            if it.active :
+ #                               it.context_pointer_set( "brush_type"  , item.properties )
 
 def draw_sub_tool( _layout , text , tool ) :
+
     preferences = bpy.context.preferences.addons[__package__].preferences
 
     column = _layout.box().column()    
@@ -95,31 +123,8 @@ def draw_sub_tool( _layout , text , tool ) :
     row.label(text =text + " Setting")
 
     if preferences.keymap_setting_expanded :
-        kl = column.column_flow( columns=1 )
-        for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
-            if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(tool.bl_label) :
-                it = kl.row()
-                for item in reversed(keymap.keymap_items) :
-                    if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-                        it = kl.row( align = True )
-    #                   it.prop(item , "active" , text = "" )
-                        if item.idname == 'mesh.poly_quilt' :
-                            if item.oskey :
-                                it.label(icon = 'EVENT_OS')
-                            if item.shift :
-                                it.label(icon = 'EVENT_SHIFT') 
-                            if item.ctrl :
-                                it.label(icon = 'EVENT_CTRL') 
-                            if item.alt :
-                                it.label(icon = 'EVENT_ALT') 
-                            it = it.split( align = True )
-                            it = it.row(align = True)
-                            it.prop(item.properties, "tool_mode" , text = "" )
-                            if( item.properties.tool_mode == 'BRUSH' ) :
-                                it = it.row()
-                                it.active = item.properties.is_property_set("brush_type")
-                                it.prop(item.properties, "brush_type" , text = "" , emboss = True )
-#                               op = it.operator("ui.unset_property_button", text="", icon='X')
+        draw_tool_keymap(column,tool.bl_label)
+
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_space_type = 'VIEW_3D'
@@ -130,6 +135,7 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_label = "Options"
     bl_options = {'DEFAULT_CLOSED'}
     bl_ui_units_x = 8
+
     @classmethod
     def poll(cls, context):
         return context.active_object

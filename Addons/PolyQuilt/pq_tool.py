@@ -57,6 +57,7 @@ class ToolPolyQuiltBase(WorkSpaceTool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
+            draw_sub_tool( layout , cls.pq_description , cls )
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
             draw_sub_tool( layout , cls.pq_description , cls )
@@ -118,7 +119,7 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
 
     # The prefix of the idname should be your add-on name.
     bl_idname = "mesh_tool.poly_quilt_extrude"
-    bl_label = "PolyQuilt:EdgeExtrude"
+    bl_label = "PolyQuilt:Extrude"
     bl_description = ( "Edge Extrude Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_extrude_icon")
     bl_widget = "MESH_GGT_PQ_Extrude"
@@ -135,7 +136,6 @@ class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_loopcut_icon")
     bl_widget = "MESH_GGT_PQ_LoopCut"
     bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH']) 
-
 
 class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     pq_main_tool = 'BRUSH'
