@@ -69,6 +69,7 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
 
 
 
+
 def register_updater(bl_info):
     config = AddonUpdaterConfig()
     config.owner = "sakana3"
@@ -281,6 +282,8 @@ class PolyQuiltPreferences(AddonPreferences):
         ],
         default='PolyQuilt'
     )    
+
+
 
     def draw(self, context):
         layout = self.layout

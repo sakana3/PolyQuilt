@@ -17,6 +17,7 @@ from bpy.types import WorkSpaceTool , Panel
 from bpy.utils.toolsystem import ToolDef
 from .pq_icon import *
 import inspect
+import rna_keymap_ui
 
 def draw_settings_ui(context, layout, tool):
     props = tool.operator_properties("mesh.poly_quilt")
@@ -84,36 +85,55 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
         op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
-def draw_tool_keymap( layout , name ) :
-    for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
-        if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(name) :
-            for item in reversed(keymap.keymap_items) :
-                if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-                    it = layout.row( align = True )
-#                   it.prop(item , "active" , text = "" )
-                    if item.idname == 'mesh.poly_quilt' :
-                        if item.oskey :
-                            it.label(icon = 'EVENT_OS')
-                        if item.shift :
-                            it.label(icon = 'EVENT_SHIFT') 
-                        if item.ctrl :
-                            it.label(icon = 'EVENT_CTRL') 
-                        if item.alt :
-                            it.label(icon = 'EVENT_ALT') 
-                        it.prop(item.properties, "tool_mode" , text = "" )
-                        if( item.properties.tool_mode == 'BRUSH' ) :
+def draw_tool_keymap( layout ,keyconfing,keymap ) :
+    for item in reversed(keymap.keymap_items) :
+        if True in (item.oskey,item.shift,item.ctrl,item.alt) :
+            it = layout.row( align = True )
+#            it.prop(item , "active" , text = "" )
+            if item.idname == 'mesh.poly_quilt' :
+                it.context_pointer_set('keymap', keymap)
+                it.row(align = True).template_event_from_keymap_item(item)
+                it.prop(item.properties , "tool_mode" , text = "" , emboss = True )
+
+                item.id_data.tag = True
+                if( item.properties.tool_mode == 'BRUSH' ) :
+                    it = it.row()
+                    it.active = item.properties.is_property_set("brush_type")
+                    it.prop(item.properties, "brush_type" , text = "" , emboss = True )
+
+    # template_keymap_item_propertiesにダーティフラグを処理させるために極小のUIを表示
+    for item in reversed(keymap.keymap_items) :
+        if True in (item.oskey,item.shift,item.ctrl,item.alt) :
+            it = layout.column( align = True )
+            it.scale_x = 0.01
+            it.scale_y = 0.01
+            it.ui_units_x = 0.01
+            it.ui_units_y = 0.01
+            if item.idname == 'mesh.poly_quilt' :
+                it.template_keymap_item_properties(item)
+
+#                   if it.active :
+#                      it.context_pointer_set( "brush_type"  , item.properties )
+#                it = layout.column()
+#                        rna_keymap_ui.draw_kmi(
+#                                [], keyconfing, keymap, item, it, 0)
+#                       it.template_keymap_item_properties(item)
 #                            for m in inspect.getmembers(item.properties):
 #                                print(m)
 
-                            it = it.row()
-                            it.active = item.properties.is_property_set("brush_type")
-                            it.prop(item.properties, "brush_type" , text = "" , emboss = True )
-#                            if it.active :
- #                               it.context_pointer_set( "brush_type"  , item.properties )
+def draw_keymap_sample( context , layout ) :
+    keyconfing = context.window_manager.keyconfigs.user    
+    keymap = keyconfing.keymaps["My Addon" ]        
 
-def draw_sub_tool( _layout , text , tool ) :
+    for item in reversed(keymap.keymap_items) :
+        row = layout.row( align = True )
+        if item.idname == "my_operator" :
+            row.template_event_from_keymap_item(item)
+            row.prop(item.properties , "tool_mode" , text = "" )
 
-    preferences = bpy.context.preferences.addons[__package__].preferences
+def draw_sub_tool( context , _layout , text , tool ) :
+
+    preferences = context.preferences.addons[__package__].preferences
 
     column = _layout.box().column()    
     row = column.row()
@@ -123,7 +143,9 @@ def draw_sub_tool( _layout , text , tool ) :
     row.label(text =text + " Setting")
 
     if preferences.keymap_setting_expanded :
-        draw_tool_keymap(column,tool.bl_label)
+        keyconfing = context.window_manager.keyconfigs.user
+        keymap = keyconfing.keymaps["3D View Tool: Edit Mesh, " + tool.bl_label ]        
+        draw_tool_keymap( column, keyconfing,keymap)
 
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):

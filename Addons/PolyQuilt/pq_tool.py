@@ -57,10 +57,10 @@ class ToolPolyQuiltBase(WorkSpaceTool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
-            draw_sub_tool( layout , cls.pq_description , cls )
+            draw_sub_tool( context , layout , cls.pq_description , cls )
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
-            draw_sub_tool( layout , cls.pq_description , cls )
+            draw_sub_tool( context , layout , cls.pq_description , cls )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 

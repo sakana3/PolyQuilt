@@ -38,4 +38,4 @@ maintools = {
 
 
 def enum_tool_callback(scene, context ):
-    return ( ( tool , tool , "" ) for tool in maintools )
+    return ( ( tool , tool , "" , "" , index  ) for index , (tool,cls) in enumerate(maintools.items()) )
