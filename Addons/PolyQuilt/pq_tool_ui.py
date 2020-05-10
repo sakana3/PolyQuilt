@@ -101,7 +101,7 @@ def draw_tool_keymap( layout ,keyconfing,keymapname ) :
                     it = it.row()
                     it.active = item.properties.is_property_set("brush_type")
                     it.prop(item.properties, "brush_type" , text = "" , emboss = True )
-    layout.operator(PQ_OT_DirtyKeymap.bl_idname).keymap_name = keymapname
+    layout.operator(PQ_OT_DirtyKeymap.bl_idname)
 
 
 def Hoge() :
@@ -214,10 +214,9 @@ class PQ_OT_DirtyKeymap(bpy.types.Operator) :
     bl_idname = "addon.polyquilt_dirty_keymap"
     bl_label = "Save Keymap"
 
-    keymap_name : bpy.props.StringProperty()
-
     def execute(self, context):
         for keymap in [ k for k in context.window_manager.keyconfigs.user.keymaps if "PolyQuilt" in k.name ] :
+            keymap.show_expanded_items = keymap.show_expanded_items
             for item in reversed(keymap.keymap_items) :
                 if True in (item.oskey,item.shift,item.ctrl,item.alt) :
                     if item.idname == 'mesh.poly_quilt' :
