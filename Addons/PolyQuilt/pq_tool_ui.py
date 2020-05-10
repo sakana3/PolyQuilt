@@ -222,4 +222,5 @@ class PQ_OT_DirtyKeymap(bpy.types.Operator) :
                     if item.idname == 'mesh.poly_quilt' :
                         item.active = item.active
 
+        bpy.ops.wm.save_userpref()
         return {'FINISHED'}
