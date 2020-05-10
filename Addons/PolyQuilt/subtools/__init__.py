@@ -20,20 +20,22 @@ from .maintool_knife import MainToolKnife
 from .maintool_delete import MainToolDelete
 from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
+from .maintool_edgeloop_dissolve import MainToolEdgeLoopDissolve
 
 maintools = {
-    'NONE'          : None ,
-    'MASTER'        : MainToolDefault ,
-    'HOLD'          : MainToolHold ,
-    'LOWPOLY'       : MainToolLowPoly ,
-    'BRUSH'         : MainToolBrush ,
-#   'BRUSH_DELETE'  : MainToolBrushDelete ,
-#   'BRUSH_RELAX'   : MainToolBrushRelax ,
-#   'BRUSH_MOVE'    : MainToolBrushMove ,
-    'EXTRUDE'       : MainToolExtrude ,
-    'KNIFE'         : MainToolKnife ,
-    'DELETE'        : MainToolDelete ,
-    'LOOPCUT'       : MainToolLoopCut ,
+    'NONE'              : None ,
+    'MASTER'            : MainToolDefault ,
+    'HOLD'              : MainToolHold ,
+    'LOWPOLY'           : MainToolLowPoly ,
+    'BRUSH'             : MainToolBrush ,
+#   'BRUSH_DELETE'      : MainToolBrushDelete ,
+#   'BRUSH_RELAX'       : MainToolBrushRelax ,
+#   'BRUSH_MOVE'        : MainToolBrushMove ,
+    'EXTRUDE'           : MainToolExtrude ,
+    'KNIFE'             : MainToolKnife ,
+    'DELETE'            : MainToolDelete ,
+    'LOOPCUT'           : MainToolLoopCut ,
+    'EDGELOOP_DISSOLVE' : MainToolEdgeLoopDissolve ,
 }
 
 

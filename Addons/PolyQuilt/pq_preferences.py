@@ -70,6 +70,53 @@ class PQ_OT_UpdateAddon(bpy.types.Operator):
 
 
 
+class ToolPropertyGroup(bpy.types.PropertyGroup):
+    default_val = 1
+
+    val : bpy.props.IntProperty(
+        name="testint_name",   # 変数名
+        description="",        # 説明文
+        default=1,   # デフォルト値
+        min=1,                 # 最小値
+        max=10,                # 最大値
+    )
+
+class ToolPropertyGroup2(bpy.types.PropertyGroup):
+
+    keymap_category : EnumProperty(
+        name="Tool",
+        description="Tool",
+        items=[
+            ('NONE', "None", ""),
+            ('POLY', "Lowpoly", ""),
+            ('Extrude', "Extrude", ""),
+        ],
+        default='NONE'
+    )    
+
+    brush : EnumProperty(
+        name="Tool",
+        description="Tool",
+        items=[
+            ('NONE', "None", ""),
+            ('POLY', "Lowpoly", ""),
+            ('Extrude', "Extrude", ""),
+        ],
+        default='NONE'
+    )    
+
+    tool_master_shift_alt_ctrl : EnumProperty(
+        name="Tool",
+        items=[
+            ('NONE', "None", ""),
+            ('POLY', "Lowpoly", ""),
+            ('Extrude', "Extrude", ""),
+        ],
+        default='NONE'
+    )    
+
+
+
 def register_updater(bl_info):
     config = AddonUpdaterConfig()
     config.owner = "sakana3"
@@ -283,7 +330,7 @@ class PolyQuiltPreferences(AddonPreferences):
         default='PolyQuilt'
     )    
 
-
+#   keymap_setting : bpy.props.PointerProperty(type=ToolPropertyGroup)
 
     def draw(self, context):
         layout = self.layout
@@ -367,6 +414,9 @@ class PolyQuiltPreferences(AddonPreferences):
             col = layout.column()
             col.scale_y = 1
             layout.row().prop(self, "is_debug" , text = "Debug")
+
+        keymap_prop = self.keymap_setting
+        layout.prop( keymap_prop , "val" )
 
     def draw_updater_ui(self,layout):
         updater = AddonUpdaterManager.get_instance()

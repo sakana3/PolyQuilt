@@ -528,6 +528,9 @@ class QMeshOperators :
         edges = []
         verts = []
 
+        if not isinstance( startEdge , bmesh.types.BMEdge ) :
+            return edges , verts
+
         def append( lst , geom ) :
             if geom not in lst :
                 lst.append(geom)

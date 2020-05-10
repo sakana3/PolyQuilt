@@ -239,6 +239,13 @@ def drawElementsHilight3D( obj , elements, radius,width ,alpha, color = (1,1,1,1
     for element in elements :
         drawElementHilight3D(obj , element, radius ,width,alpha, color)
 
+def drawElementsHilight3DFunc( obj , elements, radius,width ,alpha, color = (1,1,1,1) ) :
+    funcs = [ drawElementHilight3DFunc(obj , e, radius ,width,alpha, color) for e in elements ]
+    def func() :
+        for f in funcs :
+            f()
+    return func
+
 def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_DEPTH_TEST)

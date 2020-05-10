@@ -85,7 +85,8 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
         op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
-def draw_tool_keymap( layout ,keyconfing,keymap ) :
+def draw_tool_keymap( layout ,keyconfing,keymapname ) :
+    keymap = keyconfing.keymaps[keymapname]            
     for item in reversed(keymap.keymap_items) :
         if True in (item.oskey,item.shift,item.ctrl,item.alt) :
             it = layout.row( align = True )
@@ -100,16 +101,21 @@ def draw_tool_keymap( layout ,keyconfing,keymap ) :
                     it = it.row()
                     it.active = item.properties.is_property_set("brush_type")
                     it.prop(item.properties, "brush_type" , text = "" , emboss = True )
+    layout.operator(PQ_OT_DirtyKeymap.bl_idname).keymap_name = keymapname
 
+
+def Hoge() :
+    # Hack!
     # template_keymap_item_propertiesにダーティフラグを処理させるために極小のUIを表示
     for item in reversed(keymap.keymap_items) :
         if True in (item.oskey,item.shift,item.ctrl,item.alt) :
             it = layout.column( align = True )
-            it.scale_x = 0.01
-            it.scale_y = 0.01
-            it.ui_units_x = 0.01
-            it.ui_units_y = 0.01
+#            it.scale_x = 0.1
+#            it.scale_y = 0.1
+#            it.ui_units_x = 0.1
+#            it.ui_units_y = 0.1
             if item.idname == 'mesh.poly_quilt' :
+                it.context_pointer_set('keymap', keymap)
                 it.template_keymap_item_properties(item)
 
 #                   if it.active :
@@ -144,8 +150,7 @@ def draw_sub_tool( context , _layout , text , tool ) :
 
     if preferences.keymap_setting_expanded :
         keyconfing = context.window_manager.keyconfigs.user
-        keymap = keyconfing.keymaps["3D View Tool: Edit Mesh, " + tool.bl_label ]        
-        draw_tool_keymap( column, keyconfing,keymap)
+        draw_tool_keymap( column, keyconfing,"3D View Tool: Edit Mesh, " + tool.bl_label )
 
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
@@ -203,3 +208,19 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
 
 
+
+
+class PQ_OT_DirtyKeymap(bpy.types.Operator) :
+    bl_idname = "addon.polyquilt_dirty_keymap"
+    bl_label = "Save Keymap"
+
+    keymap_name : bpy.props.StringProperty()
+
+    def execute(self, context):
+        for keymap in [ k for k in context.window_manager.keyconfigs.user.keymaps if "PolyQuilt" in k.name ] :
+            for item in reversed(keymap.keymap_items) :
+                if True in (item.oskey,item.shift,item.ctrl,item.alt) :
+                    if item.idname == 'mesh.poly_quilt' :
+                        item.active = item.active
+
+        return {'FINISHED'}
