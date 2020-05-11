@@ -122,7 +122,7 @@ class SubToolEdgeSlice(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        pass
+        draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , self.mouse_pos , (0,2) )                   
 
     def OnDraw3D( self , context  ) :
         func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentEdge , self.draw_deges , self.sliceRate , self.preferences )

@@ -150,9 +150,28 @@ class SubToolBrushRelax(SubToolEx) :
         if self.bmo.is_mirror_mode :
             mirrors = { vert : self.bmo.find_mirror( vert ) for vert , coord in coords.items() }
 
-        bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() ) , factor = self.preferences.brush_strength  ,
+        if not self.effective_boundary :
+            bmesh.ops.smooth_vert( self.bmo.bm , verts = [ c for c in coords.keys() if not c.is_boundary ] , factor = self.preferences.brush_strength  ,
             mirror_clip_x = is_fix_zero, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
             use_axis_x = True, use_axis_y = True, use_axis_z = True)
+        else :
+            boundary = { c for c in coords.keys() if c.is_boundary }
+
+            result = {}
+            for v in boundary :
+                if len(v.link_faces) != 1 :
+                    tv = mathutils.Vector( (0,0,0) )
+                    le = [ e.other_vert( v ).co for e in v.link_edges if e.is_boundary ]
+                    for te in le :
+                        tv = tv + te
+                    result[v] = tv * (1/ len(le) )
+            for v , co in result.items() :
+                v.co = co
+
+            bmesh.ops.smooth_vert( self.bmo.bm , verts = list( coords.keys() - boundary ) , factor = self.preferences.brush_strength  ,
+            mirror_clip_x = is_fix_zero, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
+            use_axis_x = True, use_axis_y = True, use_axis_z = True)
+
 #        bmesh.ops.smooth_laplacian_vert(self.bmo.bm , verts = hits , lambda_factor = 1.0 , lambda_border = 0.0 ,
 #            use_x = True, use_y = True, use_z = True, preserve_volume = False )
 
@@ -161,12 +180,9 @@ class SubToolBrushRelax(SubToolEx) :
         zero_pos = self.bmo.zero_pos
         mirror_pos = self.bmo.mirror_pos
 #       matrix_world_inv = matrix_world.inverted()
-        for v , (f,o) in coords.items() :
-            if self.effective_boundary or not v.is_boundary :
-                p = QSnap.adjust_local( matrix_world , v.co , is_fix_zero )
-            else :
-                p = QSnap.adjust_local( matrix_world , o , is_fix_zero )
-            s = o.lerp( p , f )
+        for v , (f,orig) in coords.items() :
+            p = QSnap.adjust_local( matrix_world , v.co , is_fix_zero )
+            s = orig.lerp( p , f )
             if is_fix_zero and is_x_zero_pos(s) :
                 s = zero_pos(s)
             v.co = s

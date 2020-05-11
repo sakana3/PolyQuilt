@@ -13,6 +13,8 @@
 
 import os
 import bpy
+from .pq_keymap_editor import draw_tool_keymap
+
 from bpy.props import (
     FloatProperty,
     FloatVectorProperty,
@@ -321,37 +323,19 @@ class PolyQuiltPreferences(AddonPreferences):
         box.row().prop(self, "split_color" , text = "SplitColor" )
         box.row().prop(self, "delete_color" , text = "DeleteColor")
 
-        box = layout.box().column()
-        row = box.row()
-        row.prop( self, "keymap_setting_expanded", text="",
+        layout.prop( self, "keymap_setting_expanded", text="Keymap setting",
             icon='TRIA_DOWN' if self.keymap_setting_expanded else 'TRIA_RIGHT')
 
         if self.keymap_setting_expanded :
-            row.row().prop(self, "keymap_category", expand=True)
-            box = box.box().column()
-            for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
-                if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(self.keymap_category) :
-                    for item in reversed(keymap.keymap_items) :
-                        if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-                            it = box.row( align = True )
-        #                   it.prop(item , "active" , text = "" )
-                            if item.idname == 'mesh.poly_quilt' :
-                                it.row(align = True).template_event_from_keymap_item(item)
-                                it.prop(item.properties, "tool_mode" , text = "" )
-                                if( item.properties.tool_mode == 'BRUSH' ) :
-                                    it = it.row()
-                                    it.active = item.properties.is_property_set("brush_type")
-                                    it.prop(item.properties, "brush_type" , text = "" , emboss = True )
+            col = layout.column()
+            col.row().prop(self, "keymap_category", expand=True)
 
-            from .pq_tool_ui import PQ_OT_DirtyKeymap                                    
-            box.operator(PQ_OT_DirtyKeymap.bl_idname)
-
-        else :
-            row.label( text = "Keymap setting" )
+            keyconfing = context.window_manager.keyconfigs.user            
+            draw_tool_keymap( col.box() ,keyconfing , "3D View Tool: Edit Mesh, " + self.keymap_category )
 
         layout.prop( self, "extra_setting_expanded", text="Extra Settings",
-            icon='DISCLOSURE_TRI_DOWN' if self.extra_setting_expanded
-            else 'DISCLOSURE_TRI_RIGHT')
+            icon='TRIA_DOWN' if self.extra_setting_expanded
+            else 'TRIA_RIGHT')
         if self.extra_setting_expanded :
             self.draw_updater_ui(layout)
             col = layout.column()

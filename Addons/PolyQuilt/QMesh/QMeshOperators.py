@@ -333,7 +333,8 @@ class QMeshOperators :
         new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
         dissolve_verts = [ v for v in verts if v.is_valid ]
-        dissolve_verts = self.calc_limit_verts( dissolve_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = False )
+        if dissolve_vert_angle > 0 :
+            dissolve_verts = self.calc_limit_verts( dissolve_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = False )
         if len(dissolve_verts) > 0 :
             bmesh.ops.dissolve_verts( self.bm , verts  = dissolve_verts , use_face_split = use_face_split , use_boundary_tear = False  )
 

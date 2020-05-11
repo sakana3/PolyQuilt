@@ -29,7 +29,8 @@ from .pq_operator import *
 from .pq_operator_add_empty_object import *
 from .pq_icon import *
 from .pq_tool import PolyQuiltTools
-from .pq_tool_ui import VIEW3D_PT_tools_polyquilt_options , PQ_OT_DirtyKeymap
+from .pq_tool_ui import VIEW3D_PT_tools_polyquilt_options
+from .pq_keymap_editor import PQ_OT_DirtyKeymap
 from .gizmo_preselect import * 
 from .pq_preferences import *
 from .translation import pq_translation_dict

@@ -18,11 +18,22 @@ from bpy.utils.toolsystem import ToolDef
 from .pq_icon import *
 import inspect
 import rna_keymap_ui
-
+from bpy.app.translations import pgettext_iface as iface_
+from bpy.app.translations import contexts as i18n_contexts
+from bpy.types import AddonPreferences
 def draw_settings_ui(context, layout, tool):
     props = tool.operator_properties("mesh.poly_quilt")
     preferences = bpy.context.preferences.addons[__package__].preferences
-    
+
+    hoge =  bpy.props.EnumProperty(
+        name="LoopCut Mode",
+        description="LoopCut Mode",
+        items=[('EQUAL' , "Equal", "" ),
+               ('EVEN' , "Even", "" ) ],
+        default='EQUAL',
+    )
+
+
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
 
     col = layout.column(align=True)
@@ -85,73 +96,6 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
         popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
         op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
-def draw_tool_keymap( layout ,keyconfing,keymapname ) :
-    keymap = keyconfing.keymaps[keymapname]            
-    for item in reversed(keymap.keymap_items) :
-        if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-            it = layout.row( align = True )
-#            it.prop(item , "active" , text = "" )
-            if item.idname == 'mesh.poly_quilt' :
-                it.context_pointer_set('keymap', keymap)
-                it.row(align = True).template_event_from_keymap_item(item)
-                it.prop(item.properties , "tool_mode" , text = "" , emboss = True )
-
-                item.id_data.tag = True
-                if( item.properties.tool_mode == 'BRUSH' ) :
-                    it = it.row()
-                    it.active = item.properties.is_property_set("brush_type")
-                    it.prop(item.properties, "brush_type" , text = "" , emboss = True )
-    layout.operator(PQ_OT_DirtyKeymap.bl_idname)
-
-
-def Hoge() :
-    # Hack!
-    # template_keymap_item_propertiesにダーティフラグを処理させるために極小のUIを表示
-    for item in reversed(keymap.keymap_items) :
-        if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-            it = layout.column( align = True )
-#            it.scale_x = 0.1
-#            it.scale_y = 0.1
-#            it.ui_units_x = 0.1
-#            it.ui_units_y = 0.1
-            if item.idname == 'mesh.poly_quilt' :
-                it.context_pointer_set('keymap', keymap)
-                it.template_keymap_item_properties(item)
-
-#                   if it.active :
-#                      it.context_pointer_set( "brush_type"  , item.properties )
-#                it = layout.column()
-#                        rna_keymap_ui.draw_kmi(
-#                                [], keyconfing, keymap, item, it, 0)
-#                       it.template_keymap_item_properties(item)
-#                            for m in inspect.getmembers(item.properties):
-#                                print(m)
-
-def draw_keymap_sample( context , layout ) :
-    keyconfing = context.window_manager.keyconfigs.user    
-    keymap = keyconfing.keymaps["My Addon" ]        
-
-    for item in reversed(keymap.keymap_items) :
-        row = layout.row( align = True )
-        if item.idname == "my_operator" :
-            row.template_event_from_keymap_item(item)
-            row.prop(item.properties , "tool_mode" , text = "" )
-
-def draw_sub_tool( context , _layout , text , tool ) :
-
-    preferences = context.preferences.addons[__package__].preferences
-
-    column = _layout.box().column()    
-    row = column.row()
-    row.prop( preferences, "keymap_setting_expanded", text="",
-        icon='TRIA_DOWN' if preferences.keymap_setting_expanded else 'TRIA_RIGHT')
-
-    row.label(text =text + " Setting")
-
-    if preferences.keymap_setting_expanded :
-        keyconfing = context.window_manager.keyconfigs.user
-        draw_tool_keymap( column, keyconfing,"3D View Tool: Edit Mesh, " + tool.bl_label )
-
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_space_type = 'VIEW_3D'
@@ -161,11 +105,7 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
     bl_context = ".poly_quilt_option"  # dot on purpose (access from topbar)
     bl_label = "Options"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_ui_units_x = 8
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object
+#    bl_ui_units_x = 8
 
     def draw(self, context):
         layout = self.layout
@@ -206,21 +146,3 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         col.label( text = "Brush" )        
         col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
         col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
-
-
-
-
-class PQ_OT_DirtyKeymap(bpy.types.Operator) :
-    bl_idname = "addon.polyquilt_dirty_keymap"
-    bl_label = "Save Keymap"
-
-    def execute(self, context):
-        for keymap in [ k for k in context.window_manager.keyconfigs.user.keymaps if "PolyQuilt" in k.name ] :
-            keymap.show_expanded_items = keymap.show_expanded_items
-            for item in reversed(keymap.keymap_items) :
-                if True in (item.oskey,item.shift,item.ctrl,item.alt) :
-                    if item.idname == 'mesh.poly_quilt' :
-                        item.active = item.active
-
-        bpy.ops.wm.save_userpref()
-        return {'FINISHED'}

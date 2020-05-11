@@ -17,7 +17,7 @@ from bpy.types import WorkSpaceTool , Panel
 from bpy.utils.toolsystem import ToolDef
 from .pq_icon import *
 from .pq_tool_ui import *
-
+from .pq_keymap_editor import draw_tool_keymap_ui
 
 class ToolPolyQuiltBase(WorkSpaceTool):
     pq_main_tool = 'MASTER'
@@ -57,10 +57,10 @@ class ToolPolyQuiltBase(WorkSpaceTool):
         reg = context.region.type
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool )
-            draw_sub_tool( context , layout , cls.pq_description , cls )
+            draw_tool_keymap_ui( context , layout , cls.pq_description , cls)
         elif reg == 'WINDOW' :
             draw_settings_ui( context , layout , tool )
-            draw_sub_tool( context , layout , cls.pq_description , cls )
+            draw_tool_keymap_ui( context , layout , cls.pq_description , cls )
         elif reg == 'TOOL_HEADER' :
             draw_settings_toolheader( context , layout , tool )
 
@@ -147,7 +147,7 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     bl_description = ( "Brush Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_brush_icon")
     bl_widget = "MESH_GGT_PQ_Brush"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] ) 
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool], shift = ['BRUSH'] ) 
 
 
 PolyQuiltTools = (

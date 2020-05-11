@@ -29,7 +29,7 @@ from .subtool_edgeloop_cut import *
 from .subtool_delete import *
 
 class MainToolDelete(MainTool) :
-    name = "DeleteTool"
+    name = "Delete"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button , no_hold = True )        

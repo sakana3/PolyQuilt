@@ -36,7 +36,7 @@ from .subtool_move import *
 from .subtool_fin_slice import *
 
 class MainToolHold(MainTool) :
-    name = "HoldTool"
+    name = "Hold"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(oop,currentTarget, button)        

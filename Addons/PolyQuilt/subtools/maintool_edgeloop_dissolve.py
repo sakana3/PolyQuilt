@@ -50,7 +50,7 @@ class MainToolEdgeLoopDissolve(MainTool) :
         elif event.type == self.buttonType : 
             if event.value == 'RELEASE' :
                 if self.removes :
-                    self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
+                    self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=0 )
                     self.bmo.UpdateMesh()                    
                 return 'FINISHED'
         elif event.type == 'RIGHTMOUSE': 

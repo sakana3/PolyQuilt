@@ -42,7 +42,7 @@ from ..utils.dpi import *
 
 
 class MainToolBrush(MainTool) :
-    name = "BrushSubTool"
+    name = "Brush"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button)        
@@ -118,11 +118,12 @@ class MainToolBrush(MainTool) :
 
     @classmethod
     def recive_event( cls , gizmo , context , event ) :
-        if event.type == 'WHEELUPMOUSE' :
-            cls.change_brush_size( gizmo.preferences , context ,-50 , 0 )
+        if any( [ event.shift , event.ctrl , event.alt,  event.oskey ] ) :
+            if event.type == 'WHEELUPMOUSE' :
+                cls.change_brush_size( gizmo.preferences , context ,-50 , 0 )
 
-        if event.type == 'WHEELDOWNMOUSE' :
-            cls.change_brush_size( gizmo.preferences , context , 50 , 0 )
+            if event.type == 'WHEELDOWNMOUSE' :
+                cls.change_brush_size( gizmo.preferences , context , 50 , 0 )
 
         return {'PASS_THROUGH'}
 
