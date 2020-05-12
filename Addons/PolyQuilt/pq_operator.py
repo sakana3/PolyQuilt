@@ -351,6 +351,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
             QSnap.remove_ref()
             context.window.cursor_set( 'DEFAULT' )
             bpy.app.handlers.depsgraph_update_post.remove( MESH_OT_poly_quilt_daemon.depsgraph_update_post_handler )
+            bpy.app.handlers.depsgraph_update_pre.remove( MESH_OT_poly_quilt_daemon.depsgraph_update_pre_handler )
             return {'CANCELLED'}
 
         PQ_GizmoGroup_Base.recive_event( context, event )
@@ -363,10 +364,15 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
         MESH_OT_poly_quilt_daemon.is_running = True
         context.window_manager.modal_handler_add(self)
         bpy.app.handlers.depsgraph_update_post.append( MESH_OT_poly_quilt_daemon.depsgraph_update_post_handler )
+        bpy.app.handlers.depsgraph_update_pre.append( MESH_OT_poly_quilt_daemon.depsgraph_update_pre_handler )
         return {'RUNNING_MODAL'}
 
     @staticmethod
     def depsgraph_update_post_handler( scene):
+        PQ_GizmoGroup_Base.depsgraph_update_post( scene )
+
+    @staticmethod
+    def depsgraph_update_pre_handler( scene):
         PQ_GizmoGroup_Base.depsgraph_update_post( scene )
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):

@@ -29,6 +29,7 @@ class SubToolEdgeSlice(SubTool) :
 
     def __init__(self,op, target , mouse_pos ) :
         super().__init__(op)
+        self.currentTarget = target
         self.currentEdge = target.element
         l0 = (self.bmo.local_to_world_pos(target.element.verts[0].co) - target.hitPosition).length
         l1 = (self.bmo.local_to_world_pos(target.element.verts[1].co) - target.hitPosition).length
@@ -50,7 +51,8 @@ class SubToolEdgeSlice(SubTool) :
             func = cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
             def draw() :
                 func()           
-#                draw_util.DrawFont( '{:.2f}'.format( sliceRate) , 10 , mathutils.Vector( (100,100))  , (0,2) )      
+                with draw_util.push_pop_projection2D() :
+                    draw_util.DrawFont( '{:.2f}'.format(sliceRate) , 10 , target.coord , (0,2) )           
             return draw
 
         return None
@@ -92,9 +94,6 @@ class SubToolEdgeSlice(SubTool) :
                 if snaps :
                     draw_util.draw_pivots3D( snaps , 0.75 , color_split(0.25) )
 
-                with draw_util.push_pop_projection2D() :
-                    draw_util.DrawFont( '{:.2f}'.format(sliceRate) , 10 , currentEdge.coord , (0,2) )           
-
             return Draw
 
         def Noting() :
@@ -125,8 +124,9 @@ class SubToolEdgeSlice(SubTool) :
         draw_util.DrawFont( '{:.2f}'.format(self.sliceRate) , 10 , self.mouse_pos , (0,2) )                   
 
     def OnDraw3D( self , context  ) :
-        func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentEdge , self.draw_deges , self.sliceRate , self.preferences )
-        func()
+        if self.currentTarget.isEdge :
+            func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentTarget , self.draw_deges , self.sliceRate , self.preferences )
+            func()
 
     def calc_slice_rate( self , edge , refarence , rate ) :
         if self.operator.loopcut_mode == 'EVEN' :
