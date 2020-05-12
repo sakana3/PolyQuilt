@@ -21,6 +21,8 @@ import bpy_extras
 import collections
 import time
 import copy
+import os
+import gc
 from .utils.pqutil import *
 from .utils import draw_util
 from .utils.dpi import *
@@ -29,7 +31,6 @@ from .subtools import *
 from .QMesh import *
 from .gizmo_preselect import PQ_GizmoGroup_Base            
 
-import os
 import bpy.utils.previews
 
 __all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' , 'MESH_OT_poly_quilt_brush_size']
@@ -268,7 +269,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     def cancel( self , context):
         MESH_OT_poly_quilt.handle_remove()
         self.RemoveTimerEvent(context)
-        
+        gc.collect()
+
     @staticmethod
     def draw_callback_px(self , context , region_data):
         draw_util.begin_draw()
@@ -333,6 +335,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     bl_label = "PolyQuiltDaemon"
 
     is_running = False
+    is_scene_update = False
 
     @classmethod
     def poll( cls , context ) :
@@ -347,6 +350,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
             MESH_OT_poly_quilt_daemon.is_running = False
             QSnap.remove_ref()
             context.window.cursor_set( 'DEFAULT' )
+            bpy.app.handlers.depsgraph_update_post.remove( MESH_OT_poly_quilt_daemon.depsgraph_update_post_handler )
             return {'CANCELLED'}
 
         PQ_GizmoGroup_Base.recive_event( context, event )
@@ -358,7 +362,12 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
         QSnap.add_ref( context )
         MESH_OT_poly_quilt_daemon.is_running = True
         context.window_manager.modal_handler_add(self)
+        bpy.app.handlers.depsgraph_update_post.append( MESH_OT_poly_quilt_daemon.depsgraph_update_post_handler )
         return {'RUNNING_MODAL'}
+
+    @staticmethod
+    def depsgraph_update_post_handler( scene):
+        MESH_OT_poly_quilt_daemon.is_scene_update = True
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
     """Change Brush Size"""

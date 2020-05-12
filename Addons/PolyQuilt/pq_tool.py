@@ -42,12 +42,12 @@ class ToolPolyQuiltBase(WorkSpaceTool):
             keyitem( "s" , shift ) ,  
             keyitem( "c" , ctrl ) ,  
             keyitem( "a" , alt ) ,  
-            keyitem( "sc" , ['NONE'] ) ,  
+            keyitem( "cs" , ['NONE'] ) ,  
             keyitem( "sa" , ['NONE'] ) ,  
             keyitem( "ca" , ['NONE'] ) ,  
             keyitem( "os" , ['NONE'] ) ,  
-            keyitem( "oa" , ['NONE'] ) ,  
             keyitem( "oc" , ['NONE'] ) ,  
+            keyitem( "oa" , ['NONE'] ) ,  
 
             ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
         )

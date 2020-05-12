@@ -36,6 +36,56 @@ class QMeshOperators :
         self.preferences = preferences
 
 
+    def _CheckValid( self , context ) :
+        active_obj = context.active_object
+        if self.obj != context.active_object or self.mesh != context.active_object.data or self.bm.is_valid is False :
+            return False
+        bm = bmesh.from_edit_mesh(self.mesh)
+        if bm != self.bm :
+            return False
+
+        return True
+
+    def ensure_lookup_table( self ) :
+        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
+        self.bm.faces.ensure_lookup_table()
+        self.bm.verts.ensure_lookup_table()
+        self.bm.edges.ensure_lookup_table()      
+
+    def reload_obj( self , context ) :
+        self.obj = context.active_object
+        if self.obj != None :
+            self.mesh = self.obj.data
+            self.bm = bmesh.from_edit_mesh(self.mesh)
+            self.ensure_lookup_table()
+        else :
+            self.mesh = None
+            self.bm = None
+        self.current_matrix = None
+        self.reload_tree()            
+
+    def reload_tree( self ) :
+        if self.__btree :
+            del self.__btree
+            self.__btree = None
+        if self.__kdtree :
+            del self.__kdtree
+            self.__kdtree = None
+
+
+    def UpdateMesh( self ) :
+        self.ensure_lookup_table()
+        self.bm.normal_update()
+
+        self.obj.data.update_gpu_tag()
+        self.obj.data.update_tag()
+        self.obj.update_tag()
+        bmesh.update_edit_mesh(self.obj.data)
+#       self.obj.update_from_editmode()
+        self.__btree = None
+        self.__kdtree = None
+        self.current_matrix = None    
+
     @property
     def btree(self):
         if self.__btree == None :
@@ -149,60 +199,6 @@ class QMeshOperators :
         radius = self.preferences.distance_to_highlight * dpm()
         return (c0-c1).length <= radius 
 
-
-    def _CheckValid( self , context ) :
-        if self.obj != context.active_object or self.bm.is_valid is False :
-            return False
-        return True
-
-    def ensure_lookup_table( self ) :
-        # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
-        self.bm.faces.ensure_lookup_table()
-        self.bm.verts.ensure_lookup_table()
-        self.bm.edges.ensure_lookup_table()      
-
-    def reload_obj( self , context ) :
-        self.obj = context.active_object
-        if self.obj != None :
-            self.mesh = self.obj.data
-            self.bm = bmesh.from_edit_mesh(self.mesh)
-            self.ensure_lookup_table()
-        else :
-            self.mesh = None
-            self.bm = None
-        self.current_matrix = None
-        self.reload_tree()            
-
-    def reload_tree( self ) :
-        if self.__btree :
-            del self.__btree
-            self.__btree = None
-        if self.__kdtree :
-            del self.__kdtree
-            self.__kdtree = None
-
-
-    def UpdateMesh( self ) :
-        self.ensure_lookup_table()
-        self.bm.normal_update()
-
-        self.obj.data.update_gpu_tag()
-        self.obj.data.update_tag()
-        self.obj.update_tag()
-        bmesh.update_edit_mesh(self.obj.data)
-#       self.obj.update_from_editmode()
-        self.__btree = None
-        self.__kdtree = None
-        self.current_matrix = None    
-
-    def UpdateMesh2( self ) :
-        self.ensure_lookup_table()
-        self.bm.normal_update()
-        bmesh.update_edit_mesh(self.mesh , loop_triangles = True,destructive = True )
-        self.bm = bmesh.from_edit_mesh(self.mesh)        
-        self.__btree = None
-        self.__kdtree = None
-        self.current_matrix = None    
 
     def AddVertex( self , local_pos : Vector , is_mirror = None ) :
         vert = self.bm.verts.new( local_pos )

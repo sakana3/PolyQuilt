@@ -70,7 +70,6 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.bmo.UpdateView(context)
         QSnap.update(context)
 
-
         if self.subtool != None :
             element = self.subtool.pick_element( self.bmo , location , self.preferences )
             element.set_snap_div( self.preferences.loopcut_division )
@@ -104,7 +103,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def recive_event( self , context , event ) :
         subtool = self.maintool
 
-        keyitem = self.get_keyitem( event )
+        keyitem = self.get_keyitem( event.shift , event.ctrl , event.alt,  event.oskey )
         if keyitem and hasattr( keyitem.properties , "tool_mode" ) :
             subtool = maintools[ keyitem.properties.tool_mode ]
 
@@ -119,19 +118,15 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         if context.region_data == self.region and self.subtool:
             self.subtool.recive_event( self , context , event )
 
-    def get_keyitem( self , event ) :
-        keyitems = self.get_keyitems( self.tool )
-        for item in keyitems :
-            if [ item.shift , item.ctrl , item.alt,  item.oskey ] == [ event.shift , event.ctrl , event.alt,  event.oskey ] :
-                if item.active :
-                    return item
+    def get_keyitem( self , shift , ctrl , alt,  oskey ) :
+        keymap = bpy.context.window_manager.keyconfigs.user.keymaps["3D View Tool: Edit Mesh, " + self.tool.bl_label]
+        keyitems = [ item for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' ]
+        for item in keymap.keymap_items :
+            if item.idname == 'mesh.poly_quilt' :
+                if [ item.shift , item.ctrl , item.alt,  item.oskey ] == [ shift , ctrl , alt,  oskey ] :
+                    if item.active :
+                        return item
         return None
-
-    def get_keyitems( self , tool ) :
-        for keymap in bpy.context.window_manager.keyconfigs.user.keymaps:
-            if keymap.bl_owner_id == 'PolyQuilt' and keymap.name.endswith(tool.bl_label) :
-                return [ item for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' ]
-        return []
 
 class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     my_tool = ToolPolyQuiltBase

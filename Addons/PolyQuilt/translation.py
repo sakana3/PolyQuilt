@@ -24,6 +24,8 @@ pq_translation_dict = {
             ("*", "LoopCut") : "ループカット" ,
             ("*", "Brush_Delete") : "削除ブラシ" ,
             ("*", "Space Drag Operation") : "スペースでドラッグした時の操作" ,
+            ("*", "EdgeLoop Cut") : "エッジループカット" ,
+            ("*", "Dissolve EdgeLoop") : "エッジループ消去" ,
         }
 }
 

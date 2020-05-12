@@ -276,6 +276,8 @@ class ElementItem :
         element = self.element    
         with draw_util.push_pop_projection2D() :
             p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
+            if p1 == None :
+                return
             length = (v0-v1).length
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
@@ -287,7 +289,8 @@ class ElementItem :
                 for loop in [ l for l in face.loops if l.edge == element ]:
                     tangent = element.calc_tangent( loop )
                     p = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos (element.verts[0].co + tangent ) )
-                    tangents.append( (p - v0).normalized() )
+                    if p:
+                        tangents.append( (p - v0).normalized() )
 
             can_extrude = False
             if len( [ t for t in tangents if t.dot( norm ) > 0 ] ) <= 0 :
@@ -318,6 +321,10 @@ class ElementItem :
             p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
             v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
             v1 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[1].co) )
+
+            if None in (p1,v0,v1) :
+                return False
+
             length = (v0-v1).length
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
