@@ -367,7 +367,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
 
     @staticmethod
     def depsgraph_update_post_handler( scene):
-        MESH_OT_poly_quilt_daemon.is_scene_update = True
+        PQ_GizmoGroup_Base.depsgraph_update_post( scene )
 
 class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
     """Change Brush Size"""

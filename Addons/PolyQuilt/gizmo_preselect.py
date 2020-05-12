@@ -192,6 +192,12 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
         for gizmo in cls.child_gizmos :
             gizmo.recive_event( context , event)
 
+    @classmethod
+    def depsgraph_update_post( cls , scene ) :
+        for gizmo in cls.child_gizmos :
+            gizmo.refresh( bpy.context )
+
+
 class PQ_GizmoGroup_Preselect(PQ_GizmoGroup_Base):
     my_tool = ToolPolyQuilt
     bl_idname = my_tool.bl_widget
