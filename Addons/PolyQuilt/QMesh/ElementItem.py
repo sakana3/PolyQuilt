@@ -50,6 +50,32 @@ class ElementItem :
         self.__div = 0
         self.setup_mirror()
 
+    @property
+    def bm( self ) :
+        return self.qmesh.bm
+
+    @property
+    def index(self):
+        return self.__index
+
+    def update_index( self ) :
+        if self.__element :
+            self.__index = __element.index
+
+    def update_element( self ) :
+        self.__element = self.element
+
+    @property
+    def element(self):
+        if self.isEdge :
+            return self.__qmesh.bm.edges[self.__index]
+        elif self.isVert :
+            return self.__qmesh.bm.verts[self.__index]
+        elif self.isFace :
+            return self.__qmesh.bm.faces[self.__index]
+        return None
+
+
     def setup_mirror( self ) :
         if self.__qmesh is not None :
             is_mirror_mode = self.__qmesh.is_mirror_mode
@@ -61,8 +87,8 @@ class ElementItem :
     def set_snap_div( self , div : int ) :
         self.__div = div
         if self.isEdge :
-            p0 = self.__element.verts[0].co
-            p1 = self.__element.verts[1].co
+            p0 = self.element.verts[0].co
+            p1 = self.element.verts[1].co
             dic = [ ( self.__coord - self.__qmesh.local_to_2d( p0.lerp( p1 , (i+1.0) / (div + 1.0) ) ) ).length for i in range(div ) ]
             if div > 0 :
                 val = None
@@ -80,19 +106,6 @@ class ElementItem :
                     self.__hitPosition = self.__qmesh.local_to_world_pos(val)
                     self.__coord = self.__qmesh.world_to_2d( self.__hitPosition )
 
-    @property
-    def index(self):
-        return self.__index
-
-    @property
-    def element(self):
-        if self.isEdge :
-            return self.__element if self.is_valid else None
-        elif self.isVert :
-            return self.__element if self.is_valid else None
-        elif self.isFace :
-            return self.__element if self.is_valid else None
-        return None
 
     @property
     def mirror(self):
@@ -205,11 +218,11 @@ class ElementItem :
 
     @property
     def type_name(self)  :
-        if isinstance( self.__element , bmesh.types.BMVert ) :
+        if isinstance( self.element , bmesh.types.BMVert ) :
             return 'VERT'
-        elif isinstance( self.__element , bmesh.types.BMEdge ) :
+        elif isinstance( self.element , bmesh.types.BMEdge ) :
             return 'EDGE'
-        elif isinstance( self.__element , bmesh.types.BMFace ) :
+        elif isinstance( self.element , bmesh.types.BMFace ) :
             return 'FACE'
         return ''
 

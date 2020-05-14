@@ -149,6 +149,10 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             self.report({'WARNING'}, "Oops!context.region is None!Cancel operation:(" )
             return {'CANCELLED'}            
 
+        if self.bmo.CheckValid(context) == False :
+            self.report({'WARNING'}, "Oops!Data black was broken! Cancel operation:(" )
+            return {'CANCELLED'}            
+
         try :
             val = self.update( context, event)
         except Exception as e:
