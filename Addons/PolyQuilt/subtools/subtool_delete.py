@@ -106,6 +106,12 @@ class SubToolDelete(SubToolEx) :
 
     def RemoveElement( self , element ) :
         def dissolve_edges( edges ) :
+            single_edges = [ e for e in edges if len(e.link_faces) == 0 ]
+            edges =  [ e for e in edges if len(e.link_faces) > 0 ]
+
+            if single_edges :
+                self.bmo.delete_edges( list(single_edges) )
+
             if all( e.is_boundary for e in edges ) :
                 faces = set()
                 for e in edges :

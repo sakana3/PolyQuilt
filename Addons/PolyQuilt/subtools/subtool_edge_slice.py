@@ -44,11 +44,18 @@ class SubToolEdgeSlice(SubTool) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , target : ElementItem ) :
+        mode = gizmo.get_attr("loopcut_mode")
+
         if target != None and gizmo.bmo != None :
             split_deges , draw_deges , endTriangles , fixCenter = cls.CalcSlice( gizmo.bmo , target.element )
             co = target.world_co
+
+            l0 = (gizmo.bmo.local_to_world_pos(target.element.verts[0].co) - target.hitPosition).length
+            l1 = (gizmo.bmo.local_to_world_pos(target.element.verts[1].co) - target.hitPosition).length
+            reference_point = 0 if l0 > l1 else 1
+
             sliceRate = ( co[0] - target.hitPosition ).length / ( co[0] - co[1] ).length
-            func = cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences )
+            func = cls.DrawFunc( gizmo.bmo , target , draw_deges , sliceRate , gizmo.preferences , mode , reference_point )
             def draw() :
                 func()           
                 with draw_util.push_pop_projection2D() :
@@ -58,13 +65,13 @@ class SubToolEdgeSlice(SubTool) :
         return None
 
     @classmethod
-    def DrawFunc( cls , bmo , currentEdge , cut_deges , sliceRate : float , preferences  ) :
+    def DrawFunc( cls , bmo , currentEdge , cut_deges , sliceRate : float , preferences , mode , reference_point ) :
         if sliceRate > 0 and sliceRate < 1 :
             def color_split( alpha = 1.0 ):
                 col = preferences.split_color            
                 return (col[0],col[1],col[2],col[3] * alpha )
             def calc_slice_rate( edge , refarence , rate ) :
-                return rate if refarence == 0 else 1.0 - rate
+                return SubToolEdgeSlice.calc_slice_rate( currentEdge.element , reference_point , edge , refarence , rate , mode )
 
             size = preferences.highlight_vertex_size          
             width = preferences.highlight_line_width
@@ -125,14 +132,14 @@ class SubToolEdgeSlice(SubTool) :
 
     def OnDraw3D( self , context  ) :
         if self.currentTarget.isEdge :
-            func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentTarget , self.draw_deges , self.sliceRate , self.preferences )
+            func = SubToolEdgeSlice.DrawFunc( self.bmo , self.currentTarget , self.draw_deges , self.sliceRate , self.preferences , self.operator.loopcut_mode , self.reference_point )
             func()
-
-    def calc_slice_rate( self , edge , refarence , rate ) :
-        if self.operator.loopcut_mode == 'EVEN' :
-            len0 = self.currentEdge.calc_length()
+    @staticmethod
+    def calc_slice_rate( currentEdge , reference_point , edge , refarence , rate , mode ) :
+        if mode == 'EVEN' :
+            len0 = currentEdge.calc_length()
             len1 = edge.calc_length()
-            if self.reference_point == 0 :
+            if reference_point == 0 :
                 rate = 1 - max( min( ( (len0 / len1) * (1-rate) ) , 1.0 ) , 0.0 )
             else :
                 rate = max( min( ( len0 / len1 * rate ) , 1.0 ) , 0.0 )
@@ -230,7 +237,7 @@ class SubToolEdgeSlice(SubTool) :
         _slice = {}
         for split_dege in self.split_deges :
             edges.append( split_dege[0] )
-            _slice[ split_dege[0] ] = self.calc_slice_rate( split_dege[0] , split_dege[1] , sliceRate )
+            _slice[ split_dege[0] ] = SubToolEdgeSlice.calc_slice_rate( self.currentEdge ,self.reference_point, split_dege[0] , split_dege[1] , sliceRate , self.operator.loopcut_mode )
 
         ret = bmesh.ops.subdivide_edges(
              self.bmo.bm ,

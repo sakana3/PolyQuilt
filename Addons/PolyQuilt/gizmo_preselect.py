@@ -47,6 +47,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.subtool = self.maintool
         self.region = context.region_data
         self.bmo = QMesh( context.active_object , self.preferences )
+        self.keyitem = None
         if self.subtool :
             context.window.cursor_set( self.subtool.GetCursor() )
 
@@ -103,9 +104,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def recive_event( self , context , event ) :
         subtool = self.maintool
 
-        keyitem = self.get_keyitem( event.shift , event.ctrl , event.alt,  event.oskey )
-        if keyitem and hasattr( keyitem.properties , "tool_mode" ) :
-            subtool = maintools[ keyitem.properties.tool_mode ]
+        self.keyitem = self.get_keyitem( event.shift , event.ctrl , event.alt,  event.oskey )
+        if self.keyitem and hasattr( self.keyitem.properties , "tool_mode" ) :
+            subtool = maintools[ self.keyitem.properties.tool_mode ]
 
         if self.subtool != subtool :
             self.subtool = subtool
@@ -127,6 +128,18 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
                     if item.active :
                         return item
         return None
+
+    def get_attr( self , attr ) :
+        if self.keyitem :
+            if self.keyitem.properties.is_property_set("loopcut_mode") :
+                return getattr( self.keyitem.properties , attr )
+
+        pq = [ tool for tool in bpy.context.workspace.tools if "mesh_tool.poly_quilt" in tool.idname ]
+        if pq :
+            props = pq[0].operator_properties("mesh.poly_quilt")
+            return getattr( props , attr )
+        return None
+
 
 class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     my_tool = ToolPolyQuiltBase

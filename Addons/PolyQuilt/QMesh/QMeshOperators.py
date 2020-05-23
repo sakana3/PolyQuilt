@@ -287,6 +287,14 @@ class QMeshOperators :
             faces = list( set(faces) | mirror_faces )
         bmesh.ops.delete( self.bm , geom = faces , context = 'FACES' )
 
+    def delete_edges( self , edges , is_mirror = None ) :
+        if self.check_mirror(is_mirror) :
+            mirror_edges = [self.find_mirror(edge) for edge in edges ]
+            mirror_edges = {edge for edge in mirror_edges if edge is not None }
+            edges = list( set(edges) | mirror_edges )
+        bmesh.ops.delete( self.bm , geom = edges , context = 'FACES' )
+
+
     def dissolve_vert( self , vert  , use_verts = False , use_face_split = False , use_boundary_tear = False, dissolve_vert_angle = 180, is_mirror = None  ) :
         if vert.is_manifold == False :
             self.Remove( vert , is_mirror )
