@@ -41,7 +41,7 @@ class SubToolSeam(MainTool) :
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
-        element = qmesh.PickElement( location , preferences.distance_to_highlight , elements = ["EDGE","VERT"] )        
+        element = qmesh.PickElement( location , preferences.distance_to_highlight , elements = ["EDGE"] )        
         return element
 
     def OnUpdate( self , context , event ) :

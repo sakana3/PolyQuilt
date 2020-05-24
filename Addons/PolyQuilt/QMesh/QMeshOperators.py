@@ -626,6 +626,8 @@ class QMeshOperators :
 
 
     def calc_shortest_pass( self , bm , start , end ) :
+        from .QMesh import SelectStack        
+
         if isinstance( start , bmesh.types.BMFace ) :
             for edge in start.edges :
                 if end in edge.link_faces :
@@ -640,18 +642,20 @@ class QMeshOperators :
                     return ([edge],[])
 
         def calc( s , e ) :
+            if s == e :
+                return [s]
+
             if isinstance( e , bmesh.types.BMVert ) and isinstance( s , bmesh.types.BMVert ) :
                 for le in s.link_edges :
                     if le.other_vert( s ) == e :
                         return [le]
 
             bpy.ops.mesh.select_all(action='DESELECT')
+            bm.select_history = []
             s.select = True
             e.select = True
-            bk = bpy.context.tool_settings.mesh_select_mode[0:3]
             bpy.context.tool_settings.mesh_select_mode = ( isinstance( s , bmesh.types.BMVert ) , isinstance( s , bmesh.types.BMEdge ) , isinstance( s , bmesh.types.BMFace ) )
             bpy.ops.mesh.shortest_path_select( edge_mode = 'SELECT' , use_face_step = False , use_topology_distance = False , use_fill = False )
-            bpy.context.tool_settings.mesh_select_mode = bk
 
             ss = []
             if isinstance( s , bmesh.types.BMFace ) :
@@ -663,9 +667,10 @@ class QMeshOperators :
                 if not ss :
                     ss = [ f for f in bm.verts if f.select ]
 
+            bpy.ops.mesh.select_all(action='DESELECT')
+
             return ss
 
-        from .QMesh import SelectStack
 
         select = SelectStack( bpy.context , bm )
         select.push()
@@ -673,8 +678,8 @@ class QMeshOperators :
         if isinstance( start , bmesh.types.BMVert ) and isinstance( end , bmesh.types.BMEdge ) :
             c0 = calc( start , end.verts[0] )
             c1 = calc( start , end.verts[1] )
-            l0 = sum( [ e.calc_length() for e in c0 if not isinstance( e , bmesh.types.BMVert ) ] )
-            l1 = sum( [ e.calc_length() for e in c1 if not isinstance( e , bmesh.types.BMVert ) ] )
+            l0 = sum( [ e.calc_length() for e in c0 if isinstance( e , bmesh.types.BMEdge ) ] )
+            l1 = sum( [ e.calc_length() for e in c1 if isinstance( e , bmesh.types.BMEdge ) ] )
             collect = c0 if l0 < l1 else c1
             if end not in collect :
                 collect.append( end )
