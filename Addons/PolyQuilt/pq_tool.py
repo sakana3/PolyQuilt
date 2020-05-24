@@ -55,14 +55,20 @@ class ToolPolyQuiltBase(WorkSpaceTool):
     @classmethod
     def draw_settings( cls ,context, layout, tool):
         reg = context.region.type
+
+#       keyconfigs = context.window_manager.keyconfigs.user            
+#       keymap = keyconfigs.keymaps["3D View Tool: Edit Mesh, " + cls.bl_label ]            
+#       tools = [ item.properties.tool_mode for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' and hasattr( item.properties , "tool_mode" ) ]
+        tools = [ "MASTER" ]
+
         if reg == 'UI' :
-            draw_settings_ui( context , layout , tool )
+            draw_settings_ui( context , layout , tool  , ui = tools)
             draw_tool_keymap_ui( context , layout , cls.pq_description , cls)
         elif reg == 'WINDOW' :
-            draw_settings_ui( context , layout , tool )
+            draw_settings_ui( context , layout , tool  , ui = tools)
             draw_tool_keymap_ui( context , layout , cls.pq_description , cls )
         elif reg == 'TOOL_HEADER' :
-            draw_settings_toolheader( context , layout , tool )
+            draw_settings_toolheader( context , layout , tool , ui = tools )
 
 class ToolPolyQuilt(ToolPolyQuiltBase):
     pq_main_tool = 'MASTER'
@@ -149,6 +155,18 @@ class ToolPolyQuiltBrush(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Brush"
     bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool], shift = ['BRUSH'] ) 
 
+class ToolPolyQuiltSeam(ToolPolyQuiltBase):
+    pq_main_tool = 'MARK_SEAM'
+    pq_description = 'Seam Tool'
+
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_seam"
+    bl_label = "PolyQuilt:Seam"
+    bl_description = ( "Seam Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_seam_icon")
+    bl_widget = "MESH_GGT_PQ_Seam"
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] ) 
+
 
 PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },
@@ -158,4 +176,5 @@ PolyQuiltTools = (
     { 'tool' : ToolPolyQuiltKnife  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltBrush  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltSeam , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
 )

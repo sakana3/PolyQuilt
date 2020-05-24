@@ -244,12 +244,12 @@ class ElementItem :
         func = self.DrawFunc( obj , color , preferences , marker , edge_pivot )
         func()
 
-    def DrawFunc( self , obj , color , preferences , marker = False , edge_pivot = True ) :
+    def DrawFunc( self , obj , color , preferences , marker = False , edge_pivot = True , width = None ) :
         funcs = []
 
         if self.is_valid :
             size = preferences.highlight_vertex_size
-            width = preferences.highlight_line_width
+            width = preferences.highlight_line_width if width == None else width
             alpha = preferences.highlight_face_alpha
             element = self.element
 

@@ -529,7 +529,7 @@ class QMeshOperators :
                 vert = None
         return edges , verts
 
-    def calc_edge_loop( self , startEdge ) :
+    def calc_edge_loop( self , startEdge , check_func = None ) :
         edges = []
         verts = []
 
@@ -565,6 +565,11 @@ class QMeshOperators :
                     share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
                     if len(share_edges) != 1 :
                         break
+
+                    if check_func :
+                        if check_func( preEdge , currentV ) == False :
+                            break
+
                     preEdge = list(share_edges)[0]
 
                     if currentV not in verts :
@@ -577,6 +582,8 @@ class QMeshOperators :
                     preEdge = share_edges[0]
                 else :
                     break
+
+
                 currentV = preEdge.other_vert(currentV)
                 if currentV == vert:
                     break
@@ -616,3 +623,71 @@ class QMeshOperators :
             edges = [ step( e ) for e in edges ]
             edges = [ e for e in sum(edges, []) if e ]
         return loops
+
+
+    def calc_shortest_pass( self , bm , start , end ) :
+        if isinstance( start , bmesh.types.BMFace ) :
+            for edge in start.edges :
+                if end in edge.link_faces :
+                    return ([start,end],[])
+        elif isinstance( start , bmesh.types.BMEdge ) :
+            for vert in start.verts :
+                if end in vert.link_edges :
+                    return ([start,end],[])
+        elif isinstance( start , bmesh.types.BMVert ) :
+            for edge in start.link_edges :
+                if end in edge.verts :
+                    return ([edge],[])
+
+        def calc( s , e ) :
+            if isinstance( e , bmesh.types.BMVert ) and isinstance( s , bmesh.types.BMVert ) :
+                for le in s.link_edges :
+                    if le.other_vert( s ) == e :
+                        return [le]
+
+            bpy.ops.mesh.select_all(action='DESELECT')
+            s.select = True
+            e.select = True
+            bk = bpy.context.tool_settings.mesh_select_mode[0:3]
+            bpy.context.tool_settings.mesh_select_mode = ( isinstance( s , bmesh.types.BMVert ) , isinstance( s , bmesh.types.BMEdge ) , isinstance( s , bmesh.types.BMFace ) )
+            bpy.ops.mesh.shortest_path_select( edge_mode = 'SELECT' , use_face_step = False , use_topology_distance = False , use_fill = False )
+            bpy.context.tool_settings.mesh_select_mode = bk
+
+            ss = []
+            if isinstance( s , bmesh.types.BMFace ) :
+                ss = [ f for f in bm.faces if f.select ]
+            elif isinstance( s , bmesh.types.BMEdge ) :
+                ss = [ f for f in bm.edges if f.select ]
+            elif isinstance( s , bmesh.types.BMVert ) :
+                ss = [ f for f in bm.edges if f.select ]
+                if not ss :
+                    ss = [ f for f in bm.verts if f.select ]
+
+            return ss
+
+        from .QMesh import SelectStack
+
+        select = SelectStack( bpy.context , bm )
+        select.push()
+
+        if isinstance( start , bmesh.types.BMVert ) and isinstance( end , bmesh.types.BMEdge ) :
+            c0 = calc( start , end.verts[0] )
+            c1 = calc( start , end.verts[1] )
+            l0 = sum( [ e.calc_length() for e in c0 if not isinstance( e , bmesh.types.BMVert ) ] )
+            l1 = sum( [ e.calc_length() for e in c1 if not isinstance( e , bmesh.types.BMVert ) ] )
+            collect = c0 if l0 < l1 else c1
+            if end not in collect :
+                collect.append( end )
+        elif isinstance( start , bmesh.types.BMEdge ) and isinstance( end , bmesh.types.BMVert ) :
+            c0 = calc( start.verts[0] , end )
+            c1 = calc( start.verts[1] , end )
+            l0 = sum( [ e.calc_length() for e in c0 if not isinstance( e , bmesh.types.BMVert ) ] )
+            l1 = sum( [ e.calc_length() for e in c1 if not isinstance( e , bmesh.types.BMVert ) ] )
+            collect = c0 if l0 < l1 else c1
+            if start not in collect :
+                collect.append( start )
+        else :
+            collect = calc( start , end )
+
+        select.pop()
+        return ( collect , [] )

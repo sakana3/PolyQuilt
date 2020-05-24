@@ -146,6 +146,7 @@ class SelectStack :
     def __init__(self, context , bm) :
         self.context = context
         self.bm = bm
+        self.mesh_select_mode = context.tool_settings.mesh_select_mode[0:3]
 
     def push( self ) :
         self.mesh_select_mode = self.context.tool_settings.mesh_select_mode[0:3]
@@ -153,14 +154,13 @@ class SelectStack :
         self.face_selection = [ f.select for f in self.bm.faces ]
         self.edge_selection = [ e.select for e in self.bm.edges ]
         self.select_history = self.bm.select_history[:]
+        self.mesh_select_mode = self.context.tool_settings.mesh_select_mode[0:3]
 
     def select_mode( self , vert , edge , face ) :
         self.context.tool_settings.mesh_select_mode = (vert , edge , face)
 
 
     def pop( self ) :
-        self.context.tool_settings.mesh_select_mode = self.mesh_select_mode
-
         for select , v in zip( self.vert_selection , self.bm.verts ) :
             v.select = select
         for select , f in zip( self.face_selection , self.bm.faces ) :
@@ -173,3 +173,5 @@ class SelectStack :
         del self.vert_selection
         del self.face_selection
         del self.edge_selection
+
+        self.context.tool_settings.mesh_select_mode = self.mesh_select_mode

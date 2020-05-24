@@ -21,7 +21,7 @@ import rna_keymap_ui
 from bpy.app.translations import pgettext_iface as iface_
 from bpy.app.translations import contexts as i18n_contexts
 from bpy.types import AddonPreferences
-def draw_settings_ui(context, layout, tool):
+def draw_settings_ui(context, layout, tool  , ui ):
     props = tool.operator_properties("mesh.poly_quilt")
     preferences = bpy.context.preferences.addons[__package__].preferences
 
@@ -33,28 +33,31 @@ def draw_settings_ui(context, layout, tool):
         default='EQUAL',
     )
 
-
 #       layout.label(text="Make",text_ctxt="Make", translate=True, icon='NORMALS_FACE')
 
-    col = layout.column(align=True)
-    col.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = False  )
+    if "MASTER" in ui or "LOWPOLY" in ui :
+        col = layout.column(align=True)
+        col.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = False  )
 
-    col = layout.column(align=True)
-    col.prop(props, "plane_pivot" , text = "Pivot" , expand = True , icon_only = False )
+        col = layout.column(align=True)
+        col.prop(props, "plane_pivot" , text = "Pivot" , expand = True , icon_only = False )
 
-    col = layout.column(align=True)
-    col.prop(props, "move_type" , text = "Move" , expand = True , icon_only = False )
+        col = layout.column(align=True)
+        col.prop(props, "move_type" , text = "Move" , expand = True , icon_only = False )
 
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
     layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
     layout.prop( preferences, "fix_to_x_zero", toggle = True , text = "Fix X=0" , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
 
-    row = layout.row(align=True)
-    row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
+    if "MASTER" in ui or "EXTRUDE" in ui :
+        row = layout.row(align=True)
+        row.prop(props, "extrude_mode" , text = "EXTRUDE" , expand = True )
 
-    layout.separator()
-    row = layout.row(align=True)
-    row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
+    if "MASTER" in ui or "LOOPCUT" in ui :
+        layout.separator()
+        row = layout.row(align=True)
+        row.prop(props, "loopcut_mode" , text = "LOOPCUT" , expand = True )
+
     row = layout.row(align=True)
     row.prop( preferences, "loopcut_division" , text = "Edge Snap Div" , expand = True, slider = True  )
 
@@ -62,12 +65,13 @@ def draw_settings_ui(context, layout, tool):
     col = layout.column(align=True)
     col.prop( preferences, "vertex_dissolve_angle" , text = "Vertex Dissolve Angle", expand = True, slider = True , icon_only = False  )
 
-    layout.separator()
-    col = layout.column(align=True)
-    col.prop( props, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
+    if "MASTER" in ui or "BRUSH" in ui :
+        layout.separator()
+        col = layout.column(align=True)
+        col.prop( props, "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = False )
 
-    col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
-    col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
+        col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
+        col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
 #            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))
@@ -81,20 +85,19 @@ def draw_settings_ui(context, layout, tool):
 def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTION']  ):
     props = tool.operator_properties("mesh.poly_quilt")
 
-    if 'GEOM' in ui :
+    if "MASTER" in ui or "LOWPOLY" in ui :
         row = layout.row( align=True)
         row.label( text = "Geom" )
         row.prop(props, "geometry_type" , text = "Geom" , expand = True , icon_only = True  )
 
-    if 'BRUSH' in ui :
+    if "MASTER" in ui or "BRUSH" in ui :
         row = layout.row( align=True)
         row.label( text = "Brush" )
         row.prop( props , "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
 
-    if 'OPTION' in ui :
-        # Expand panels from the side-bar as popovers.
-        popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
-        op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
+    # Expand panels from the side-bar as popovers.
+    popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
+    op = layout.popover_group(context=".poly_quilt_option", **popover_kw)
 
 
 class VIEW3D_PT_tools_polyquilt_options( Panel):

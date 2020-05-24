@@ -110,7 +110,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
         if self.subtool != subtool :
             self.subtool = subtool
-            bpy.context.area.tag_redraw()
+            if context.area :
+                context.area.tag_redraw()
         if self.subtool :
             PQ_GizmoGroup_Base.set_cursor( subtool.GetCursor() )
         else :
@@ -131,15 +132,15 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def get_attr( self , attr ) :
         if self.keyitem :
-            if self.keyitem.properties.is_property_set("loopcut_mode") :
+            if self.keyitem.properties.is_property_set(attr) :
                 return getattr( self.keyitem.properties , attr )
 
-        pq = [ tool for tool in bpy.context.workspace.tools if "mesh_tool.poly_quilt" in tool.idname ]
-        if pq :
-            props = pq[0].operator_properties("mesh.poly_quilt")
-            return getattr( props , attr )
-        return None
+        for tool in bpy.context.workspace.tools :
+            if "mesh_tool.poly_quilt" in tool.idname :
+                props = tool.operator_properties("mesh.poly_quilt")
+                return getattr( props , attr )
 
+        return None
 
 class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     my_tool = ToolPolyQuiltBase
@@ -246,8 +247,13 @@ class PQ_GizmoGroup_Brush(PQ_GizmoGroup_Base):
     bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Brush Gizmo"
 
+class PQ_GizmoGroup_Seam(PQ_GizmoGroup_Base):
+    my_tool = ToolPolyQuiltSeam
+    bl_idname = my_tool.bl_widget
+    bl_label = "PolyQuilt Seam Gizmo"
 
-all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush )
+
+all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush, PQ_GizmoGroup_Seam )
 
 
 # ursor (enum in ['DEFAULT', 'NONE', 'WAIT', 'CROSSHAIR', 'MOVE_X', 'MOVE_Y', 'KNIFE', 'TEXT', 'PAINT_BRUSH', 'PAINT_CROSS', 'DOT', 'ERASER', 'HAND', 'SCROLL_X', 'SCROLL_Y', 'SCROLL_XY', 'EYEDROPPER'], (optional)) – cursor
