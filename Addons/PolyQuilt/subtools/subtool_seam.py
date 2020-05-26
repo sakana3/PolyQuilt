@@ -41,7 +41,7 @@ class SubToolSeam(MainTool) :
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
-        element = qmesh.PickElement( location , preferences.distance_to_highlight , elements = ["EDGE"] )        
+        element = qmesh.PickElement( location , preferences.distance_to_highlight , elements = ["EDGE","VERT"] )        
         return element
 
     def OnUpdate( self , context , event ) :
@@ -130,7 +130,7 @@ class SubToolSeam(MainTool) :
             if self.bmo.is_mirror_mode :
                 mirror = self.bmo.find_mirror( edge )
                 if mirror :
-                    mirror.seam = True
+                    mirror.seam = seam
         self.bmo.UpdateMesh()
 
     def find_seam_loop( self , edge ) :

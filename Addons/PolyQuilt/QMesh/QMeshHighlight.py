@@ -92,44 +92,6 @@ class QMeshHighlight :
             self.current_matrix = None
             self.__local_tag__ = QMeshHighlight.__grobal_tag__
 
-    def UpdateViewNP( self ,context , forced = False ):
-        rv3d = context.region_data
-        matrix = self.pqo.obj.matrix_world @ rv3d.perspective_matrix
-        self.checkDirty()
-
-        if forced == True or matrix != self.current_matrix :
-            region = context.region
-            halfW = region.width / 2.0
-            halfH = region.height / 2.0
-            matrix_world = self.pqo.obj.matrix_world
-            perspective_matrix = rv3d.perspective_matrix
-
-            verts = self.pqo.bm.verts
-
-            vertCount = len(verts)
-            verts_co = np.array( [ v.co for v in verts ] )
-            verts_co.shape = (vertCount, 3) 
-            verts_co_4d = np.ones(shape=(vertCount, 4), dtype=np.float) 
-            verts_co_4d[:, :-1] = verts_co
-            verts_world = np.einsum( 'ij,aj->ai' , matrix_world , verts_co_4d)
-            verts_view = np.einsum( 'ij,aj->ai' , perspective_matrix , verts_world ) 
-            verts_xyz = verts_view[:,[0,1,2]] 
-            verts_w = verts_view[:,[3]]
-            verts_proj = verts_xyz / verts_w * np.array( (halfW , halfH , 1) ) + np.array( (halfW , halfH , 0) ) 
-            verts_proj_xy = verts_view[:,[0,1]] 
-
-            viewPos = { v : Vector( p ).to_2d() for (v,p,w) in zip(verts , verts_proj , verts_world ) }
-
-            edges = self.pqo.bm.edges
-            edges_size = len(edges) 
-#           edges_verts = [ (e.verts[0].index,e.verts[1].index) for e in edges ]
-#           self.__viewPosEdges = [ (e , verts_xyz[e[0]] , verts_xyz[e[1]] ) for e in edges_verts ]
-
-            self.__viewPosEdges = { e : [ p1 , p2 ] for e,p1,p2 in [ (e, viewPos[e.verts[0]], viewPos[e.verts[1]]) for e in edges ]  if p1 and p2 and not e.hide }
-            self.__viewPosVerts = [ (a,p) for v,p in viewPos.items() if p and not p[0].hide ]
-
-            self.current_matrix = matrix        
-
     def UpdateView( self ,context , forced = False ):
         rv3d = context.region_data
         pj_matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
@@ -150,6 +112,7 @@ class QMeshHighlight :
 
             verts = self.pqo.bm.verts
             viewPos = { p : ProjVert(p) for p in verts }
+#           viewPos = compute( verts , pj_matrix , region.width , region.height )
 
             edges = self.pqo.bm.edges
             viewEdges = { e : [ viewPos[e.verts[0]] , viewPos[e.verts[1]] ] for e in edges if not e.hide }

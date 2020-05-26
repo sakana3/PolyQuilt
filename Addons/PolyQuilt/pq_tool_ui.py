@@ -45,6 +45,9 @@ def draw_settings_ui(context, layout, tool  , ui ):
         col = layout.column(align=True)
         col.prop(props, "move_type" , text = "Move" , expand = True , icon_only = False )
 
+        row = layout.row(align=True)
+        row.prop(props, "snap_mode" , text = "Snap" , expand = True , icon_only = False )
+
 #       layout.prop(context.active_object.data, "use_mirror_x", toggle = toggle , icon_only = False, icon_value = custom_icon("icon_opt_mirror") )
     layout.prop(context.active_object.data, "use_mirror_x", toggle = True , icon_only = False , icon = "MOD_MIRROR" )
     layout.prop( preferences, "fix_to_x_zero", toggle = True , text = "Fix X=0" , icon_only = False, icon_value = custom_icon("icon_opt_x0") )
@@ -131,6 +134,11 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         row.ui_units_x = 3.25     
         row.prop(props, "move_type" , text = "" , expand = True , icon_only = True )
   
+        col = layout.column()        
+        col.label( text = "Snap" )
+        row = layout.row(align=True)
+        row.prop(props, "snap_mode" , text = "Snap" , expand = True , icon_only = False )
+
         layout.label( text = "Fix X=0" )
         layout.prop( preferences, "fix_to_x_zero", toggle = True , text = "" , icon_only = True, icon_value = custom_icon("icon_opt_x0") )
 

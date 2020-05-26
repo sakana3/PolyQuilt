@@ -77,6 +77,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     __draw_handle2D = None
     __draw_handle3D = None
     __timer_handle = None
+    __pre_timr = 0
+    __cur_timr = 0
 
     tool_mode : bpy.props.EnumProperty(
         name="Tool Mode",
@@ -102,6 +104,15 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         name="Move Type",
         description="Move Type.",
         items=enum_move_type_callback,
+    )
+
+    snap_mode : bpy.props.EnumProperty(
+        name="Snap Mode",
+        description="Snap Mode",
+        items=[('ON' , "On", "" ),
+               ('OFF' , "Off", "" ) ,
+               ('AUTO' , "Auto", "" ) ],
+        default='ON',
     )
 
     loopcut_mode : bpy.props.EnumProperty(
@@ -209,6 +220,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         return {ret}
 
     def invoke(self, context, event):
+        MESH_OT_poly_quilt.__pre_timr = MESH_OT_poly_quilt.__cur_timr
+        MESH_OT_poly_quilt.__cur_timr = time.time()
 
         self.preferences = context.preferences.addons[__package__].preferences
         if context.region == None :
@@ -332,6 +345,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if cls.__timer_handle is not None:
             context.window_manager.event_timer_remove(cls.__timer_handle)
             cls.__timer_handle = None
+
+    @property
+    def is_snap( self ) :
+        if self.snap_mode == 'ON' :
+            return True
+        if self.snap_mode == 'OFF' :
+            return False
+        return bpy.context.scene.tool_settings.use_snap
 
 class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""
