@@ -26,6 +26,8 @@ pq_translation_dict = {
             ("*", "Space Drag Operation") : "スペースでドラッグした時の操作" ,
             ("*", "EdgeLoop Cut") : "エッジループカット" ,
             ("*", "Dissolve EdgeLoop") : "エッジループ消去" ,
+            ("*", "Mark Seam") : "シームをマーク" ,
+            ("*", "Mark Seam Loop") : "シームループをマーク" ,
         }
 }
 

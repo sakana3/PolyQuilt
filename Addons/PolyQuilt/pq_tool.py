@@ -165,8 +165,7 @@ class ToolPolyQuiltSeam(ToolPolyQuiltBase):
     bl_description = ( "Seam Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_seam_icon")
     bl_widget = "MESH_GGT_PQ_Seam"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] ) 
-
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool], ctrl = ['MARK_SEAM_LOOP'] ) 
 
 PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },

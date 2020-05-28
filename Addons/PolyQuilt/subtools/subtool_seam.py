@@ -26,7 +26,7 @@ from .subtool import MainTool
 from ..utils.dpi import *
 
 class SubToolSeam(MainTool) :
-    name = "SeamTool"
+    name = "Mark Seam"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button , no_hold = True )        
@@ -52,22 +52,10 @@ class SubToolSeam(MainTool) :
                 vt = None
                 if self.startTarget.isEdge :
                     vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
-                ed = None
-                if self.startTarget.isFace :
-                    ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
                 if vt :
-                    if self.startTarget.isEdge and self.startTarget.element.seam :
-                        e = self.find_seam_loop( self.startTarget.element )
-                        v = []
-                    else :
-                        def check_func( edge , vert ) :
-                            return any( [ e.seam for e in vert.link_edges if e != edge ] ) == False
-
-                        e , v = self.bmo.calc_edge_loop( self.startTarget.element , check_func )
-                    self.removes = (e,v)
+                    e = self.find_seam_loop( self.bmo , self.startTarget.element )
+                    self.removes = (e,[])
                     self.currentTarget = self.startTarget
-                elif ed :
-                    self.removes = (  self.bmo.calc_loop_face(ed) , [] )
                 elif self.startTarget.element != self.currentTarget.element :
                     self.removes = self.bmo.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element )
                 else :
@@ -86,7 +74,10 @@ class SubToolSeam(MainTool) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
+            if element.isEdge and element.element.seam :
+                color = (0,0,0,1)
+            else :
+                color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
             return element.DrawFunc( gizmo.bmo.obj , (color[0],color[1],color[2],1) , gizmo.preferences , marker = False , edge_pivot = False , width = 5 )
         return None
 
@@ -98,8 +89,12 @@ class SubToolSeam(MainTool) :
             alpha = self.preferences.highlight_face_alpha
             vertex_size = self.preferences.highlight_vertex_size        
             width = 5        
-            color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
-            color = (color[0],color[1],color[2],1)
+            if all( isinstance( e , bmesh.types.BMEdge ) and e.seam for e in self.removes[0] )  :
+                color = (0,0,0,1)
+            else :
+                color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
+                color = (color[0],color[1],color[2],1)
+
             draw_util.drawElementsHilight3D( self.bmo.obj , self.removes[0] , vertex_size , width , alpha , color )
             if self.bmo.is_mirror_mode :
                 mirrors = [ self.bmo.find_mirror(m) for m in self.removes[0] ]
@@ -133,21 +128,27 @@ class SubToolSeam(MainTool) :
                     mirror.seam = seam
         self.bmo.UpdateMesh()
 
-    def find_seam_loop( self , edge ) :
+    @classmethod
+    def find_seam_loop( cls , bmo , edge ) :
         loop = [edge]
 
-        def find_loop( start , head ) :
-            while(True) :
-                link_seams = [ e for e in head.link_edges if e != start and e.seam ]
-                if len( [ e for e in link_seams ] ) != 1 :
-                    return
-                start =  link_seams[0]
-                if start in loop :
-                    break
-                loop.append( start )
-                head = start.other_vert(head)
+        if not edge.seam :
+            def check_func( edge , vert ) :
+                return any( [ e.seam for e in vert.link_edges if e != edge ] ) == False
+            loop , v = bmo.calc_edge_loop( edge , check_func )
+        else :
+            def find_loop( start , head ) :
+                while(True) :
+                    link_seams = [ e for e in head.link_edges if e != start and e.seam ]
+                    if len( [ e for e in link_seams ] ) != 1 :
+                        return
+                    start =  link_seams[0]
+                    if start in loop :
+                        break
+                    loop.append( start )
+                    head = start.other_vert(head)
 
-        find_loop( edge , edge.verts[0] )
-        find_loop( edge , edge.verts[1] )
+            find_loop( edge , edge.verts[0] )
+            find_loop( edge , edge.verts[1] )
 
         return loop

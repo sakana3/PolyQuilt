@@ -124,7 +124,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         keymap = bpy.context.window_manager.keyconfigs.user.keymaps["3D View Tool: Edit Mesh, " + self.tool.bl_label]
         keyitems = [ item for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' ]
         for item in keymap.keymap_items :
-            if item.idname == 'mesh.poly_quilt' :
+            if item.idname == 'mesh.poly_quilt' and item.active :
                 if [ item.shift , item.ctrl , item.alt,  item.oskey ] == [ shift , ctrl , alt,  oskey ] :
                     if item.active :
                         return item

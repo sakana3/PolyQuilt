@@ -49,7 +49,8 @@ def draw_tool_keymap( layout ,keyconfing,keymapname ) :
 #               ic.prop( item ,   icon = 'ERROR' )
 
                 ic = it.row(align = True)
-                ic.ui_units_x = cnt + 1
+                ic.ui_units_x = cnt + 2
+                ic.prop(item , "active" , text = "" , emboss = True )
                 ic.template_event_from_keymap_item(item)
 
                 ic = it.row(align = True)

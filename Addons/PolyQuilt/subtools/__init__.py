@@ -22,6 +22,7 @@ from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
 from .maintool_edgeloop_dissolve import MainToolEdgeLoopDissolve
 from .subtool_seam import SubToolSeam
+from .subtool_seam_loop import SubToolSeamLoop
 
 maintools = {
     'NONE'              : None ,
@@ -38,6 +39,7 @@ maintools = {
     'LOOPCUT'           : MainToolLoopCut ,
     'EDGELOOP_DISSOLVE' : MainToolEdgeLoopDissolve ,
     'MARK_SEAM'         : SubToolSeam ,
+    'MARK_SEAM_LOOP'    : SubToolSeamLoop ,
 }
 
 
