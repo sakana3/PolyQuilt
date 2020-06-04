@@ -126,6 +126,9 @@ class SubToolSeam(MainTool) :
                 mirror = self.bmo.find_mirror( edge )
                 if mirror :
                     mirror.seam = seam
+
+        if bpy.context.tool_settings.use_edge_path_live_unwrap :
+            bpy.ops.uv.unwrap()
         self.bmo.UpdateMesh()
 
     @classmethod
