@@ -173,20 +173,20 @@ class SubToolEdgeSlice(SubTool) :
         return d
 
     @classmethod
-    def CalcSlice( cls , bmo , startEdge ) :
+    def CalcSlice( cls , bmo , currentEdge ) :
         check_edges = []
         draw_deges = []
         split_deges = []
         endTriangles = {}
         fixCenter = False
 
-        startEdges = [ (startEdge,0) ]
+        startEdges = [ (currentEdge,0) ]
 
         if bmo.is_mirror_mode :
-            mirrorEdge = bmo.find_mirror(startEdge,False)
+            mirrorEdge = bmo.find_mirror(currentEdge,False)
             if mirrorEdge is not None :
-                if mirrorEdge != startEdge :
-                    mirrorVert = bmo.find_mirror(startEdge.verts[0])
+                if mirrorEdge != currentEdge :
+                    mirrorVert = bmo.find_mirror(currentEdge.verts[0])
                     startEdges.append( (mirrorEdge, 0 if mirrorEdge.verts[0] == mirrorVert else 1 ) )
                 else :
                     fixCenter = True
@@ -198,11 +198,13 @@ class SubToolEdgeSlice(SubTool) :
 
                 vidx = startEdge[1]
                 face = startFace
-                edge = startEdge[0]              
-                while( face != None and edge != None  ) :
-                    loop = [ l for l in face.loops if l.edge == edge ][-1]
-                    if edge not in check_edges :
-                        check_edges.append(edge)
+                edge = startEdge[0]
+                for i in range(0,4096) :              
+                    if( face == None or edge == None  ) :
+                        break
+
+                    if edge.index not in check_edges :
+                        check_edges.append(edge.index)
                         split_deges.append( (edge ,vidx ) )
 
                     if len( face.loops ) != 4 :
@@ -213,6 +215,7 @@ class SubToolEdgeSlice(SubTool) :
                                 endTriangles[face] = None
                         break
 
+                    loop = [ l for l in face.loops if l.edge == edge ][-1]
                     opposite = loop.link_loop_next.link_loop_next
                     pidx = 1 if ( loop.vert == edge.verts[vidx]) == (opposite.edge.verts[0] == opposite.vert) else 0                    
                     draw_deges.append( (loop.edge,opposite.edge ,vidx , pidx ) )
@@ -222,13 +225,14 @@ class SubToolEdgeSlice(SubTool) :
                         face = [ f for f in opposite.edge.link_faces if f != face ][-1]
                         edge = opposite.edge
                     else :
-                        if opposite.edge not in check_edges :                        
+                        if opposite.edge.index not in check_edges :                        
                             split_deges.append( (opposite.edge ,vidx ) )
-                            check_edges.append( opposite.edge )
+                            check_edges.append( opposite.edge.index )
                         break
 
                     if startEdge[0].index == edge.index :
                         break
+               
 
         return split_deges , draw_deges , endTriangles , fixCenter
 
