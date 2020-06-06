@@ -39,7 +39,7 @@ class MainToolHold(MainTool) :
     name = "Hold"
 
     def __init__(self,op,currentTarget, button) :
-        super().__init__(oop,currentTarget, button)        
+        super().__init__(op,currentTarget, button)        
 
     @staticmethod
     def LMBEventCallback(self , event ):

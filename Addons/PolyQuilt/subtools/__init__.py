@@ -27,7 +27,7 @@ from .subtool_seam_loop import SubToolSeamLoop
 maintools = {
     'NONE'              : None ,
     'MASTER'            : MainToolDefault ,
-    'HOLD'              : MainToolHold ,
+#   'HOLD'              : MainToolHold ,
     'LOWPOLY'           : MainToolLowPoly ,
     'BRUSH'             : MainToolBrush ,
 #   'BRUSH_DELETE'      : MainToolBrushDelete ,

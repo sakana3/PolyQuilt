@@ -34,7 +34,7 @@ from .subtool_fin_slice import *
 from .subtool_polypen import *
 
 class MainToolExtrude(MainTool) :
-    name = "Extrude"
+    name = "Edge Extrude"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button , no_hold = True )        

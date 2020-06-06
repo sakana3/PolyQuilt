@@ -24,8 +24,11 @@ pq_translation_dict = {
             ("*", "LoopCut") : "ループカット" ,
             ("*", "Brush_Delete") : "削除ブラシ" ,
             ("*", "Space Drag Operation") : "スペースでドラッグした時の操作" ,
-            ("*", "EdgeLoop Cut") : "エッジループカット" ,
-            ("*", "Dissolve EdgeLoop") : "エッジループ消去" ,
+            ("*", "Loop Cut") : "ループカット" ,
+            ("*", "Dissolve Loop") : "ループ消去" ,
+            ("*", "Make Polygon") : "ポリゴン作成" ,
+            ("*", "Master Tool") : "マスターツール" ,
+            ("*", "Edge Extrude") : "エッジ押し出し" ,
             ("*", "Mark Seam") : "シームをマーク" ,
             ("*", "Mark Seam Loop") : "シームループをマーク" ,
         }
