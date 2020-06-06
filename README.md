@@ -1,5 +1,5 @@
 I am currently working on an English document. [Click here](https://github.com/sakana3/PolyQuilt/releases/download/1.3.0/PolyQuilt_v1.3.0.zip) to download the latest version.  
-If you are using Blender 2.82 and earlier. [Click here](https://github.com/sakana3/PolyQuilt/releases/download/1.2.0/PolyQuilt_v1.2.0.zip) to download.
+If you are using Blender2.82 and earlier. [Click here](https://github.com/sakana3/PolyQuilt/releases/download/1.2.0/PolyQuilt_v1.2.0.zip) to download.
 
 # PolyQuilt(ポリキルト)
 ---
@@ -8,7 +8,7 @@ PolyQuiltはローポリモデリングをサポートするBlender2.8用アド�
 
 # 導入方法
 
-最新版ダウンロードは[こちら](https://github.com/sakana3/PolyQuilt/releases/download/1.3.0/PolyQuilt_v1.3.0.zip)から  
+最新版ダウンロードは[こちら](https://github.com/sakana3/PolyQuilt/releases/download/1.3.0/PolyQuilt_v1.3.0.zip)から（Blender2.83 LTS以降）  
 Blender2.82以前の方は[こちら](https://github.com/sakana3/PolyQuilt/releases/download/1.2.0/PolyQuilt_v1.2.0.zip)から  
 
 ダウンロードして編集→設定→アドオン→インストールよりダウンロード先を指定してインストールしてください。インストールした段階ではまだ使えませんのでその後検索バーよりPolyQuiltを検索しチェックボックスをOnにしてください。
