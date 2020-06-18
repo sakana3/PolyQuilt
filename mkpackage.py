@@ -1,6 +1,8 @@
 # coding: UTF-8
 import os
+import re
 import zipfile
+import shutil
 
 modulename = "PolyQuilt"
 package_folder = os.getcwd() + "/Addons/PolyQuilt"
@@ -15,10 +17,7 @@ with open( package_folder + "/__init__.py", encoding= "utf-8" ) as f:
             version =  '.'.join(vtext)
         line = f.readline()
 
-filename = modulename + "_" + version + ".zip"
+filename = modulename + "_" + version 
 
-with zipfile.ZipFile(filename,'w') as myzip:
-    for folder, subfolders, files in os.walk(package_folder):
-        myzip.write(folder)
-        for file in files:
-            myzip.write(os.path.join(folder,file))
+shutil.make_archive( filename , 'zip', root_dir= package_folder )
+
