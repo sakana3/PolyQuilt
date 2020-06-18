@@ -41,6 +41,7 @@ class MainToolLoopCut(MainTool) :
 
     @staticmethod
     def LMBEventCallback(self , event ):
+        last_mouse_pos = event.mouse_pos
         self.debugStr = str(event.type)
 
         if event.type == MBEventType.Release :

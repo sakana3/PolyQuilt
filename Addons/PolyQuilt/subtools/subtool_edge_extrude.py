@@ -52,37 +52,43 @@ class SubToolEdgeExtrude(SubTool) :
 
         self.newEdge = [ self.bmo.local_to_world_pos( v.co ) for v in self.currentEdge.element.verts ]
 
-        # calc perpendicular
-        view_matrix = bpy.context.region_data.view_matrix
-        view_vector = bpy.context.region_data.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))                 
-        vp = [ view_matrix @ v for v in self.newEdge ]
-        vs = [ mathutils.Vector(( v.x , v.y , 0.0)) for v in vp ]
-        n = (vs[1] - vs[0]).normalized()     
-        self.perpendicular = view_vector.cross( n.xyz ).normalized()
 
     @staticmethod
     def Check( root ,target ) :
         return target.element.is_boundary or target.element.is_manifold == False
 
-    def CalcFin( self , context , v0 , v1 , move ) :
+    def CalcFin( self , context ,edge , move ) :
+        v0 = self.bmo.local_to_world_pos(edge.verts[0].co)
+        v1 = self.bmo.local_to_world_pos(edge.verts[1].co)
+
         region = context.region
         rv3d = context.region_data
         view_matrix = rv3d.view_matrix
         view_vector = rv3d.view_rotation.to_matrix() @ mathutils.Vector((0.0, 0.0, -1.0))            
 
-        n = ( view_matrix.to_3x3() @ move ).xy.normalized()
-        r0 = math.atan2( n.y , n.x )
-        r1 = math.atan2( self.perpendicular.y , self.perpendicular.x )
-
-        q0 = mathutils.Quaternion( view_vector , r0 )
-        q1 = mathutils.Quaternion( view_vector , r1 )
-
-        q = q0.rotation_difference(q1)
-
-        f0 = self.bmo.local_to_world_pos(v0.co) - self.startPos
-        f1 = self.bmo.local_to_world_pos(v1.co) - self.startPos
+        f0 = v0 - self.startPos
+        f1 = v1 - self.startPos
 
         if self.operator.extrude_mode != 'PARALLEL' :
+            vp = [ view_matrix @ v for v in (v0,v1) ]
+            vs = [ mathutils.Vector(( v.x , v.y , 0.0)) for v in vp ]
+            n = (vs[1] - vs[0]).normalized()     
+            perpendicular = view_vector.cross( n.xyz ).normalized()
+
+            nm = ( view_matrix.to_3x3() @ move ).xy.normalized()
+
+            dot = perpendicular.x * nm.x + perpendicular.y * nm.y      # dot product between [x1, y1] and [x2, y2]
+            if dot < 0: 
+                perpendicular = -perpendicular
+
+            r0 = math.atan2( nm.y , nm.x )
+            r1 = math.atan2( perpendicular.y , perpendicular.x )
+
+            q0 = mathutils.Quaternion( view_vector , r0 )
+            q1 = mathutils.Quaternion( view_vector , r1 )
+
+            q = q0.rotation_difference(q1)
+
             if self.operator.extrude_mode == 'BEND' :
                 f0 = q.to_matrix() @ f0
                 f1 = q.to_matrix() @ f1
@@ -109,7 +115,7 @@ class SubToolEdgeExtrude(SubTool) :
 
             dist = self.preferences.distance_to_highlight
 
-            self.newEdge = self.CalcFin( context , self.currentEdge.element.verts[0] , self.currentEdge.element.verts[1] , move )
+            self.newEdge = self.CalcFin( context , self.currentEdge.element , move )
 
             if self.operator.is_snap :
                 # X=0でのスナップをチェック

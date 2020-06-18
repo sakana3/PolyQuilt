@@ -40,7 +40,15 @@ class SubToolEdgeSlice(SubTool) :
         self.sliceRate = self.CalcSplitRate( bpy.context , mouse_pos , self.currentEdge )
 
     def Check( root , target ) :
-        return target.isEdge and ( target.world_co[0] - target.world_co[1] ).length > sys.float_info.epsilon
+        if target.isEdge :
+            if ( target.world_co[0] - target.world_co[1] ).length <= sys.float_info.epsilon :
+                return False
+            co = target.world_co
+            sliceRate = ( co[0] - target.hitPosition ).length / ( co[0] - co[1] ).length
+            if sliceRate >= 0.02 and sliceRate < 0.98 :
+                return True
+
+        return False
 
     @classmethod
     def DrawHighlight( cls , gizmo , target : ElementItem ) :
@@ -76,7 +84,6 @@ class SubToolEdgeSlice(SubTool) :
             size = preferences.highlight_vertex_size          
             width = preferences.highlight_line_width
             alpha = preferences.highlight_face_alpha
-            draw_util.drawElementHilight3D( bmo.obj , currentEdge, size , width , alpha , color_split(0.25) )
             pos = currentEdge.verts[0].co + ( currentEdge.verts[1].co- currentEdge.verts[0].co) * sliceRate
             pos = bmo.local_to_world_pos( pos )
 

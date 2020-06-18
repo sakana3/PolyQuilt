@@ -232,7 +232,7 @@ class QMeshOperators :
 
         if linkCount == 0 and normal != None :
             face.normal_update()
-            dp = face.normal.dot( normal )
+            dp = face.normal.dot( self.obj.matrix_world.inverted().to_3x3() @ normal )
             if dp > 0.0 :
                 face.normal_flip()
                 face.normal_update()           
