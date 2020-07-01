@@ -17,7 +17,7 @@ with open( package_folder + "/__init__.py", encoding= "utf-8" ) as f:
             version =  '.'.join(vtext)
         line = f.readline()
 
-filename = modulename + "_" + version 
+filename = modulename + "_v" + version 
 
 shutil.make_archive( filename , 'zip', root_dir= package_folder )
 
