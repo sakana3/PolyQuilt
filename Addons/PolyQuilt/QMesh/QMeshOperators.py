@@ -128,6 +128,18 @@ class QMeshOperators :
     def world_to_local_pos(  self ,pos : Vector ) :
         return self.obj.matrix_world.inverted() @ pos
 
+    def local_to_world_nrm(  self , norm : Vector ) :
+        p0 = self.obj.matrix_world @ Vector( (0,0,0) )
+        p1 = self.obj.matrix_world @ norm
+        return ( p0 - p1 ).normalized()
+
+    def world_to_local_nrm(  self , norm : Vector ) :
+        inv = self.obj.matrix_world.inverted()
+        p0 = inv @ Vector( (0,0,0) )
+        p1 = inv @ norm
+        return ( p0 - p1 ).normalized()
+
+
     def world_to_2d(  self ,pos : Vector ) :
         return pqutil.location_3d_to_region_2d( pos )
 

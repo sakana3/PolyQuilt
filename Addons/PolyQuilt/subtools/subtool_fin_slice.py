@@ -95,15 +95,19 @@ class SubToolFinSlice(SubTool) :
         return virts , edges
 
     def CalcRate( self , context , coord ):
+        backface_culling = self.bmo.get_shading(bpy.context).show_backface_culling
+        hit = self.bmo.highlight.PickFace( coord, [] , backface_culling )
+
         rate = 0.0
         dist = 0.0
         ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
         d = self.preferences.distance_to_highlight* dpm()
         for edge in self.currentTarget.element.link_edges :
-            r = pqutil.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )
-            if r > rate :
-                rate = r
-                dist = d * (edge.verts[0].co - edge.verts[1].co).length
+            if not hit.isFace or edge in hit.element.edges :
+                r = pqutil.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )
+                if r > rate :
+                    rate = r
+                    dist = d * (edge.verts[0].co - edge.verts[1].co).length
         return rate , dist
 
     def DoSplit( self ) :

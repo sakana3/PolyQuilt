@@ -27,7 +27,7 @@ from .subtool import SubTool
 class SubToolMove(SubTool) :
     name = "MoveTool"
 
-    def __init__(self,op,startTarget,startMousePos) :
+    def __init__(self,op,startTarget,startMousePos, move_type = None ) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.currentTarget.set_snap_div( 0 )        
@@ -46,13 +46,19 @@ class SubToolMove(SubTool) :
         else :
             self.mirror_pair = { v : None for v in startTarget.verts }
 
-        self.normal_ray = pqutil.Ray( self.startPos , startTarget.normal ).world_to_object( self.bmo.obj )
+        self.normal_ray = pqutil.Ray( self.startPos , self.bmo.local_to_world_nrm( startTarget.normal ) )
         self.normal_ray.origin = self.startPos
         self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , startTarget.hitPosition )
         self.move_plane = self.screen_space_plane
-        self.move_type = 'FREE'
+        if move_type == None :
+            if self.currentTarget.is_hit_center() :
+                self.move_type = 'NORMAL'
+            else :
+                self.move_type = op.move_type
+        else :
+            self.move_type = move_type
+        self.ChangeRay(self.move_type)
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
-        self.ChangeRay(op.move_type )
         self.repeat = False
         self.MoveTo( bpy.context , self.mouse_pos )
         self.bmo.UpdateMesh(False)
@@ -189,8 +195,9 @@ class SubToolMove(SubTool) :
             self.snapTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
 
         if self.move_ray != None :
-            v1 = self.move_ray.origin + self.move_ray.vector * 10000.0 
-            v2 = self.move_ray.origin - self.move_ray.vector * 10000.0 
+            v0 = self.move_ray.origin
+            v1 = v0 + self.move_ray.vector * 10000.0 
+            v2 = v0 - self.move_ray.vector * 10000.0 
             draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.2 )
 
     def ChangeRay( self , move_type ) :
@@ -203,10 +210,9 @@ class SubToolMove(SubTool) :
             plane.origin = self.startPos
 #           self.move_plane = plane
 
-        if move_type == self.move_type :
+        if move_type == 'FREE' :
             self.move_ray = None
-            move_type = 'FREE'
-        if move_type == 'X' :
+        elif move_type == 'X' :
             self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
             self.move_color = ( 1.0 , 0.0 ,0.0 ,1.0  )
         elif move_type == 'Y' :

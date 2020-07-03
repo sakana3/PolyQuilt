@@ -29,6 +29,8 @@ from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
 from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
+from .subtool_face_extrude import *
+from .subtool_face_insert import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 from .subtool_polypen import *
@@ -76,8 +78,14 @@ class MainToolDefault(MainTool) :
             elif self.currentTarget.isVert :
                 tools = []
                 tools.append(SubToolFinSlice(self.operator,self.currentTarget ))
+                if SubToolFaceInsert.Check( self ,self.currentTarget ) :
+                    tools.append(SubToolFaceInsert(self.operator,self.currentTarget ))
                 if SubToolVertExtrude.Check( self ,self.currentTarget ) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
+                self.SetSubTool( tools )
+            elif self.currentTarget.isFace :
+                tools = []
+                tools.append(SubToolFaceExtrude(self.operator,self.currentTarget , self.mouse_pos ))
                 self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
@@ -97,7 +105,13 @@ class MainToolDefault(MainTool) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
+            if element.is_hit_center() :
+                def draw() :
+                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
+                    element.draw_center_normal()
+                return draw
+            else :
+                return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
         return None
 
     def OnDraw( self , context  ) :

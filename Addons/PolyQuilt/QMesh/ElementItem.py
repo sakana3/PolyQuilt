@@ -20,6 +20,7 @@ import collections
 from mathutils import *
 from ..utils import pqutil
 from ..utils import draw_util
+from ..utils import dpi
 from ..utils.dpi import *
 
 __all__ = ['ElementItem']
@@ -60,7 +61,7 @@ class ElementItem :
 
     def update_index( self ) :
         if self.__element :
-            self.__index = __element.index
+            self.__index = self.__element.index
 
     def update_element( self ) :
         self.__element = self.element
@@ -271,8 +272,18 @@ class ElementItem :
                     v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
                     v1 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[1].co) )                        
                     def draw_marker() :
-                        self.draw_extrude_marker( preferences.marker_size , v0 , v1 )
+                        self.draw_edge_extrude_marker( preferences.marker_size , v0 , v1 )
                     funcs.append( draw_marker )
+            elif self.isFace :
+                if marker :
+                    center = element.calc_center_median()
+                    if bmesh.geometry.intersect_face_point( element , center ) :
+                        pos = self.__qmesh.local_to_world_pos(center)
+                        hit = self.is_hit_center()
+                        dist = self.__qmesh.preferences.distance_to_highlight * 0.5            
+                        def draw_face_marker():                
+                            draw_util.draw_pivots3D( [pos] , dist if hit else dist * 0.7 , ( color[0] , color[1] , color[2] , 1 if hit else 0.5 ) )
+                        funcs.append( draw_face_marker )
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 funcs.append( draw_util.drawElementHilight3DFunc( obj , self.mirror , size , width ,alpha , color ) )
@@ -285,7 +296,8 @@ class ElementItem :
         return draw_all
 
 
-    def draw_extrude_marker( self , size , v0 , v1 ) :
+
+    def draw_edge_extrude_marker( self , size , v0 , v1 ) :
         element = self.element    
         with draw_util.push_pop_projection2D() :
             p1 = pqutil.location_3d_to_region_2d( self.hitPosition )
@@ -347,3 +359,25 @@ class ElementItem :
             return (p1 - center).length <= radius
         return False
 
+    def is_hit_center( self ) :
+        if self.isFace :
+            center = self.element.calc_center_median()
+            if bmesh.geometry.intersect_face_point( self.element , center ) :
+                pos = self.__qmesh.local_to_world_pos(center)
+                p0 = pqutil.location_3d_to_region_2d( pos )            
+                p1 = pqutil.location_3d_to_region_2d( self.hitPosition )            
+                dist = self.__qmesh.preferences.distance_to_highlight * dpm()  
+                return ( p0 - p1 ).length <= dist
+        return False
+
+    def draw_center_normal(self) :
+        center = self.element.calc_center_median()
+        p1 = center
+        p2 = center + self.element.normal
+        p1 = self.__qmesh.local_to_world_pos( p1 )  
+        p2 = self.__qmesh.local_to_world_pos( p2 )  
+        dst = (p1 - p2).length
+        if dst > 0.001 :
+            draw_util.draw_lines3D( bpy.context , [ p1 , p2 ] , self.__qmesh.preferences.highlight_color )
+
+    
