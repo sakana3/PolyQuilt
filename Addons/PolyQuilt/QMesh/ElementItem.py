@@ -297,7 +297,7 @@ class ElementItem :
         dist = self.__qmesh.preferences.distance_to_highlight * 0.5
         if is_normal :   
             p1 = self.__qmesh.local_to_world_pos( center )  
-            p2 = self.__qmesh.local_to_world_pos( center + self.element.normal )  
+            p2 = self.__qmesh.local_to_world_pos( center + self.element.normal * self.element.calc_perimeter() / len(self.element.edges) / 2 )  
             def draw_face_marker():                
                 draw_util.draw_pivots3D( [pos] , dist if is_hit else dist * 0.7 , ( color[0] , color[1] , color[2] , 1 if is_hit else 0.5 ) )
                 draw_util.draw_lines3D( bpy.context , [ p1 , p2 ] , color )
