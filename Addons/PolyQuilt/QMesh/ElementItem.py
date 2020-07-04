@@ -77,13 +77,16 @@ class ElementItem :
         return None
 
 
-    def setup_mirror( self ) :
-        if self.__qmesh is not None :
-            is_mirror_mode = self.__qmesh.is_mirror_mode
-            if self.__qmesh.is_mirror_mode :
-                self.__mirror = self.__qmesh.find_mirror( self.element )
+    def setup_mirror( self , mirror = None ) :
+        if mirror != None :
+            self.__mirror = mirror
         else :
-            self.__mirror = None
+            if self.__qmesh is not None :
+                is_mirror_mode = self.__qmesh.is_mirror_mode
+                if self.__qmesh.is_mirror_mode :
+                    self.__mirror = self.__qmesh.find_mirror( self.element )
+            else :
+                self.__mirror = None
 
     def set_snap_div( self , div : int ) :
         self.__div = div
@@ -275,15 +278,7 @@ class ElementItem :
                         self.draw_edge_extrude_marker( preferences.marker_size , v0 , v1 )
                     funcs.append( draw_marker )
             elif self.isFace :
-                if marker :
-                    center = element.calc_center_median()
-                    if bmesh.geometry.intersect_face_point( element , center ) :
-                        pos = self.__qmesh.local_to_world_pos(center)
-                        hit = self.is_hit_center()
-                        dist = self.__qmesh.preferences.distance_to_highlight * 0.5            
-                        def draw_face_marker():                
-                            draw_util.draw_pivots3D( [pos] , dist if hit else dist * 0.7 , ( color[0] , color[1] , color[2] , 1 if hit else 0.5 ) )
-                        funcs.append( draw_face_marker )
+                pass
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
                 funcs.append( draw_util.drawElementHilight3DFunc( obj , self.mirror , size , width ,alpha , color ) )
@@ -296,6 +291,22 @@ class ElementItem :
         return draw_all
 
 
+    def draw_face_center_marker_func( self , color , is_hit , is_normal ) :
+        center = self.element.calc_center_median()
+        pos = self.__qmesh.local_to_world_pos(center)
+        dist = self.__qmesh.preferences.distance_to_highlight * 0.5
+        if is_normal :   
+            p1 = self.__qmesh.local_to_world_pos( center )  
+            p2 = self.__qmesh.local_to_world_pos( center + self.element.normal )  
+            def draw_face_marker():                
+                draw_util.draw_pivots3D( [pos] , dist if is_hit else dist * 0.7 , ( color[0] , color[1] , color[2] , 1 if is_hit else 0.5 ) )
+                draw_util.draw_lines3D( bpy.context , [ p1 , p2 ] , color )
+
+            return draw_face_marker
+        else :
+            def draw_face_marker():                
+                draw_util.draw_pivots3D( [pos] , dist if is_hit else dist * 0.7 , ( color[0] , color[1] , color[2] , 1 if is_hit else 0.5 ) )
+            return draw_face_marker
 
     def draw_edge_extrude_marker( self , size , v0 , v1 ) :
         element = self.element    
@@ -370,14 +381,6 @@ class ElementItem :
                 return ( p0 - p1 ).length <= dist
         return False
 
-    def draw_center_normal(self) :
-        center = self.element.calc_center_median()
-        p1 = center
-        p2 = center + self.element.normal
-        p1 = self.__qmesh.local_to_world_pos( p1 )  
-        p2 = self.__qmesh.local_to_world_pos( p2 )  
-        dst = (p1 - p2).length
-        if dst > 0.001 :
-            draw_util.draw_lines3D( bpy.context , [ p1 , p2 ] , self.__qmesh.preferences.highlight_color )
+
 
     

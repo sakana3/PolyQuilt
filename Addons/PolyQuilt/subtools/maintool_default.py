@@ -84,9 +84,10 @@ class MainToolDefault(MainTool) :
                     tools.append(SubToolVertExtrude(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isFace :
-                tools = []
-                tools.append(SubToolFaceExtrude(self.operator,self.currentTarget , self.mouse_pos ))
-                self.SetSubTool( tools )
+                if not QSnap.is_active() :
+                    tools = []
+                    tools.append(SubToolFaceExtrude(self.operator,self.currentTarget , self.mouse_pos ))
+                    self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 
@@ -105,13 +106,17 @@ class MainToolDefault(MainTool) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
-            if element.is_hit_center() :
-                def draw() :
-                    element.Draw( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
-                    element.draw_center_normal()
-                return draw
-            else :
-                return element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True )
+            funcs = []
+            funcs.append( element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True ) )
+
+            if not QSnap.is_active() :
+                if element.isFace :
+                    funcs.append( element.draw_face_center_marker_func( gizmo.preferences.highlight_color , element.is_hit_center() , element.is_hit_center() ) )
+
+            def draw() :
+                for func in funcs :
+                    func()
+            return draw
         return None
 
     def OnDraw( self , context  ) :

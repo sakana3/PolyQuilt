@@ -28,10 +28,38 @@ class SubToolFaceExtrude(SubToolMove) :
     name = "Extrud&MoveTool"
 
     def __init__(self,op,startTarget,startMousePos) :
+        newMirror = None
+        faces = [startTarget.element]
+        region = False
+        if op.bmo.is_mirror_mode :
+            mirror = op.bmo.find_mirror( startTarget.element  )
+            if mirror != None and mirror != startTarget.element:
+                faces = [startTarget.element , mirror ]
+                if op.preferences.fix_to_x_zero or startTarget.normal.dot(mirror.normal) > 0.999999999 :
+                    region = True
 
-        ret = bmesh.ops.extrude_discrete_faces( op.bmo.bm , faces = [startTarget.element], use_normal_flip = True , use_select_history = False )        
+        verts = [ [v for v in f.verts] for f in faces ]
+        is_convex = all( [ len( e.link_faces ) > 1 for e in startTarget.element.edges ] )
+
+        if region :
+            ret = bmesh.ops.extrude_face_region( op.bmo.bm , geom  = faces, use_normal_flip = False , use_select_history = False )        
+            ret = [ g for g in ret['geom'] if isinstance( g , bmesh.types.BMFace ) ] 
+        else :
+            ret = bmesh.ops.extrude_discrete_faces( op.bmo.bm , faces = faces, use_normal_flip = True , use_select_history = False )        
+            ret = ret['faces']
+
+        if not is_convex:
+            for vs in verts :
+                op.bmo.AddFace( reversed(vs) , normal = None , is_mirror = False )
+
         op.bmo.UpdateMesh()
 
-        newFace = ElementItem( op.bmo , element = ret['faces'][0] , coord = startTarget.coord , hitPosition = startTarget.hitPosition )
-
-        super().__init__(op,newFace,startMousePos,'NORMAL')
+        newFace = ElementItem( op.bmo , element = ret[0] , coord = startTarget.coord , hitPosition = startTarget.hitPosition )
+        if op.bmo.is_mirror_mode :
+            if len(faces) > 1 :
+                newMirror = ret[1]
+            else :
+                newMirror = ret[0]
+            newFace.setup_mirror(newMirror)
+    
+        super().__init__(op,newFace,startMousePos,'NORMAL',newMirror)

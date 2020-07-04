@@ -27,7 +27,7 @@ from .subtool import SubTool
 class SubToolMove(SubTool) :
     name = "MoveTool"
 
-    def __init__(self,op,startTarget,startMousePos, move_type = None ) :
+    def __init__(self,op,startTarget,startMousePos, move_type = None, mirror = None  ) :
         super().__init__(op)
         self.currentTarget = startTarget
         self.currentTarget.set_snap_div( 0 )        
@@ -38,14 +38,20 @@ class SubToolMove(SubTool) :
         self.target_orig = { v : v.co.copy()  for v in startTarget.verts if v != None }
         if self.bmo.is_mirror_mode :
             inv = self.bmo.obj.matrix_world.inverted() @ self.startPos
-            mirrors = [ self.bmo.find_mirror(v) for v in startTarget.verts ]
-            if inv.x >= 0 :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if v not in mirrors or v.co.x > 0 }
+            if mirror == None and mirror != startTarget.element :
+                mirrors = [ self.bmo.find_mirror(v,False) for v in startTarget.verts ]
             else :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) if v not in mirrors or v.co.x < 0 }
+                def find_mirror( v ) :
+                    f = [ m for m in mirror.verts if self.bmo.test_mirror( v.co , m.co ) ]
+                    return f[0] if f else None
+                mirrors = [ find_mirror(v) for v in startTarget.verts ]
+            if inv.x >= 0 :
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) }
+            else :
+                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) }
+                
         else :
             self.mirror_pair = { v : None for v in startTarget.verts }
-
         self.normal_ray = pqutil.Ray( self.startPos , self.bmo.local_to_world_nrm( startTarget.normal ) )
         self.normal_ray.origin = self.startPos
         self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , startTarget.hitPosition )
@@ -254,7 +260,10 @@ class SubToolMove(SubTool) :
             p = QSnap.view_adjust(p)
             p = self.bmo.obj.matrix_world.inverted() @ p
 
-            if self.preferences.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
+            if vert == mirror :
+                p.x = 0.0
+
+            elif self.preferences.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
                 p.x = 0.0
 
             self.bmo.set_positon( vert , p , False )

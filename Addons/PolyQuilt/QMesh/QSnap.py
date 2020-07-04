@@ -43,7 +43,13 @@ class QSnap :
 
     @classmethod
     def is_active( cls ) :
-        return cls.instance != None
+        if cls.instance == None :
+            return False
+
+        if cls.instance.bvh_list == None :
+            return False
+
+        return True
 
     @classmethod
     def update(cls,context) :
@@ -107,6 +113,19 @@ class QSnap :
             if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(location) :
                 location.x = 0
             return location
+        return world_pos
+
+    @classmethod
+    def adjust_by_normal( cls , world_pos : mathutils.Vector , world_normal : mathutils.Vector  , is_fix_to_x_zero = False) :
+        if cls.instance != None :
+            ray = pqutil.Ray( world_pos , world_normal )
+            location , norm , index = cls.instance.__raycast_double( ray )
+            if location == None :
+                location , norm , index = cls.instance.__find_nearest( world_pos )
+            if location != None :
+                if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(location) :
+                    location.x = 0
+                return location
         return world_pos
 
     @classmethod
