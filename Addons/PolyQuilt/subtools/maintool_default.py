@@ -25,8 +25,8 @@ from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *
-from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
+from .subtool_edgeloop_dissolve import *
 from .subtool_edge_extrude import *
 from .subtool_vert_extrude import *
 from .subtool_face_extrude import *
@@ -69,9 +69,9 @@ class MainToolDefault(MainTool) :
                     tools.append(SubToolPolyPen(self.operator,self.currentTarget))
                 else :
                     if len(self.currentTarget.element.link_faces) > 0 :
-                        tools.append(SubToolEdgeSlice(self.operator,self.currentTarget, self.mouse_pos))
-                    if SubToolEdgeloopCut.Check( self ,self.currentTarget) : 
-                        tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
+                        tools.append(SubToolEdgeLoopCut(self.operator,self.currentTarget, self.mouse_pos))
+                    if SubToolEdgeloopDissolve.Check( self ,self.currentTarget) : 
+                        tools.append(SubToolEdgeloopDissolve(self.operator,self.currentTarget))
                     if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 
                         tools.append(SubToolEdgeExtrude(self.operator,self.currentTarget,False))
                 self.SetSubTool( tools )

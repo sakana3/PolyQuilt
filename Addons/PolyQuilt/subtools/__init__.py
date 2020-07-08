@@ -21,6 +21,7 @@ from .maintool_delete import MainToolDelete
 from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
 from .maintool_edgeloop_dissolve import MainToolEdgeLoopDissolve
+from .subtool_edgeloop_extrude import SubToolEdgeLoopExtrude
 from .subtool_seam import SubToolSeam
 from .subtool_seam_loop import SubToolSeamLoop
 
@@ -30,13 +31,11 @@ maintools = {
 #   'HOLD'              : MainToolHold ,
     'LOWPOLY'           : MainToolLowPoly ,
     'BRUSH'             : MainToolBrush ,
-#   'BRUSH_DELETE'      : MainToolBrushDelete ,
-#   'BRUSH_RELAX'       : MainToolBrushRelax ,
-#   'BRUSH_MOVE'        : MainToolBrushMove ,
     'EXTRUDE'           : MainToolExtrude ,
     'KNIFE'             : MainToolKnife ,
     'DELETE'            : MainToolDelete ,
     'LOOPCUT'           : MainToolLoopCut ,
+    'EDGELOOP_EXTRUDE'  : SubToolEdgeLoopExtrude ,
     'EDGELOOP_DISSOLVE' : MainToolEdgeLoopDissolve ,
     'MARK_SEAM'         : SubToolSeam ,
     'MARK_SEAM_LOOP'    : SubToolSeamLoop ,

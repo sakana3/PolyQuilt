@@ -24,21 +24,13 @@ from ..utils.dpi import *
 from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
-from .subtool_makepoly import *
-from .subtool_knife import *
-from .subtool_edge_slice import *
-from .subtool_edgeloop_cut import *
-from .subtool_edge_extrude import *
 from .subtool_brush_relax import *
 from .subtool_brush_size import *
 from .subtool_brush_move import *
 from .subtool_brush_delete import *
 from .subtool_move import *
-from .subtool_fin_slice import *
 from .subtool_autoquad import *
 from ..utils.dpi import *
-
-
 
 
 class MainToolBrush(MainTool) :

@@ -25,11 +25,10 @@ from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *
-from .subtool_edge_slice import *
-from .subtool_edge_slide import *
 from .subtool_edgeloop_cut import *
+from .subtool_edgeloop_slide import *
+from .subtool_edgeloop_dissolve import *
 from .subtool_edge_extrude import *
-from .subtool_edge_extrude_multi import *
 from .subtool_vert_extrude import *
 from .subtool_autoquad import *
 from .subtool_move import *
@@ -53,7 +52,7 @@ class MainToolHold(MainTool) :
         elif event.type == MBEventType.Click :
             if self.currentTarget.isVert or self.currentTarget.isEdge or self.currentTarget.isEmpty:
                 if SubToolAutoQuad.Check( self , self.currentTarget) :
-                    self.SetSubTool( SubToolAutoQuad( self ))
+                    self.SetSubTool( SubToolAutoQuad( event , self ))
             self.isExit = True
 
         elif event.type == MBEventType.LongClick :
@@ -84,17 +83,13 @@ class MainToolHold(MainTool) :
             if self.currentTarget.isEdge :
                 tools = []
                 if len(self.currentTarget.element.link_faces) > 0 :
-                    tools.append(SubToolEdgeSlice(self.operator,self.currentTarget, self.mouse_pos))
-                if SubToolEdgeloopCut.Check(self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeloopCut(self.operator,self.currentTarget))
-                if SubToolEdgeExtrudeMulti.Check(self ,self.currentTarget) : 
-                    tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget,True))                    
+                    tools.append(SubToolEdgeLoopCut(self.operator,self.currentTarget, self.mouse_pos))
+                if SubToolEdgeloopDissolve.Check(self ,self.currentTarget) : 
+                    tools.append(SubToolEdgeloopDissolve(self.operator,self.currentTarget))
                 self.SetSubTool( tools )
             elif self.currentTarget.isVert :
                 tools = []
-                if SubToolEdgeExtrudeMulti.Check( self ,self.currentTarget ) :
-                    tools.append(SubToolEdgeExtrudeMulti(self.operator,self.currentTarget))
-                self.SetSubTool( tools )
+#               self.SetSubTool( tools )
             elif self.currentTarget.isEmpty :
                 self.SetSubTool( SubToolKnife(self.operator,self.currentTarget , self.LMBEvent.PressPos ) )   
 

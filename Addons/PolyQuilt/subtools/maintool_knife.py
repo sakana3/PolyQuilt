@@ -25,10 +25,7 @@ from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_makepoly import *
 from .subtool_knife import *
-from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
-from .subtool_edge_extrude import *
-from .subtool_vert_extrude import *
 from .subtool_move import *
 from .subtool_fin_slice import *
 from .subtool_polypen import *

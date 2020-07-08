@@ -24,8 +24,8 @@ from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_knife import *
-from .subtool_edge_slice import *
 from .subtool_edgeloop_cut import *
+from .subtool_edgeloop_dissolve import *
 from .subtool_delete import *
 
 class MainToolEdgeLoopDissolve(MainTool) :
@@ -50,7 +50,7 @@ class MainToolEdgeLoopDissolve(MainTool) :
         elif event.type == self.buttonType : 
             if event.value == 'RELEASE' :
                 if self.removes :
-                    self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle=0 )
+                    self.bmo.dissolve_edges( self.removes , use_verts = False , use_face_split = False , dissolve_vert_angle =self.preferences.vertex_dissolve_angle )
                     self.bmo.UpdateMesh()                    
                 return 'FINISHED'
         elif event.type == 'RIGHTMOUSE': 

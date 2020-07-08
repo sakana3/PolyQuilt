@@ -250,7 +250,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 self.report({'WARNING'}, "Element data is invalid!" )
                 return {'CANCELLED'}
 
-            element = copy.copy(self.preselect.currentElement)
+            element = self.preselect.currentElement
 
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
@@ -260,7 +260,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
             if self.bmo.obj != context.active_object or self.bmo.bm.is_valid is False :            
                 self.report({'WARNING'}, "BMesh Broken..." )
                 return {'CANCELLED'}
-
+            if not maintools[self.tool_mode].Check( None , element ) :
+                return {'CANCELLED'}
             self.currentSubTool = maintools[self.tool_mode](self , element, event.type )
             self.currentSubTool.OnInit(context )
 #            self.currentSubTool.Update(context, event)

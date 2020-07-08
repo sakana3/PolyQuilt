@@ -227,6 +227,8 @@ class QMeshOperators :
     def AddFace( self , verts , normal = None , is_mirror = None ) :
         self.ensure_lookup_table()
         face = self.bm.faces.new( verts )
+        if face == None :
+            return None
 
         linkCount = 0
         for loop in [ l for l in face.loops if not l.edge.is_boundary ] :
@@ -336,17 +338,19 @@ class QMeshOperators :
             mirror_edges = {edge for edge in mirror_edges if edge is not None }
             edges = list( set(edges) | mirror_edges )
 
-        if all( e.is_boundary for e in edges ) :
-            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
-            return
-
         verts = set()
         for e in edges :
             verts.add( e.verts[0] )
             verts.add( e.verts[1] )
 
+        if all( e.is_boundary for e in edges ) :
+            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
+            bmesh.ops.delete( self.bm , geom = [ v for v in verts if v.is_valid and v.is_wire ] , context = 'VERTS' )
+        elif all( not e.is_contiguous for e in edges ) :
+            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
+        else :
+            new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
-        new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
 
         dissolve_verts = [ v for v in verts if v.is_valid ]
         if dissolve_vert_angle > 0 :
@@ -541,65 +545,52 @@ class QMeshOperators :
                 vert = None
         return edges , verts
 
-    def calc_edge_loop( self , startEdge , check_func = None ) :
-        edges = []
-        verts = []
-
+    def calc_edge_loop( self , startEdge , check_func = None , is_mirror = None ) :
         if not isinstance( startEdge , bmesh.types.BMEdge ) :
-            return edges , verts
+            return [] ,[]
+
+        edges = [startEdge]
+        verts = [startEdge.verts[0],startEdge.verts[1]]
 
         def append( lst , geom ) :
             if geom not in lst :
                 lst.append(geom)
-                if self.is_mirror_mode :
-                    mirror =self.find_mirror( geom )
-                    if mirror :
-                        lst.append( mirror )
 
-        for vert in startEdge.verts :
-            preEdge = startEdge
-            currentV = vert
-            while currentV != None :
-                append(edges , preEdge)
+        def check( src , dst ) :
+            if src != dst :
+                 if len(dst.link_faces) == satrt_link_face_cnt :
+                     if not set(src.link_faces) & set(dst.link_faces) :
+                         src_edges = sum( ( tuple(f.edges) for f in src.link_faces ) , () )
+                         if all( ( set(src_edges) & set( f.edges ) for f in  dst.link_faces  ) )  :
+                             return True
+            return False
 
-                if currentV.is_boundary :
-                    if len( currentV.link_faces )== 2 :
-                        if not any( [ len(f.verts) == 3 for f in currentV.link_faces ] ):
-                            if currentV not in verts :
-                                append(verts , currentV)
-                    break
+        satrt_link_face_cnt = len( startEdge.link_faces )
 
-                if len(currentV.link_faces) == 4 :
-                    faces = set(currentV.link_faces ) ^ set(preEdge.link_faces )
-                    if len( faces ) != 2 :
-                        break
-                    faces = list(faces)
-                    share_edges = set(faces[0].edges) & set(faces[1].edges) & set(currentV.link_edges )
-                    if len(share_edges) != 1 :
-                        break
+        loop_verts = [ (startEdge,startEdge.verts[0] ), (startEdge,startEdge.verts[1]) ]
+        while( len(loop_verts) > 0 ) :
+            cur_edge = loop_verts[-1][0]
+            cur_vert = loop_verts[-1][1]
+            loop_verts.pop(-1)
 
-                    if check_func :
-                        if check_func( preEdge , currentV ) == False :
-                            break
+            if check_func != None and not check_func(cur_edge,cur_vert) :
+                continue
 
-                    preEdge = list(share_edges)[0]
+            est_edges = [ e for e in cur_vert.link_edges if check(cur_edge , e) ]
+            if len(est_edges) == 1 :
+                append_edge = est_edges[0]
+                if len(append_edge.link_faces) == satrt_link_face_cnt and  append_edge not in edges :
+                    loop_verts.append( (append_edge , append_edge.other_vert(cur_vert) ) )
+                    append( edges , append_edge)
+                    if cur_vert not in verts :
+                        append( verts , cur_vert )
 
-                    if currentV not in verts :
-                        append(verts , currentV)
+        if self.check_mirror(is_mirror) :
+            edges.extend( [ m for m in ( self.find_mirror( e ) for e in edges ) if m and m not in edges ] )
+            verts.extend( [ m for m in ( self.find_mirror( v ) for v in verts ) if m and m not in verts ] )
 
-                elif len(currentV.link_faces) == 2 :
-                    share_edges = [ e for e in currentV.link_edges if e != preEdge ]
-                    if len(share_edges) != 1 :
-                        break
-                    preEdge = share_edges[0]
-                else :
-                    break
-
-
-                currentV = preEdge.other_vert(currentV)
-                if currentV == vert:
-                    break
         return edges , verts
+
 
     def do_edge_loop_cut( self , edges , verts ) :
         bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = False , use_face_split = False )  

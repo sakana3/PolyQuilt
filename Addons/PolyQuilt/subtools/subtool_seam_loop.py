@@ -65,7 +65,7 @@ class SubToolSeamLoop(SubToolSeam) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        if element != None and gizmo.bmo != None :
+        if element.isEdge and gizmo.bmo != None :
             edges = cls.find_seam_loop( gizmo.bmo , element.element )
             if edges :
                 alpha = gizmo.preferences.highlight_face_alpha

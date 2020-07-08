@@ -142,6 +142,7 @@ class SubToolPolyPen(SubTool) :
         vt = [ QSnap.view_adjust( p ) for p in vt ]
 
         for v , p in zip( fin1.Verts , vt ) :
+            mirror = None
             if self.bmo.is_mirror_mode :
                 mirror = self.bmo.find_mirror(v)
 

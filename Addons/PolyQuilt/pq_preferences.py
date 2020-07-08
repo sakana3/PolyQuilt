@@ -260,7 +260,7 @@ class PolyQuiltPreferences(AddonPreferences):
     vertex_dissolve_angle : FloatProperty(
         name="Vertex Dessolve Angle",
         description="Vertex Dessolve Angle",
-        default= 160,
+        default= 120,
         min=0,
         max=180)
 
