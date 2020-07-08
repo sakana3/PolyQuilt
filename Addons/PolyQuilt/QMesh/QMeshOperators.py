@@ -338,21 +338,28 @@ class QMeshOperators :
             mirror_edges = {edge for edge in mirror_edges if edge is not None }
             edges = list( set(edges) | mirror_edges )
 
-        verts = set()
+        verts = {}
         for e in edges :
-            verts.add( e.verts[0] )
-            verts.add( e.verts[1] )
+            verts[ e.verts[0] ] = e.is_wire
+            verts[ e.verts[1] ] = e.is_wire
 
-        if all( e.is_boundary for e in edges ) :
-            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
-            bmesh.ops.delete( self.bm , geom = [ v for v in verts if v.is_valid and v.is_wire ] , context = 'VERTS' )
-        elif all( not e.is_contiguous for e in edges ) :
-            bmesh.ops.delete( self.bm , geom = edges , context = 'EDGES' )
-        else :
-            new_face = bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = use_verts , use_face_split = use_face_split )
+        for edge in edges :
+            if edge.is_valid :
+                if edge.is_boundary :
+                    bmesh.ops.delete( self.bm , geom = [edge] , context = 'EDGES' )
+                elif edge.is_wire :
+                    bmesh.ops.delete( self.bm , geom = [edge] , context = 'EDGES' )
+                else :
+                    bmesh.ops.dissolve_edges( self.bm , edges = [edge] , use_verts = use_verts , use_face_split = use_face_split )
 
+        # 独立頂点を削除
+        delete_Verts = [ v for v , w in verts.items() if v.is_valid and len(v.link_edges) == 0 ]
+        bmesh.ops.delete( self.bm , geom = delete_Verts , context = 'VERTS' )
+        delete_Verts = [ v for v , w in verts.items() if v.is_valid and len(v.link_edges) == 1 and not w ]
+        bmesh.ops.delete( self.bm , geom = delete_Verts , context = 'VERTS' )
 
         dissolve_verts = [ v for v in verts if v.is_valid ]
+
         if dissolve_vert_angle > 0 :
             dissolve_verts = self.calc_limit_verts( dissolve_verts , dissolve_vert_angle = dissolve_vert_angle , is_mirror = False )
         if len(dissolve_verts) > 0 :
@@ -591,12 +598,6 @@ class QMeshOperators :
 
         return edges , verts
 
-
-    def do_edge_loop_cut( self , edges , verts ) :
-        bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = False , use_face_split = False )  
-        vs = [ v for v in verts if v.is_valid ]
-        bmesh.ops.dissolve_verts( self.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        
-  
 
     @staticmethod
     def calc_loop_face( edge ) :

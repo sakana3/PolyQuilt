@@ -105,33 +105,17 @@ class SubToolDelete(SubToolEx) :
         return 'ERASER'
 
     def RemoveElement( self , element ) :
-        def dissolve_edges( edges ) :
-            single_edges = [ e for e in edges if len(e.link_faces) == 0 ]
-            edges =  [ e for e in edges if len(e.link_faces) > 0 ]
-
-            if single_edges :
-                self.bmo.delete_edges( list(single_edges) )
-
-            if all( e.is_boundary for e in edges ) :
-                faces = set()
-                for e in edges :
-                    for f in e.link_faces :
-                        faces.add(f)
-                self.bmo.delete_faces( list(faces) )
-            else :
-                self.bmo.dissolve_edges( edges , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
-
         if element.isNotEmpty :
             if self.removes[0] and self.removes[1] :
-                self.bmo.do_edge_loop_cut( self.removes[0] , self.removes[1] )
+                self.bmo.dissolve_edges( self.removes[0] , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif element.isVert :
                 edges = [ r for r in self.removes[0] if isinstance( r , bmesh.types.BMEdge )  ]
                 if edges :
-                    dissolve_edges( edges )
+                    self.bmo.dissolve_edges( edges , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
                 else :
                     self.bmo.dissolve_vert( element.element , False , False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle  )
             elif element.isEdge :
-                dissolve_edges( self.removes[0] )
+                    self.bmo.dissolve_edges( self.removes[0] , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
             elif element.isFace :
                 self.bmo.delete_faces( self.removes[0] )                    
             self.bmo.UpdateMesh()

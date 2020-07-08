@@ -32,7 +32,6 @@ class SubToolEdgeloopDissolve(SubTool) :
         self.currentEdge = target
         self.is_forcus = False
         self.EdgeLoops = None
-        self.VertLoops = None
 
     def Check( root ,target : ElementItem ) :
         if len( target.element.link_faces ) == 2 :
@@ -47,7 +46,7 @@ class SubToolEdgeloopDissolve(SubTool) :
             if self.bmo.is_snap2D( self.mouse_pos , p0 ) or self.bmo.is_snap2D( self.mouse_pos , p1 ) :
                 self.is_forcus = True
                 if self.EdgeLoops == None :
-                    self.EdgeLoops , self.VertLoops = self.bmo.calc_edge_loop( self.currentEdge.element )
+                    self.EdgeLoops , v = self.bmo.calc_edge_loop( self.currentEdge.element )
         return self.is_forcus
 
     def OnUpdate( self , context , event ) :
@@ -60,7 +59,7 @@ class SubToolEdgeloopDissolve(SubTool) :
             if event.value == 'RELEASE' :
                 if self.EdgeLoops != None :
 #                   bpy.ops.mesh.select_all(action='DESELECT')
-                    self.bmo.do_edge_loop_cut( self.EdgeLoops , self.VertLoops )
+                    self.bmo.dissolve_edges( self.EdgeLoops , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )                    
                     self.bmo.UpdateMesh()
                     self.currentTarget = ElementItem.Empty() 
                     return 'FINISHED'
