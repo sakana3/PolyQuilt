@@ -74,7 +74,7 @@ class move_component_module :
                 if mirror :
                     m = mathutils.Vector( (-p.x,p.y,p.z) )
                     if mirror in self.verts :
-                        if (self.start_pos.x > 0 and initial_pos.x > 0 ) or (self.start_pos.x < 0 and initial_pos.x < 0 ) :
+                        if (self.start_pos.x >= 0 and initial_pos.x >= 0 ) or (self.start_pos.x <= 0 and initial_pos.x <= 0 ) :
                             vert.co , mirror.co = p , m
                     else :
                         vert.co , mirror.co = p , m
