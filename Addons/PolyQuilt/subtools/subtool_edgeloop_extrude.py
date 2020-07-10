@@ -96,6 +96,13 @@ class SubToolEdgeLoopExtrude(MainTool) :
         return False
 
     @staticmethod
+    def CheckMarker( root , target : ElementItem ) :
+        if target.isEdge :
+            return target.element.is_boundary and target.can_extrude()
+        return False
+
+
+    @staticmethod
     def pick_element( qmesh , location , preferences ) :
         element = qmesh.PickElement( location , preferences.distance_to_highlight , edgering = True , elements = ["EDGE"] )
         if element.isEdge : 
@@ -105,19 +112,13 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        lw2 = gizmo.bmo.local_to_world_pos
         if element.isEdge :
-            loop_edge , v = gizmo.bmo.calc_edge_loop( element.element )        
-            color = gizmo.preferences.makepoly_color         
-            draw_lines = ( ( lw2( e.verts[0].co ) , lw2( e.verts[1].co) ) for e in loop_edge )
-            draw_lines = sum( draw_lines , () )
-            def draw() :
-                draw_util.draw_lines3D( bpy.context , draw_lines , color , 4 , primitiveType = 'LINES' , hide_alpha = 0 )
-            return draw
-
+            alpha = gizmo.preferences.highlight_face_alpha
+            vertex_size = gizmo.preferences.highlight_vertex_size        
+            width = gizmo.preferences.highlight_line_width
+            color = gizmo.preferences.highlight_color
+            return draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , element.both_loops , vertex_size ,width,alpha, color )
         return None
-
-
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':

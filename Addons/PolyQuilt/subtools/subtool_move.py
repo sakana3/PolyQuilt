@@ -23,6 +23,7 @@ from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubTool
+from .subtool_util import move_component_module
 
 class SubToolMove(SubTool) :
     name = "MoveTool"
@@ -32,41 +33,14 @@ class SubToolMove(SubTool) :
         self.currentTarget = startTarget
         self.currentTarget.set_snap_div( 0 )        
         self.snapTarget = ElementItem.Empty()
-        self.startMousePos = copy.copy(startTarget.coord)
-        self.mouse_pos = startMousePos.copy()
-        self.startPos = startTarget.hitPosition.copy()
         self.target_orig = { v : v.co.copy()  for v in startTarget.verts if v != None }
-        if self.bmo.is_mirror_mode :
-            inv = self.bmo.obj.matrix_world.inverted() @ self.startPos
-            if mirror == None and mirror != startTarget.element :
-                mirrors = [ self.bmo.find_mirror(v,False) for v in startTarget.verts ]
-            else :
-                def find_mirror( v ) :
-                    f = [ m for m in mirror.verts if self.bmo.test_mirror( v.co , m.co ) ]
-                    return f[0] if f else None
-                mirrors = [ find_mirror(v) for v in startTarget.verts ]
-            if inv.x >= 0 :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) }
-            else :
-                self.mirror_pair = { v : m for v,m in zip( startTarget.verts , mirrors ) }
-                
-        else :
-            self.mirror_pair = { v : None for v in startTarget.verts }
-        self.normal_ray = pqutil.Ray( self.startPos , self.bmo.local_to_world_nrm( startTarget.normal ) )
-        self.normal_ray.origin = self.startPos
-        self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , startTarget.hitPosition )
-        self.move_plane = self.screen_space_plane
-        if move_type == None :
-            if self.currentTarget.is_hit_center() :
-                self.move_type = 'NORMAL'
-            else :
-                self.move_type = op.move_type
-        else :
-            self.move_type = move_type
-        self.ChangeRay(self.move_type)
+
+        mt = move_component_module.check_move_type( startTarget , op.move_type , move_type )
+        self.move_component_module = move_component_module( self.bmo , startTarget , startMousePos , mt , self.preferences.fix_to_x_zero )
+        self.move_component_module.set_geoms( [startTarget.element] )
+
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
-        self.repeat = False
-        self.MoveTo( bpy.context , self.mouse_pos )
+        self.MoveTo( bpy.context , startMousePos )
         self.bmo.UpdateMesh(False)
         self.is_snap = False
 
@@ -98,7 +72,7 @@ class SubToolMove(SubTool) :
             self.is_snap = False
             if self.operator.is_snap :
                 dist = self.preferences.distance_to_highlight
-                if self.currentTarget.isVert and self.move_ray == None :# and ( self.currentTarget.element.is_manifold is False or self.currentTarget.element.is_boundary )  :
+                if self.currentTarget.isVert and self.move_component_module.move_ray == None :# and ( self.currentTarget.element.is_manifold is False or self.currentTarget.element.is_boundary )  :
                     self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , self.ignoreSnapTarget , elements = ['VERT'] )
 
                     if self.snapTarget.isVert \
@@ -123,7 +97,7 @@ class SubToolMove(SubTool) :
                             if self.bmo.check_near(self.currentTarget.element.co , mp ) :
                                 self.currentTarget.element.co = self.bmo.zero_pos(mp)
                                 self.is_snap = True
-                elif self.currentTarget.isEdge and self.move_ray == None :
+                elif self.currentTarget.isEdge and self.move_component_module.move_ray == None :
                     self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreSnapTarget ) 
                     if self.snapTarget.isEdge :
                         p0 = self.bmo.local_to_2d( self.currentTarget.element.verts[0].co )
@@ -151,39 +125,19 @@ class SubToolMove(SubTool) :
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
-                verts = set( self.target_orig.keys() ) | set( v for v in self.mirror_pair.values() if v != None )
-                self.bmo.UpdateMesh()
+                verts = set( self.move_component_module.mirror_set.keys() ) | set( v for v in self.move_component_module.mirror_set.values() if v != None )
                 if self.snapTarget.isVert :
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.co)
                 elif self.snapTarget.isEdge : 
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[0].co)
                     verts = verts | self.bmo.find_near(self.bmo.obj.matrix_world @ self.snapTarget.element.verts[1].co)
                 if len(verts) > 1 :
-                    bmesh.ops.remove_doubles( self.bmo.bm , verts = list(verts) , dist = threshold )
+                    bmesh.ops.remove_doubles( self.bmo.bm , verts = [ v for v in verts if v ] , dist = threshold )
                     self.bmo.UpdateMesh()
 
                 return 'FINISHED'
-        elif event.type == 'WHEELUPMOUSE' :
-            a = { 'FREE' : 'X' , 'X' : 'Y'  , 'Y' : 'Z' , 'Z' : 'NORMAL' , 'NORMAL' : 'FREE' }
-            self.ChangeRay( a[self.move_type] )
-        elif event.type == 'WHEELDOWNMOUSE' :
-            a = { 'FREE' : 'NORMAL' , 'X' : 'FREE' , 'Y' : 'X' , 'Z' : 'Y' , 'NORMAL' : 'Z' }
-            self.ChangeRay( a[self.move_type] )
-        elif event.value == 'PRESS' :
-            if self.repeat == False :
-                if event.type == 'X' :
-                    self.ChangeRay( 'X' )
-                elif event.type == 'Y' :
-                    self.ChangeRay( 'Y' )
-                elif event.type == 'Z' :
-                    self.ChangeRay( 'Z' )
-                elif event.type == 'N' :
-                    self.ChangeRay( 'NORMAL'  )
-                elif event.type == 'T' :
-                    self.ChangeRay( 'TANGENT'  )
-            self.repeat = True
-        elif event.value == 'RELEASE' :
-            self.repeat = False
+        else :
+            self.move_component_module.update(event)
 
         self.debugStr = str(self.snapTarget.element)
 
@@ -200,77 +154,12 @@ class SubToolMove(SubTool) :
         if self.snapTarget.isNotEmpty :
             self.snapTarget.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
 
-        if self.move_ray != None :
-            v0 = self.move_ray.origin
-            v1 = v0 + self.move_ray.vector * 10000.0 
-            v2 = v0 - self.move_ray.vector * 10000.0 
-            draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.2 )
-
-    def ChangeRay( self , move_type ) :
-        self.move_ray = None
-        self.move_plane = self.screen_space_plane
-        self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
-
-        if self.preferences.fix_to_x_zero and self.currentTarget.is_x_zero:
-            plane = pqutil.Plane( mathutils.Vector((0,0,0) ) ,  mathutils.Vector((1,0,0) ) ).object_to_world( self.bmo.obj )
-            plane.origin = self.startPos
-#           self.move_plane = plane
-
-        if move_type == 'FREE' :
-            self.move_ray = None
-        elif move_type == 'X' :
-            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (1,0,0) ) )
-            self.move_color = ( 1.0 , 0.0 ,0.0 ,1.0  )
-        elif move_type == 'Y' :
-            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (0,1,0) ) )
-            self.move_color = ( 0.0 , 1.0 ,0.0 ,1.0  )
-        elif move_type == 'Z' :
-            self.move_ray = pqutil.Ray( self.startPos , mathutils.Vector( (0,0,1) ) )
-            self.move_color = ( 0.0 , 0.0 ,1.0 ,1.0  )
-        elif move_type == 'NORMAL' :
-            self.move_ray = self.normal_ray
-            self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
-        elif move_type == 'TANGENT' :
-            self.move_plane = pqutil.Plane( self.startPos , self.normal_ray.vector )
-
-        self.move_type = move_type
+        self.move_component_module.draw_3D( context )
 
     def MoveTo( self ,context ,  mouse_pos ) :
-        move = mathutils.Vector( (0.0,0.0,0.0) )
+        move = self.move_component_module.move_to( mouse_pos )
 
-        if self.move_ray != None :
-            ray = pqutil.Ray.from_screen( context , mouse_pos )
-            p0 , p1 , d = self.move_ray.distance( ray )
-
-            move = ( p0 - self.move_ray.origin )
-        elif self.move_plane != None :
-            rayS = pqutil.Ray.from_screen( context , self.startMousePos )
-            rayG = pqutil.Ray.from_screen( context , mouse_pos )
-            vS = self.move_plane.intersect_ray( rayS )
-            vG = self.move_plane.intersect_ray( rayG )
-
-            move = (vG - vS)
-
-        self.currentTarget.hitPosition = self.startPos + move
-
-        for vert , mirror in self.mirror_pair.items() :
-            initial_pos = self.target_orig[vert]
-            p = self.bmo.obj.matrix_world @ initial_pos
-            p = p + move
-            p = QSnap.view_adjust(p)
-            p = self.bmo.obj.matrix_world.inverted() @ p
-
-            if vert == mirror :
-                p.x = 0.0
-
-            elif self.preferences.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
-                p.x = 0.0
-
-            self.bmo.set_positon( vert , p , False )
-
-            if mirror :
-                p.x = -p.x
-                self.bmo.set_positon( mirror , p , False )
+        self.move_component_module.update_geoms( move )
         return
 
             

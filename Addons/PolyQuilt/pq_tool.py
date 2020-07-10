@@ -131,6 +131,18 @@ class ToolPolyQuiltExtrude(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_Extrude"
     bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] ) 
 
+class ToolPolyQuiltEdgeLoop(ToolPolyQuiltBase):
+    pq_main_tool = 'EDGELOOP'
+    pq_description = 'EdgeLoop Tool'
+
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_edgeloop"
+    bl_label = "PolyQuilt:EdgeLoop"
+    bl_description = ( "Edgeloop Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_edgeloop_icon")
+    bl_widget = "MESH_GGT_PQ_EdgeLoop"
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
+
 class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     pq_main_tool = 'LOOPCUT'
     pq_description = 'LoopCut Tool'
@@ -171,6 +183,7 @@ PolyQuiltTools = (
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },
     { 'tool' : ToolPolyQuiltPoly  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltExtrude  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltEdgeLoop  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltLoopCut  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltKnife  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },

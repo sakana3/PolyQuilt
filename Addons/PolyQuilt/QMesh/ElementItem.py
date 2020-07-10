@@ -47,7 +47,6 @@ class ElementItem :
         self.__dist: float = dist
         self.__mirror = None
         self.__qmesh = qmesh
-        self.__mirror = None
         self.__div = 0
         self.setup_mirror()
 
@@ -219,6 +218,32 @@ class ElementItem :
     @property
     def type(self):
         return self.__type
+
+    @property
+    def loops( self ) :
+        if self.isEdge :        
+            if not hasattr( self , "__loop" ) :
+                self.__loop , v = self.__qmesh.calc_edge_loop( self.element , is_mirror = False )
+            return self.__loop
+        return []
+
+    @property
+    def mirror_loops( self ) :
+        if self.isEdge :        
+            if not hasattr( self , "__mirror_loop" ) :
+                if self.mirror != None :
+                    self.__mirror_loop = [ t for t in [ self.__qmesh.find_mirror(e,False) for e in self.loops ] if t ]
+                else :
+                    self.__mirror_loop = []
+            return self.__mirror_loop
+        return []
+
+    @property
+    def both_loops( self ) :
+        mp = [ m for m in self.mirror_loops if m not in self.loops ]
+        if mp :
+            return self.loops + mp
+        return self.loops
 
     @property
     def type_name(self)  :

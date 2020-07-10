@@ -20,6 +20,7 @@ from .maintool_knife import MainToolKnife
 from .maintool_delete import MainToolDelete
 from .maintool_extrude import MainToolExtrude
 from .maintool_loopcut import MainToolLoopCut
+from .maintool_edgeloop import MainToolEdgeLoop
 from .maintool_edgeloop_dissolve import MainToolEdgeLoopDissolve
 from .subtool_edgeloop_extrude import SubToolEdgeLoopExtrude
 from .subtool_seam import SubToolSeam
@@ -34,13 +35,13 @@ maintools = {
     'EXTRUDE'           : MainToolExtrude ,
     'KNIFE'             : MainToolKnife ,
     'DELETE'            : MainToolDelete ,
+    'EDGELOOP'          : MainToolEdgeLoop ,
     'LOOPCUT'           : MainToolLoopCut ,
     'EDGELOOP_EXTRUDE'  : SubToolEdgeLoopExtrude ,
     'EDGELOOP_DISSOLVE' : MainToolEdgeLoopDissolve ,
     'MARK_SEAM'         : SubToolSeam ,
     'MARK_SEAM_LOOP'    : SubToolSeamLoop ,
 }
-
 
 def enum_tool_callback(scene, context ):
     return ( ( tool , cls.name if cls else "None" , "" ,"", index  ) for index , (tool,cls) in enumerate(maintools.items()) )

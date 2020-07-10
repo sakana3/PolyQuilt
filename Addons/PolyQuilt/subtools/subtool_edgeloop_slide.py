@@ -22,24 +22,35 @@ from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
 from ..utils.dpi import *
-from .subtool import SubTool
+from .subtool import MainTool
 
-class SubToolEdgeSlide(SubTool) :
-    name = "EdgeLoopSlideTool"
+class SubToolEdgeSlide(MainTool) :
+    name = "EdgeLoop Slide"
 
-    def __init__(self,op, target : ElementItem ) :
-        super().__init__(op)
+    def __init__(self,op,target : ElementItem , button) :        
+        super().__init__(op,target, button)
         self.currentEdge = target.element
-        self.edges , self.vetrs = self.bmo.findEdgeLoop( self.currentEdge )
+        self.edges = self.bmo.sort_edges( target.both_loops )
+        self.verts = []
+        for e in self.edges :
+            for v in e.verts :
+                if v not in self.verts :
+                    self.verts.append(v)
         l2w = self.bmo.local_to_world_pos
-        t = [ [ l2w( e.other_vert(v).co) for e in self.vetrs[v] ] for v in self.currentEdge.verts ]
+        edge = self.currentEdge
+
+        t = { f : [ [ l2w(e.other_vert(v).co) for e in f.edges if e != edge and v in e.verts ][0] for v in edge.verts ] for f in edge.link_faces }
+
+        f = { e for e in self.currentEdge }
+
+        t = [ [ l2w( e.other_vert(v).co) for e in self.verts[v] ] for v in self.currentEdge.verts ]
         v0 = l2w(self.currentEdge.verts[0].co)
         v1 = l2w(self.currentEdge.verts[1].co)
         rate = ( v0 - target.hitPosition ).length / ( v0 - v1 ).length
         self.center_pos = target.hitPosition
         self.target_poss = [ t[0][i].lerp( t[1][i] , rate ) for i in range( len(self.currentEdge.link_faces) ) ]
-        self.initial_poss = { v : v.co.copy() for v in self.vetrs }
-        self.other_poss = { v : [ e.other_vert(v).co.copy() for e in edges] for v,edges in self.vetrs.items() }
+        self.initial_poss = { v : v.co.copy() for v in self.verts }
+        self.other_poss = { v : [ e.other_vert(v).co.copy() for e in edges] for v,edges in self.verts.items() }
         self.rates = [0,0]
 
     def OnUpdate( self , context , event ) :
@@ -47,11 +58,11 @@ class SubToolEdgeSlide(SubTool) :
             self.rates = self.calcRate( context , self.mouse_pos )
             max_rate = max( self.rates )
             if max_rate <= sys.float_info.epsilon :
-                for vert in self.vetrs :
+                for vert in self.verts :
                     vert.co = self.initial_poss[vert]
             else :
-                for vert in self.vetrs :
-                    edges = self.vetrs[vert]
+                for vert in self.verts :
+                    edges = self.verts[vert]
                     for i in range( len(edges)) :
                         if self.rates[i] >= sys.float_info.epsilon and self.rates[i] == max_rate :
                             p = self.initial_poss[vert].lerp( self.other_poss[vert][i] , self.rates[i] )

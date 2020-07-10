@@ -1,0 +1,105 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import bpy
+import math
+import mathutils
+import bmesh
+import bpy_extras
+import collections
+import copy
+from ..utils import pqutil
+from ..utils import draw_util
+from ..QMesh import *
+from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
+from .subtool import *
+from .subtool_edgeloop_cut import *
+from .subtool_edgeloop_dissolve import *
+from .subtool_edgeloop_extrude import SubToolEdgeLoopExtrude
+from .subtool_edgeloop_slide import SubToolEdgeSlide
+from .subtool_edgeloop_tweak import SubToolEdgeLoopTweak
+
+class MainToolEdgeLoop(MainTool) :
+    name = "EdgeLoop Tool"
+
+    def __init__(self,op,currentTarget, button) :
+        super().__init__(op,currentTarget, button , no_hold = False )        
+        self.callback = { 
+            MBEventType.Release         : [] ,
+            MBEventType.Click           : [] ,
+            MBEventType.LongClick       : [] ,
+            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ]] ,
+            MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ],[SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
+        }
+
+    @staticmethod
+    def LMBEventCallback(self , event ):
+        self.debugStr = str(event.type)
+        if event.type in self.callback.keys() :
+            tools = [ t[1]( self.operator , self.currentTarget , self.buttonType ) for t in self.callback[event.type] if t[0]( self , self.currentTarget ) ]
+            if tools :
+                self.SetSubTool( tools )
+            self.isExit = True
+
+    @staticmethod
+    def pick_element( qmesh , location , preferences ) :
+        element = qmesh.PickElement( location , preferences.distance_to_highlight, elements = ['EDGE'] )        
+        return element
+
+    @staticmethod
+    def Check( root , target ) :
+        if target.isEdge :
+            return True
+        return False
+
+    @classmethod
+    def DrawHighlight( cls , gizmo , element ) :
+        funcs = []
+        funcs.append( element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True ) )
+
+        if element.isEdge :
+            alpha = gizmo.preferences.highlight_face_alpha
+            vertex_size = gizmo.preferences.highlight_vertex_size        
+            width = gizmo.preferences.highlight_line_width
+            color = gizmo.preferences.highlight_color
+            if element.can_extrude() :
+                color = gizmo.preferences.makepoly_color
+                width = gizmo.preferences.highlight_line_width + 1
+            funcs.append( draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , element.both_loops , vertex_size ,width,alpha, color ) )
+            def draw() :
+                for func in funcs :
+                    func()
+            return draw
+        return None
+
+    def OnDraw( self , context  ) :
+        if self.LMBEvent.isPresure :
+            if self.currentTarget.isNotEmpty :
+                self.LMBEvent.Draw( self.currentTarget.coord )
+            else:
+                self.LMBEvent.Draw( None )
+
+    def OnDraw3D( self , context  ) :
+        if self.currentTarget.isEdge :
+            alpha = self.preferences.highlight_face_alpha
+            vertex_size = self.preferences.highlight_vertex_size        
+            width = self.preferences.highlight_line_width
+            color = self.preferences.highlight_color
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.currentTarget.both_loops , vertex_size ,width,alpha, color )
+
+    def OnExit( self ) :
+        pass
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'DEFAULT'

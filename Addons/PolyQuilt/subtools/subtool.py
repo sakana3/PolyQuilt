@@ -106,7 +106,7 @@ class SubToolRoot :
             if ret == 'FINISHED' :
                 for subTool in self.subTool :
                     subTool.OnExit()
-                self.OnExitSubTool( context , subTool)
+                    self.OnExitSubTool( context , subTool)
 
         if ret == 'PASS_THROUGH' :
             ret = 'RUNNING_MODAL'

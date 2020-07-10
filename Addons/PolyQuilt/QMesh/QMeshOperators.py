@@ -598,6 +598,30 @@ class QMeshOperators :
 
         return edges , verts
 
+    @staticmethod
+    def sort_edges( edges ) :
+        vs =[]
+        for e in edges :
+            for v in e.verts :
+                vs.append(v)
+
+        border = [ v for v in vs if len( [ e for e in edges if v in e.verts ] ) == 1 ]
+
+        for v in border :
+            result = []
+            tv = v
+            te = [ e for e in edges if tv in e.verts ][0]
+            while(tv != None) :
+                tt = [ e for e in edges if e != te and tv in e.verts ]
+                if len(tt) > 1 :
+                    return None
+                if len(tt) == 0 :
+                    break
+                te = tt[0]
+                tv = te.other_vert(tv)
+                result.append( te )
+
+        return edges
 
     @staticmethod
     def calc_loop_face( edge ) :
