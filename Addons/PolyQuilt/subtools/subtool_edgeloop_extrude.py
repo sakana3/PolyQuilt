@@ -98,7 +98,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
     @staticmethod
     def CheckMarker( root , target : ElementItem ) :
         if target.isEdge :
-            return target.element.is_boundary and target.can_extrude()
+            return (target.element.is_boundary or target.element.is_wire) and target.can_extrude()
         return False
 
 
