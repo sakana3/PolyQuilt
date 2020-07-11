@@ -23,110 +23,21 @@ from ..utils import draw_util
 from ..utils.dpi import *
 from ..QMesh import *
 from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
-from .subtool import SubTool
+from .subtool import MainTool
+from .subtool_util import vert_array_util
 
 
-class vert_array_util :
-    def __init__(self , qmesh ) :
-        self.qmesh = qmesh
-        self.verts_list = []
-        self.face_count = 0
-        self.edge_count = 0
 
-    def get( self , index : int ) :
-        return self.verts[index]
-
-    def add( self , vert ) :
-        world = self.qmesh.local_to_world_pos( vert.co )
-        screen = pqutil.location_3d_to_region_2d( world )
-        self.verts_list.append( [vert,vert.index,vert.co.copy(),world,screen] )
-        self.qmesh.bm.select_history.discard(vert)
-        self.qmesh.bm.select_history.add(vert)
-        vert.select_set(True)
-
-    def add_face( self , face ) :
-        self.qmesh.bm.select_history.discard(face)
-        self.qmesh.bm.select_history.add(face)
-        self.face_count = self.face_count + 1
-
-    def add_edge( self , edge ) :
-        self.qmesh.bm.select_history.discard(edge)
-        self.qmesh.bm.select_history.add(edge)
-        self.edge_count = self.edge_count + 1
-
-    def add_line( self , vert ) :
-        self.add( vert )
-        edge = self.qmesh.add_edge( self.get(-2) , self.get(-1) )          
-        self.add_edge( edge )
-        self.qmesh.UpdateMesh()                      
-        return edge
-
-    def clear_verts( self ) :
-        self.verts_list = []
-
-    def reset_verts( self ) :
-        self.verts_list = [ self.verts_list[-1] ]
-
-    @property
-    def vert_count( self ) :
-        return len(self.verts_list)
-
-    @property
-    def verts( self ) :
-        if len(self.verts_list) == 0 :
-            return []
-        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMVert) ][-len(self.verts_list):]
-
-    @property
-    def faces( self ) :
-        if self.face_count == 0 :
-            return []
-        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMFace) ][-self.face_count:]
-
-    @property
-    def last_vert( self ) :
-        return self.verts[-1]
-
-    @property
-    def last_edge( self ) :
-        return self.edges[-1]
-
-    @property
-    def last_face( self ) :
-        return self.faces[-1]
-
-    @property
-    def edges( self ) :
-        if self.edge_count == 0 :
-            return []
-        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMEdge) ][-self.edge_count:]
-
-    def clear_faces( self ) :
-        self.face_count = 0
-
-    def clear_edges( self ) :
-        self.edge_count = 0
-
-    @property
-    def cos( self ) :
-        return [ i[1] for i in self.verts_list ]
-
-    @property
-    def world_positions( self ) :
-        return [ i[3] for i in self.verts_list ]
-
-    @property
-    def screen_positions( self ) :
-        return [ i[4] for i in self.verts_list ]
-
-
-class SubToolMakePoly(SubTool) :
+class SubToolMakePoly(MainTool) :
     name = "MakePolyTool"
 
-    def __init__(self,op,startElement , mouse_pos ) :
-        super().__init__(op)        
+    def NewByEdge( op,startElement , button ) :
+        return SubToolMakePoly(op,startElement , button , "EDGE")
+
+    def __init__(self,op,startElement , button , mode = None ) :
+        super().__init__(op,startElement , button)
         self.mekePolyList = []
-        self.mouse_pos = mouse_pos
+        self.mouse_pos = op.mouse_pos
         self.currentTarget = startElement
 
         if self.operator.plane_pivot == 'OBJ' :
@@ -140,7 +51,7 @@ class SubToolMakePoly(SubTool) :
             p = self.calc_planned_construction_position()
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
-            self.currentTarget = ElementItem( self.bmo , vert , mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 )
+            self.currentTarget = ElementItem( self.bmo , vert , self.mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 )
         elif startElement.isEdge :
             self.currentTarget = self.edge_split( startElement )
             self.bmo.UpdateMesh()
@@ -157,7 +68,7 @@ class SubToolMakePoly(SubTool) :
         self.targetElement = None
         self.isEnd = False
         self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op )
-        self.mode = op.geometry_type
+        self.mode = op.geometry_type if mode == None else mode
         self.EdgeLoops = None
         self.VertLoops = None
         if self.mode == 'VERT' :

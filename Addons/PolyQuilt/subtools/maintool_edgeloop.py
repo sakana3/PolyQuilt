@@ -38,13 +38,30 @@ class MainToolEdgeLoop(MainTool) :
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
-            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ]] ,
+            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] ] ,
             MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ],[SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
         }
 
     @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
+
+        if event.type == MBEventType.LongClick :                
+            if self.currentTarget.isEdge :
+                self.bmo.dissolve_edges( self.currentTarget.both_loops , use_verts = False , use_face_split = False , dissolve_vert_angle=self.preferences.vertex_dissolve_angle )
+                self.bmo.UpdateMesh()
+                self.isExit = True
+
+        elif event.type == MBEventType.Click :                
+            if self.currentTarget.isEdge :
+                for face in self.bmo.bm.faces :
+                    face.select_set(False)
+                self.bmo.bm.select_flush(True)
+                for edge in self.currentTarget.both_loops :
+                    edge.select_set(True)
+                self.bmo.UpdateMesh()
+                self.isExit = True
+
         if event.type in self.callback.keys() :
             tools = [ t[1]( self.operator , self.currentTarget , self.buttonType ) for t in self.callback[event.type] if t[0]( self , self.currentTarget ) ]
             if tools :
@@ -60,7 +77,7 @@ class MainToolEdgeLoop(MainTool) :
     def Check( root , target ) :
         if target.isEdge :
             return True
-        return False
+        return True
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
@@ -95,6 +112,8 @@ class MainToolEdgeLoop(MainTool) :
             vertex_size = self.preferences.highlight_vertex_size        
             width = self.preferences.highlight_line_width
             color = self.preferences.highlight_color
+            if self.LMBEvent.is_hold :
+                color = self.color_delete()            
             draw_util.drawElementsHilight3D( self.bmo.obj , self.currentTarget.both_loops , vertex_size ,width,alpha, color )
 
     def OnExit( self ) :

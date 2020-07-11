@@ -50,7 +50,7 @@ class MainToolDefault(MainTool) :
 
         elif event.type == MBEventType.Click :
             if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
-                self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
+                self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.buttonType ) )
 
         elif event.type == MBEventType.LongClick :
             if self.currentTarget.isVert :
@@ -69,7 +69,7 @@ class MainToolDefault(MainTool) :
                     tools.append(SubToolPolyPen(self.operator,self.currentTarget))
                 else :
                     if len(self.currentTarget.element.link_faces) > 0 :
-                        tools.append(SubToolEdgeLoopCut(self.operator,self.currentTarget, self.mouse_pos))
+                        tools.append(SubToolEdgeLoopCut(self.operator,self.currentTarget, self.buttonType ))
                     if SubToolEdgeloopDissolve.Check( self ,self.currentTarget) : 
                         tools.append(SubToolEdgeloopDissolve(self.operator,self.currentTarget))
                     if SubToolEdgeExtrude.Check( self ,self.currentTarget) : 

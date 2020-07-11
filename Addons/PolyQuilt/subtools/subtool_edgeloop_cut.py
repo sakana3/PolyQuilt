@@ -22,13 +22,13 @@ from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
 from ..utils.dpi import *
-from .subtool import SubTool
+from .subtool import MainTool
 
-class SubToolEdgeLoopCut(SubTool) :
-    name = "SliceTool"
+class SubToolEdgeLoopCut(MainTool) :
+    name = "EdgeLoop Cut"
 
-    def __init__(self,op, target , mouse_pos ) :
-        super().__init__(op)
+    def __init__(self,op,target, button) :
+        super().__init__(op,target, button , no_hold = True )      
         self.currentTarget = target
         self.currentEdge = target.element
         l0 = (self.bmo.local_to_world_pos(target.element.verts[0].co) - target.hitPosition).length
@@ -37,7 +37,7 @@ class SubToolEdgeLoopCut(SubTool) :
         self.fixCenter = False
         self.split_deges , self.draw_deges , self.endTriangles , self.fixCenter = self.CalcSlice( self.bmo , self.currentEdge)
         self.is_forcus = True
-        self.sliceRate = self.CalcSplitRate( bpy.context , mouse_pos , self.currentEdge )
+        self.sliceRate = self.CalcSplitRate( bpy.context , self.mouse_pos , self.currentEdge )
 
     def Check( root , target ) :
         if target.isEdge :

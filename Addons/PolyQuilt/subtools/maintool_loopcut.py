@@ -49,7 +49,7 @@ class MainToolLoopCut(MainTool) :
 
         elif event.type == MBEventType.Down :
             if SubToolEdgeLoopCut.Check( self , self.currentTarget ):
-                self.SetSubTool( SubToolEdgeLoopCut(self.operator,self.currentTarget, self.mouse_pos ) )
+                self.SetSubTool( SubToolEdgeLoopCut(self.operator,self.currentTarget, self.buttonType ) )
 
     @classmethod
     def DrawHighlight( cls , gizmo , target ) :

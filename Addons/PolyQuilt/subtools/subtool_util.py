@@ -52,7 +52,7 @@ class move_component_module :
         else :
             self.mirror_set = { v : None for v in self.verts }
 
-    def update_geoms( self , move : mathutils.Vector ) -> bool :
+    def update_geoms( self , move : mathutils.Vector , snap_type : str = 'VIEW' ) -> bool :
 
         if (self.move - move).length >= sys.float_info.epsilon :
             self.move = move
@@ -63,7 +63,11 @@ class move_component_module :
                 initial_pos = self.verts[vert]
                 p = wm @ initial_pos
                 p = p + move
-                p = QSnap.view_adjust(p)
+                if QSnap.is_active() :
+                    if snap_type == 'VIEW' :
+                        p = QSnap.view_adjust(p)
+                    elif snap_type == 'NEAR' :
+                        p = QSnap.adjust_point(p)
                 p = im @ p
 
                 if self.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
@@ -127,6 +131,11 @@ class move_component_module :
 
             move = (vG - vS)
 
+        if QSnap.is_active() :
+            targetPos = self.start_pos + move
+            targetPos = QSnap.view_adjust( targetPos )
+            move = targetPos - self.start_pos
+
         if change_conponent :
             self.currentTarget.hitPosition = self.start_pos + move
 
@@ -176,3 +185,129 @@ class move_component_module :
             move_type = move_type1
 
         return move_type
+
+    def snap_loop( self , sorce_edge : bmesh.types.BMEdge , sorce_loop  , snap_edge : bmesh.types.BMEdge ) :
+        snap_loop , __ = self.bmo.calc_edge_loop( snap_edge )        
+        p0 = self.bmo.local_to_world_pos( sorce_edge.verts[0].co)
+        p1 = self.bmo.local_to_world_pos( sorce_edge.verts[1].co) 
+        s0 = self.bmo.local_to_world_pos( snap_edge.verts[0].co) 
+        s1 = self.bmo.local_to_world_pos( snap_edge.verts[1].co)
+        if (p0-s0).length + (p1-s1).length > (p0-s1).length + (p1-s0).length :
+            t0 = snap_edge.verts[0]
+            t1 = snap_edge.verts[1]
+        else :
+            t0 = snap_edge.verts[1]
+            t1 = snap_edge.verts[0]
+
+        def other( edge , vert , edges ) :
+            hits = [ e for e in edges if e != edge and vert in e.verts ]
+            if len(hits) == 1 :
+                return hits[0] , hits[0].other_vert(vert) 
+            return None , None
+
+        pair_verts = {}
+        for (src , dst) in zip(sorce_edge.verts , [t1,t0] ) :
+            sv = src
+            se = sorce_edge
+            dv = dst
+            de = snap_edge
+            while( sv != None and dv != None ) :
+                pair_verts[sv] = dv
+                se , sv = other( se , sv , sorce_loop  )
+                de , dv = other( de , dv , snap_loop  )
+
+        return pair_verts
+
+
+class vert_array_util :
+    def __init__(self , qmesh ) :
+        self.qmesh = qmesh
+        self.verts_list = []
+        self.face_count = 0
+        self.edge_count = 0
+
+    def get( self , index : int ) :
+        return self.verts[index]
+
+    def add( self , vert ) :
+        world = self.qmesh.local_to_world_pos( vert.co )
+        screen = pqutil.location_3d_to_region_2d( world )
+        self.verts_list.append( [vert,vert.index,vert.co.copy(),world,screen] )
+        self.qmesh.bm.select_history.discard(vert)
+        self.qmesh.bm.select_history.add(vert)
+        vert.select_set(True)
+
+    def add_face( self , face ) :
+        self.qmesh.bm.select_history.discard(face)
+        self.qmesh.bm.select_history.add(face)
+        self.face_count = self.face_count + 1
+
+    def add_edge( self , edge ) :
+        self.qmesh.bm.select_history.discard(edge)
+        self.qmesh.bm.select_history.add(edge)
+        self.edge_count = self.edge_count + 1
+
+    def add_line( self , vert ) :
+        self.add( vert )
+        edge = self.qmesh.add_edge( self.get(-2) , self.get(-1) )          
+        self.add_edge( edge )
+        self.qmesh.UpdateMesh()                      
+        return edge
+
+    def clear_verts( self ) :
+        self.verts_list = []
+
+    def reset_verts( self ) :
+        self.verts_list = [ self.verts_list[-1] ]
+
+    @property
+    def vert_count( self ) :
+        return len(self.verts_list)
+
+    @property
+    def verts( self ) :
+        if len(self.verts_list) == 0 :
+            return []
+        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMVert) ][-len(self.verts_list):]
+
+    @property
+    def faces( self ) :
+        if self.face_count == 0 :
+            return []
+        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMFace) ][-self.face_count:]
+
+    @property
+    def last_vert( self ) :
+        return self.verts[-1]
+
+    @property
+    def last_edge( self ) :
+        return self.edges[-1]
+
+    @property
+    def last_face( self ) :
+        return self.faces[-1]
+
+    @property
+    def edges( self ) :
+        if self.edge_count == 0 :
+            return []
+        return [ h for h in self.qmesh.bm.select_history if isinstance(h,bmesh.types.BMEdge) ][-self.edge_count:]
+
+    def clear_faces( self ) :
+        self.face_count = 0
+
+    def clear_edges( self ) :
+        self.edge_count = 0
+
+    @property
+    def cos( self ) :
+        return [ i[1] for i in self.verts_list ]
+
+    @property
+    def world_positions( self ) :
+        return [ i[3] for i in self.verts_list ]
+
+    @property
+    def screen_positions( self ) :
+        return [ i[4] for i in self.verts_list ]

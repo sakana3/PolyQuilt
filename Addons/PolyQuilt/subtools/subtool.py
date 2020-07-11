@@ -35,7 +35,7 @@ class SubToolRoot :
         self.subTool = []
         self.__enterySubTool = None
         self.step = 0
-        self.mouse_pos = mathutils.Vector((0,0))
+        self.mouse_pos = op.mouse_pos
         self.preferences = op.preferences
         self.activeSubTool = None
         self.buttonType = button

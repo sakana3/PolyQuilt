@@ -180,7 +180,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     def update(self, context, event):
         if self.preferences.is_debug :
             t = time.time()
-                    
+
         if event.type == 'TIMER':
             if self.currentSubTool is None or not self.currentSubTool.check_animated(context) :
                 return {'PASS_THROUGH'}
@@ -195,6 +195,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         self.bmo.CheckValid( context )
         ret = 'FINISHED'
+
+        self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))                
 
         if event.type == 'ESC':
             if self.currentSubTool is not None :
@@ -262,6 +264,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 return {'CANCELLED'}
             if not maintools[self.tool_mode].Check( None , element ) :
                 return {'CANCELLED'}
+            self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))                
             self.currentSubTool = maintools[self.tool_mode](self , element, event.type )
             self.currentSubTool.OnInit(context )
 #            self.currentSubTool.Update(context, event)

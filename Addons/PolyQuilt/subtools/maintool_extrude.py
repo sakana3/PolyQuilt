@@ -47,7 +47,7 @@ class MainToolExtrude(MainTool) :
 
         elif event.type == MBEventType.Click or event.type == MBEventType.LongClick :
             if self.currentTarget.isVert or self.currentTarget.isEmpty or self.currentTarget.isEdge:
-                self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.mouse_pos ) )
+                self.SetSubTool( SubToolMakePoly(self.operator,self.currentTarget , self.buttonType ) )
 
         elif event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
             if self.currentTarget.isEdge :
