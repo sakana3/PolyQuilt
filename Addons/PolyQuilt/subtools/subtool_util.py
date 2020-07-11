@@ -212,6 +212,8 @@ class move_component_module :
             dv = dst
             de = snap_edge
             while( sv != None and dv != None ) :
+                if sv in pair_verts.keys() or dv in pair_verts.items()  :
+                    break
                 pair_verts[sv] = dv
                 se , sv = other( se , sv , sorce_loop  )
                 de , dv = other( de , dv , snap_loop  )

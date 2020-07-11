@@ -292,6 +292,8 @@ class SubToolEdgeLoopExtrude(MainTool) :
             dv = dst
             de = snapEdge
             while( sv != None and dv != None ) :
+                if sv in self.verts.keys() or dv in self.verts.items()  :
+                    break
                 self.verts[sv] = dv
                 se , sv = other( se , sv , self.edges  )
                 de , dv = other( de , dv , dstEdges  )
