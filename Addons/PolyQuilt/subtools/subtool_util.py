@@ -55,9 +55,31 @@ class move_component_module :
     def update_geoms( self , move : mathutils.Vector , snap_type : str = 'VIEW' ) -> bool :
 
         if (self.move - move).length >= sys.float_info.epsilon :
+            pos_table = self.update_geoms_pos(move,snap_type)
+            for vert , mirror in self.mirror_set.items() :
+                if vert in pos_table :
+                    vert.co = pos_table[vert]
+                if mirror in pos_table :
+                    mirror.co = pos_table[mirror]
+            return True
+
+        return False
+
+    def update_geoms_pos( self , move : mathutils.Vector , snap_type : str = 'VIEW' ) -> bool :
+        ret = {}
+
+        if (self.move - move).length >= sys.float_info.epsilon :
             self.move = move
             wm = self.bmo.obj.matrix_world 
             im = wm.inverted()
+
+            is_center_snap = self.bmo.is_mirror_mode or self.bmo.preferences.fix_to_x_zero
+            is_fix_center = False
+            if is_center_snap :
+                if self.currentTarget.isEdge or self.currentTarget.isVert :
+                    v = self.bmo.world_to_local_pos(self.start_pos + move)
+                    if self.bmo.is_x0_snap( v ) :
+                        is_fix_center = True
 
             for vert , mirror in self.mirror_set.items() :
                 initial_pos = self.verts[vert]
@@ -70,23 +92,27 @@ class move_component_module :
                         p = QSnap.adjust_point(p)
                 p = im @ p
 
-                if self.fix_to_x_zero and self.bmo.is_x_zero_pos( initial_pos ) :
+                if is_center_snap and self.bmo.is_x_zero_pos( initial_pos ) :
                     p.x = 0.0
-                if mirror == vert :
+                elif mirror == vert :
+                    p.x = 0.0
+                elif is_fix_center :
                     p.x = 0.0
 
                 if mirror :
                     m = mathutils.Vector( (-p.x,p.y,p.z) )
                     if mirror in self.verts :
                         if (self.start_pos.x >= 0 and initial_pos.x >= 0 ) or (self.start_pos.x <= 0 and initial_pos.x <= 0 ) :
-                            vert.co , mirror.co = p , m
+                            ret[vert] = p
+                            ret[mirror] = m
                     else :
-                        vert.co , mirror.co = p , m
+                        ret[vert] = p
+                        ret[mirror] = m
                 else :
-                    vert.co = p
+                    ret[vert] = p
 
-            return True
-        return False
+        return ret
+
 
     def update( self , event ) :
         if event.type == 'WHEELUPMOUSE' :
