@@ -25,6 +25,7 @@ from ..utils import draw_util
 from ..QMesh import *
 from ..utils.dpi import *
 from .subtool import MainTool
+from .subtool_util import move_component_module
 
 class SubToolEdgeLoopExtrude(MainTool) :
     name = "EdgeLoop Extrude"
@@ -40,6 +41,9 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
         self.currentEdge = target.element
         self.edges , __ = self.bmo.calc_edge_loop( self.currentEdge , is_mirror = False )
+
+        self.move_component_module = move_component_module( self.bmo , target , self.mouse_pos , 'FREE' , self.preferences.fix_to_x_zero )
+        self.move_component_module.set_geoms( target.loops )
 
         self.verts = set()
         for e in self.edges :
@@ -122,14 +126,8 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            rayS = pqutil.Ray.from_screen( context , self.startMousePos )
-            rayG = pqutil.Ray.from_screen( context , self.mouse_pos )      
-            vS = self.move_plane.intersect_ray( rayS )
-            vG = self.move_plane.intersect_ray( rayG )
-            move = (vG - vS)
-            self.targetPos = self.startPos + move
-            if QSnap.is_active() :
-                self.targetPos = QSnap.view_adjust( self.targetPos )
+            move = self.move_component_module.move_to( self.mouse_pos )
+
             dist = self.preferences.distance_to_highlight
 
             self.is_center_snap = False
@@ -218,6 +216,9 @@ class SubToolEdgeLoopExtrude(MainTool) :
             if event.value == 'RELEASE' :
                 self.MakePoly()
                 return 'FINISHED'
+        else :
+            self.move_component_module.update(event)
+
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
@@ -265,6 +266,8 @@ class SubToolEdgeLoopExtrude(MainTool) :
                 if self.snapTarget.isEdge and None not in t :
                     draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 3 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 
+        self.move_component_module.draw_3D(context)
+
     def AdsorptionEdge( self , srcEdge , snapEdge ) :
         dstEdges , __ = self.bmo.calc_edge_loop( snapEdge )        
 
@@ -286,22 +289,24 @@ class SubToolEdgeLoopExtrude(MainTool) :
                 return hits[0] , hits[0].other_vert(vert) 
             return None , None
 
+        verts =  []
         for (src , dst) in zip(srcEdge.verts , [t1,t0] ) :
             sv = src
             se = srcEdge
             dv = dst
             de = snapEdge
             while( sv != None and dv != None ) :
-                if sv in self.verts.keys() or dv in self.verts.items()  :
+                if sv in verts or dv in verts  :
                     break
                 self.verts[sv] = dv
+                verts.extend( [sv,dv] )
                 se , sv = other( se , sv , self.edges  )
                 de , dv = other( de , dv , dstEdges  )
 
     def MakePoly( self ) :
         threshold = bpy.context.scene.tool_settings.double_threshold
 
-        if (self.targetPos - self.startPos  ).length <= threshold :
+        if self.move_component_module.move_distance <= threshold :
             return
 
         for vert in self.verts :

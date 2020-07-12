@@ -141,6 +141,10 @@ class move_component_module :
 
         return move
 
+    @property
+    def move_distance( self ) :
+        return ( self.currentTarget.hitPosition - self.start_pos ).length
+
     def change_ray( self , move_type : str ) :
         self.move_plane = None
         self.move_ray = None
