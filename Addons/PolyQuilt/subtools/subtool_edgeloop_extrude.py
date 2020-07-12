@@ -35,61 +35,24 @@ class SubToolEdgeLoopExtrude(MainTool) :
         self.l2w = self.bmo.local_to_world_pos
         self.w2l = self.bmo.world_to_local_pos
 
-        self.currentVert = None
-        self.currentEdge = None
-        self.moveType = 'NORMAL'
-
-        self.currentEdge = target.element
-        self.edges , __ = self.bmo.calc_edge_loop( self.currentEdge , is_mirror = False )
+        self.edges = target.both_loops
+        self.mirrorEdges = target.mirror_loops
 
         self.move_component_module = move_component_module( self.bmo , target , self.mouse_pos , 'FREE' , self.preferences.fix_to_x_zero )
         self.move_component_module.set_geoms( target.loops )
 
         self.verts = set()
-        for e in self.edges :
+        for e in target.both_loops :
             self.verts = self.verts | set( e.verts )
 
         self.verts = { v : self.l2w( v.co ) for v in self.verts }
 
-        self.mirror_edge = None
-
-        # mirror
-        is_symetry = False
-        self.mirrorEdges = []
-        if self.bmo.is_mirror_mode :
-            mirror_edges = { e : self.bmo.find_mirror( e ) for e in self.edges }
-            if set( self.edges ) & set(mirror_edges.values()) :
-                self.centerVerts = [ v for v in self.verts if self.bmo.is_x_zero_pos(v.co) ]
-                notCenterVerts = [ v for v in self.verts if v not in self.centerVerts ]
-                if target.hitPosition.x >= 0 :
-                    self.plusVerts = [ v for v in notCenterVerts if v.co.x > 0 ]
-                else :
-                    self.plusVerts = [ v for v in notCenterVerts if v.co.x < 0 ]
-                self.minusVerts = { self.bmo.find_mirror( v ) : v  for v in notCenterVerts if v not in self.plusVerts }
-                is_symetry = True
-            else :
-                self.mirrorEdges = { v : m for v , m in mirror_edges.items() if m }
-
-        if not is_symetry :
-            if self.preferences.fix_to_x_zero :
-                self.centerVerts = [ v for v in self.verts if self.bmo.is_x_zero_pos(v.co) ]
-            else :
-                self.centerVerts = []
-            self.plusVerts = {v : None for v in self.verts if v not in self.centerVerts }
-            self.minusVerts = {}
-
-        self.startPos = target.hitPosition
-        self.targetPos = target.hitPosition
-        self.screen_space_plane = pqutil.Plane.from_screen( bpy.context , target.hitPosition )
-        self.move_plane = self.screen_space_plane
-        self.startMousePos = copy.copy(target.coord)
         self.snapTarget = ElementItem.Empty()
         self.is_center_snap = False
 
-        self.snap_edges = {}
         self.ignoreVerts = set()
         self.ignoreEdges = set()
-        for e in self.edges :
+        for e in target.both_loops :
             for face in e.link_faces :
                 self.ignoreVerts = self.ignoreVerts | set(face.verts)
                 self.ignoreEdges = self.ignoreEdges | set(face.edges)
@@ -141,13 +104,12 @@ class SubToolEdgeLoopExtrude(MainTool) :
                     self.verts[v] = pos_tbl[v]
 
             self.snapTarget = ElementItem.Empty()
-            if self.currentEdge and self.is_center_snap == False :
+            if self.currentTarget.element and self.is_center_snap == False :
                 snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )       
                 if snapTarget.isEdge :
                     self.snapTarget = snapTarget
-                    self.snap_edges = self.move_component_module.snap_loop( self.currentEdge , self.currentTarget.loops  , snapTarget.element )
-
-                    for vert , snap in self.snap_edges.items() :
+                    snap_edges = self.move_component_module.snap_loop( self.currentTarget.element , self.currentTarget.loops  , snapTarget.element )
+                    for vert , snap in snap_edges.items() :
                         self.verts[vert] = snap
 
         elif event.type == 'RIGHTMOUSE' :
@@ -195,14 +157,10 @@ class SubToolEdgeLoopExtrude(MainTool) :
                     return self.l2w( v.co )
             return None
 
-        for e in self.edges :
+        for e in self.currentTarget.both_loops :
             p = [ self.l2w( v.co ) for v in e.verts ]
             t = [ v2p(e, self.verts[v],False ) for v in e.verts ]
             polyss = [ [ v for v in (p[0],t[0],t[1],p[1]) if v != None ] ]
-
-            if self.mirrorEdges and e in self.mirrorEdges :
-                polyss.append( [ self.bmo.mirror_pos_w2l(v) for v in (p[0],t[0],t[1],p[1]) if v != None ] )
-
             for polys in polyss :
                 draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
                 draw_util.draw_lines3D( context , polys , self.color_create(1.0) , 2 , primitiveType = 'LINE_LOOP' , hide_alpha = 0 )        
@@ -223,22 +181,20 @@ class SubToolEdgeLoopExtrude(MainTool) :
                 self.bmo.UpdateMesh()
 
         newFaces = []
-        for edge in self.edges :
+        for edge in self.currentTarget.loops :
             t = [ self.verts[v] for v in edge.verts ]
             if  t[0] == None and t[1] == None :
                 continue
             verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
+            newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
+            self.bmo.UpdateMesh()
 
-            normal = None
-            if edge.link_faces :
-                for loop in edge.link_faces[0].loops :
-                    if edge == loop.edge :
-                        if loop.vert == edge.verts[0] :
-                            verts.reverse()
-            else :
-                normal = pqutil.getViewDir()
-
-            newFaces.append( self.bmo.AddFace( verts , normal , is_mirror = (len(self.mirrorEdges) > 0 ) ) )
+        for edge in [ m for m in self.currentTarget.mirror_loops if m not in self.currentTarget.loops ] :
+            t = [ self.verts[v] for v in edge.verts ]
+            if  t[0] == None and t[1] == None :
+                continue
+            verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
+            newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
             self.bmo.UpdateMesh()
 
         newVerts = set( sum( ( tuple(f.verts) for f in newFaces ) , () ) )
