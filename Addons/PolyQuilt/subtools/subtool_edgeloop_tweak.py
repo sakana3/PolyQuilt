@@ -38,9 +38,16 @@ class SubToolEdgeLoopTweak(MainTool) :
         self.move_component_module = move_component_module( self.bmo , target , self.mouse_pos , op.move_type , self.preferences.fix_to_x_zero )
         self.move_component_module.set_geoms( self.loop_edges )
 
-        self.ignore_edges = copy.copy(self.loop_edges)
         self.snap_target = ElementItem.Empty()
         self.snap_edges = {}
+
+#        self.ignore_edges = copy.copy(self.loop_edges)
+        self.ignoreVerts = set()
+        self.ignore_edges = set()
+        for e in target.both_loops :
+            for face in e.link_faces :
+                self.ignoreVerts = self.ignoreVerts | set(face.verts)
+                self.ignore_edges = self.ignore_edges | set(face.edges)
 
     @staticmethod
     def Check( root , target ) :
@@ -53,7 +60,7 @@ class SubToolEdgeLoopTweak(MainTool) :
             if self.move_component_module.update_geoms(move , snap_type = 'NEAR' ) :
                 self.bmo.UpdateMesh()
 
-            # Snap
+            # Snap 2 Edge
             dist = self.preferences.distance_to_highlight
             snap_target = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignore_edges )       
             if snap_target.isEdge :
@@ -65,6 +72,16 @@ class SubToolEdgeLoopTweak(MainTool) :
             else :
                 self.snap_edges = {}
                 self.snap_target = ElementItem.Empty()
+
+            # Snap 2 Vert
+            for vert in self.move_component_module.verts :
+                if vert not in self.snap_edges.keys() :
+                    pos =self.bmo.local_to_2d( vert.co )
+                    if pos :
+                        snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
+                        if snapTarget.isVert :
+                            vert.co = snapTarget.element.co
+                            self.snap_edges[vert] = snapTarget.element
 
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'RELEASE' :
@@ -86,7 +103,11 @@ class SubToolEdgeLoopTweak(MainTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        pass
+        size = self.preferences.highlight_vertex_size
+        for snap in self.snap_edges :
+            pos = pqutil.location_3d_to_region_2d( snap.co )
+            if pos :
+                draw_util.draw_circle2D( pos , size , (1,1,1,1) , False )
 
     def OnDraw3D( self , context  ) :
         alpha = self.preferences.highlight_face_alpha

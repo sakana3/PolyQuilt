@@ -232,7 +232,7 @@ class ElementItem :
         if self.isEdge :        
             if not hasattr( self , "__mirror_loop" ) :
                 if self.mirror != None :
-                    self.__mirror_loop = [ t for t in [ self.__qmesh.find_mirror(e,False) for e in self.loops ] if t ]
+                    self.__mirror_loop = [ t for t , s in [ (self.__qmesh.find_mirror(e,False) , e) for e in self.loops ] if t ]
                 else :
                     self.__mirror_loop = []
             return self.__mirror_loop

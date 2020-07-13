@@ -112,6 +112,14 @@ class SubToolEdgeLoopExtrude(MainTool) :
                     for vert , snap in snap_edges.items() :
                         self.verts[vert] = snap
 
+
+            for vert , tar in self.verts.items() :
+                pos =self.bmo.local_to_2d( tar ) if isinstance( tar , mathutils.Vector ) else None
+                if pos :
+                    snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
+                    if snapTarget.isVert :
+                        self.verts[vert] = snapTarget.element
+
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass
@@ -145,17 +153,10 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
     def OnDraw3D( self , context  ) :
         def v2p( e , v , mirror ) :
-            if mirror :
-                if isinstance( v , mathutils.Vector ) :
-                    return self.bmo.mirror_pos_w2l( v )
-                elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
-                    return self.l2w( self.bmo.mirror_pos( v.co ) )
-            else :
-                if isinstance( v , mathutils.Vector ) :
-                    return v
-                elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
-                    return self.l2w( v.co )
-            return None
+            if isinstance( v , mathutils.Vector ) :
+                return v
+            elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
+                return self.l2w( v.co )
 
         for e in self.currentTarget.both_loops :
             p = [ self.l2w( v.co ) for v in e.verts ]
