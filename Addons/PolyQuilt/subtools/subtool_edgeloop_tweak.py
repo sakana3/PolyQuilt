@@ -80,6 +80,14 @@ class SubToolEdgeLoopTweak(MainTool) :
                     if pos :
                         snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
                         if snapTarget.isVert :
+                            if self.bmo.is_mirror_mode :
+                                mirror = self.bmo.find_mirror( snapTarget.element , None )
+                                if mirror :
+                                    m =  self.move_component_module.mirror_set[vert]
+                                    if m and m != mirror :
+                                        self.snap_edges[m] = mirror
+                                        m.co = mirror.co
+
                             vert.co = snapTarget.element.co
                             self.snap_edges[vert] = snapTarget.element
 
@@ -94,7 +102,7 @@ class SubToolEdgeLoopTweak(MainTool) :
                 if self.snap_edges :
                     threshold = bpy.context.scene.tool_settings.double_threshold
                     elem = list(self.snap_edges.keys()) + list(self.snap_edges.values())
-                    bmesh.ops.remove_doubles( self.bmo.bm , verts = list(elem) , dist = threshold )
+                    bmesh.ops.remove_doubles( self.bmo.bm , verts = list(set(elem)) , dist = threshold )
                     self.bmo.UpdateMesh()
                 return 'FINISHED'
         else :

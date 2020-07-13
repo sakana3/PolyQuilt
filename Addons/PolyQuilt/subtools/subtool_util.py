@@ -48,7 +48,7 @@ class move_component_module :
                     self.verts[geom] = geom.vert.co.copy()
 
         if self.bmo.check_mirror( is_mirror ) :
-            self.mirror_set = { v : self.bmo.find_mirror( v , False ) for v in self.verts }
+            self.mirror_set = { v : self.bmo.find_mirror( v , True ) for v in self.verts }
         else :
             self.mirror_set = { v : None for v in self.verts }
 

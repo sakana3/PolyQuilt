@@ -113,12 +113,20 @@ class SubToolEdgeLoopExtrude(MainTool) :
                         self.verts[vert] = snap
 
 
-            for vert , tar in self.verts.items() :
-                pos =self.bmo.local_to_2d( tar ) if isinstance( tar , mathutils.Vector ) else None
-                if pos :
-                    snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
-                    if snapTarget.isVert :
-                        self.verts[vert] = snapTarget.element
+            for vert in self.move_component_module.verts :
+                tar = self.verts[vert]
+                if not isinstance( tar , bmesh.types.BMVert ) :
+                    pos =self.bmo.local_to_2d( tar )
+                    if pos :
+                        snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
+                        if snapTarget.isVert :
+                            if self.bmo.is_mirror_mode :
+                                mirror = self.bmo.find_mirror( snapTarget.element , None )
+                                if mirror  :
+                                    m =  self.move_component_module.mirror_set[vert]
+                                    self.verts[m] = mirror
+
+                            self.verts[vert] = snapTarget.element
 
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
@@ -190,11 +198,10 @@ class SubToolEdgeLoopExtrude(MainTool) :
             newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
             self.bmo.UpdateMesh()
 
-        for edge in [ m for m in self.currentTarget.mirror_loops if m not in self.currentTarget.loops ] :
-            t = [ self.verts[v] for v in edge.verts ]
-            if  t[0] == None and t[1] == None :
-                continue
-            verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
+        for mirror in [ m for m in self.mirrorEdges if m not in self.currentTarget.loops ] :
+            t = [ self.verts[v] for v in mirror.verts ]
+
+            verts = [ v for v in (mirror.verts[0],mirror.verts[1],t[1],t[0]) if v != None ]
             newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
             self.bmo.UpdateMesh()
 
