@@ -52,10 +52,11 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
         self.ignoreVerts = set()
         self.ignoreEdges = set()
-        for e in target.both_loops :
+        for e in target.loops :
             for face in e.link_faces :
                 self.ignoreVerts = self.ignoreVerts | set(face.verts)
                 self.ignoreEdges = self.ignoreEdges | set(face.edges)
+        self.snap_lock =  {}
 
     @staticmethod
     def Check( root , target ) :
@@ -96,43 +97,48 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
             self.is_center_snap = False
             if self.bmo.is_mirror_mode :
-                self.is_center_snap = self.bmo.is_x0_snap( self.move_component_module.currentTarget.hitPosition )
+                p = self.move_component_module.currentTarget.hitPosition
+                self.is_center_snap = self.bmo.is_x0_snap( p )
 
             pos_tbl = self.move_component_module.update_geoms_pos( move , "NEAR" )
             for v in pos_tbl :
                 if v in self.verts :
                     self.verts[v] = pos_tbl[v]
-
+            
             self.snapTarget = ElementItem.Empty()
             if self.currentTarget.element and self.is_center_snap == False :
                 snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreEdges )       
-                if snapTarget.isEdge :
+                if snapTarget.isEdge and snapTarget.element != self.currentTarget.element :
                     self.snapTarget = snapTarget
                     snap_edges = self.move_component_module.snap_loop( self.currentTarget.element , self.currentTarget.loops  , snapTarget.element )
                     for vert , snap in snap_edges.items() :
                         self.verts[vert] = snap
+                        pos_tbl[vert] = snap
+                        if vert in self.move_component_module.mirror_set :
+                            mv = self.move_component_module.mirror_set[vert]
+                            ms = self.bmo.find_mirror( snap , True )
+                            if mv and ms :
+                                self.verts[mv] = ms
+                                pos_tbl[mv] = ms
 
 
-            for vert in self.move_component_module.verts :
-                tar = self.verts[vert]
-                if not isinstance( tar , bmesh.types.BMVert ) :
-                    pos =self.bmo.local_to_2d( tar )
-                    if pos :
-                        snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore=self.ignoreVerts )
-                        if snapTarget.isVert :
-                            if self.bmo.is_mirror_mode :
-                                mirror = self.bmo.find_mirror( snapTarget.element , None )
-                                if mirror  :
-                                    m =  self.move_component_module.mirror_set[vert]
-                                    self.verts[m] = mirror
-
-                            self.verts[vert] = snapTarget.element
+            snaps = self.move_component_module.find_snap_vert( pos_tbl , self.ignoreVerts )
+            snaps.update(self.snap_lock)            
+            for v , s in snaps.items() :
+                self.verts[v] = s
 
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass
             elif event.value == 'RELEASE' :
                 return 'FINISHED'
+        elif event.type == 'SPACE' :
+            if event.value == 'RELEASE' :
+                if event.alt :
+                    self.snap_lock = {}
+                else :
+                    self.snap_lock = { v : s for v , s in self.verts.items() if isinstance( s , bmesh.types.BMVert  ) }
+                    print(self.snap_lock)
         elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 self.MakePoly()
@@ -162,7 +168,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
     def OnDraw3D( self , context  ) :
         def v2p( e , v , mirror ) :
             if isinstance( v , mathutils.Vector ) :
-                return v
+                return self.l2w( v )
             elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
                 return self.l2w( v.co )
 
@@ -186,7 +192,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
         for vert in self.verts :
             if isinstance( self.verts[vert] , mathutils.Vector ) :
-                self.verts[vert] = self.bmo.AddVertexWorld( self.verts[vert] , False )
+                self.verts[vert] = self.bmo.AddVertexWorld( self.l2w( self.verts[vert] ) , False )
                 self.bmo.UpdateMesh()
 
         newFaces = []
@@ -202,8 +208,10 @@ class SubToolEdgeLoopExtrude(MainTool) :
             t = [ self.verts[v] for v in mirror.verts ]
 
             verts = [ v for v in (mirror.verts[0],mirror.verts[1],t[1],t[0]) if v != None ]
-            newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
-            self.bmo.UpdateMesh()
+
+            if set(verts) not in [ { v for v in f.verts } for f in newFaces ] :
+                newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
+                self.bmo.UpdateMesh()
 
         newVerts = set( sum( ( tuple(f.verts) for f in newFaces ) , () ) )
 

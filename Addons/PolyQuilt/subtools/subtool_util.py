@@ -251,6 +251,28 @@ class move_component_module :
         return pair_verts
 
 
+    def find_snap_vert( self , vert_dic , ignoreVerts ) :
+        snaps = {}
+        dist = self.bmo.preferences.distance_to_highlight
+        for vert in self.verts :
+            if vert in vert_dic :
+                tar = vert_dic[vert]
+                if not isinstance( tar , bmesh.types.BMVert ) :
+                    pos =self.bmo.local_to_2d( vert_dic[vert] )
+                    if pos :
+                        snapTarget = self.bmo.PickElement( pos , dist , edgering=True , backface_culling = True , elements=['VERT'] , ignore= ignoreVerts )
+                        if snapTarget.isVert :
+                            if self.bmo.is_mirror_mode :
+                                mirror = self.bmo.find_mirror( snapTarget.element , None )
+                                if mirror  :
+                                    m =  self.mirror_set[vert]
+                                    snaps[m] = mirror
+
+                            snaps[vert] = snapTarget.element
+
+        return snaps
+
+
 class vert_array_util :
     def __init__(self , qmesh ) :
         self.qmesh = qmesh
