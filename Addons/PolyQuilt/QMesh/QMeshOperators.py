@@ -242,7 +242,6 @@ class QMeshOperators :
         if linkCount > 0 :
             face.normal_flip()
             face.normal_update()           
-            isLink = True
 
         if linkCount == 0 and normal != None :
             face.normal_update()
@@ -253,13 +252,14 @@ class QMeshOperators :
                 verts = verts[::-1] 
 
         if self.check_mirror(is_mirror) :
-            mirror = [ self.find_mirror(v,False) for v in verts[::-1] ]
-            mirror = [ m if m != None else self.bm.verts.new( self.mirror_pos(o.co) ) for o,m in zip(verts[::-1] , mirror) ]
+            verts = list(face.verts)[::-1]
+            mirror = [ self.find_mirror(v,False) for v in verts  ]
+            mirror = [ m if m != None else self.bm.verts.new( self.mirror_pos(o.co) ) for o,m in zip(verts, mirror) ]
             self.ensure_lookup_table()
 
             if all(mirror) :
                 if set(verts) ^ set(mirror) :
-                    face_mirror = self.bm.faces.new( mirror )
+                    face_mirror = self.AddFace( mirror , normal , False )
 
         return face
 

@@ -30,20 +30,30 @@ class move_component_module :
         self.verts = {}
         self.mirror_set = {}
         self.move = mathutils.Vector( (0,0,0) )
+        self.center_verts = set()
 
     def set_geoms( self , geoms , is_mirror = None ) :
         self.verts = {}
         self.mirror_set = {}
+        self.center_verts = set()
         for geom in geoms :
             if geom != None :
                 if isinstance( geom , bmesh.types.BMVert ) :
                     self.verts[geom] = geom.co.copy()
+                    if self.bmo.is_x_zero_pos( geom.co ) :
+                        self.center_verts.add(geom)
                 elif isinstance( geom , bmesh.types.BMEdge ) :
                     for vert in geom.verts :
                         self.verts[vert] = vert.co.copy()
+                    if all( self.bmo.is_x_zero_pos( v.co ) for v in geom.verts ) :
+                        for vert in geom.verts :
+                            self.center_verts.add(vert)
                 elif isinstance( geom , bmesh.types.BMFace ) :
                     for vert in geom.verts :
                         self.verts[vert] = vert.co.copy()
+                    if all( self.bmo.is_x_zero_pos( v.co ) for v in geom.verts ) :
+                        for vert in geom.verts :
+                            self.center_verts.add(vert)
                 elif isinstance( geom , bmesh.types.BMLoop ) :
                     self.verts[geom] = geom.vert.co.copy()
 
@@ -65,7 +75,7 @@ class move_component_module :
 
         return False
 
-    def update_geoms_pos( self , move : mathutils.Vector , snap_type : str = 'VIEW' ) -> bool :
+    def update_geoms_pos( self , move : mathutils.Vector , snap_type : str = 'VIEW' , move_center : bool = False  ) -> bool :
         ret = {}
 
         if (self.move - move).length >= sys.float_info.epsilon :
@@ -91,7 +101,7 @@ class move_component_module :
                         p = QSnap.adjust_point(p)
                 p = im @ p
 
-                if is_center_snap and self.bmo.is_x_zero_pos( initial_pos ) :
+                if is_center_snap and self.bmo.is_x_zero_pos( initial_pos ) and ( move_center == False or vert not in self.center_verts ) :
                     p.x = 0.0
                 elif mirror == vert :
                     p.x = 0.0

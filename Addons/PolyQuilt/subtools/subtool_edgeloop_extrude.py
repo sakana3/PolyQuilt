@@ -100,7 +100,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
                 p = self.move_component_module.currentTarget.hitPosition
                 self.is_center_snap = self.bmo.is_x0_snap( p )
 
-            pos_tbl = self.move_component_module.update_geoms_pos( move , "NEAR" )
+            pos_tbl = self.move_component_module.update_geoms_pos( move , "NEAR" , move_center = True )
             for v in pos_tbl :
                 if v in self.verts :
                     self.verts[v] = pos_tbl[v]
@@ -167,15 +167,22 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
     def OnDraw3D( self , context  ) :
         def v2p( e , v , mirror ) :
+            vt = None
             if isinstance( v , mathutils.Vector ) :
-                return self.l2w( v )
+                vt = v
             elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
-                return self.l2w( v.co )
+                vt = v.co
+            vt = vt if not mirror else self.bmo.mirror_pos( vt )
+            return self.l2w( vt )
 
         for e in self.currentTarget.both_loops :
             p = [ self.l2w( v.co ) for v in e.verts ]
             t = [ v2p(e, self.verts[v],False ) for v in e.verts ]
             polyss = [ [ v for v in (p[0],t[0],t[1],p[1]) if v != None ] ]
+            if all( [ v in self.move_component_module.center_verts for v in e.verts ] ) :
+                t = [ v2p(e, self.verts[v],True ) for v in e.verts ]
+                polyss.append( [ v for v in (p[0],t[0],t[1],p[1]) if v != None ] )
+
             for polys in polyss :
                 draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
                 draw_util.draw_lines3D( context , polys , self.color_create(1.0) , 2 , primitiveType = 'LINE_LOOP' , hide_alpha = 0 )        
@@ -201,7 +208,8 @@ class SubToolEdgeLoopExtrude(MainTool) :
             if  t[0] == None and t[1] == None :
                 continue
             verts = [ v for v in (edge.verts[0],edge.verts[1],t[1],t[0]) if v != None ]
-            newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = False ) )
+            cm = all( [ v in self.move_component_module.center_verts for v in edge.verts ] )
+            newFaces.append( self.bmo.AddFace( verts , pqutil.getViewDir() , is_mirror = cm ) )
             self.bmo.UpdateMesh()
 
         for mirror in [ m for m in self.mirrorEdges if m not in self.currentTarget.loops ] :
