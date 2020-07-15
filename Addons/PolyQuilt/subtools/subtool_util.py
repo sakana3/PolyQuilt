@@ -77,8 +77,7 @@ class move_component_module :
             is_fix_center = False
             if is_center_snap :
                 if self.currentTarget.isEdge or self.currentTarget.isVert :
-                    v = self.bmo.world_to_local_pos(self.start_pos + move)
-                    if self.bmo.is_x0_snap( v ) :
+                    if self.bmo.is_x0_snap( self.start_pos + move ) :
                         is_fix_center = True
 
             for vert , mirror in self.mirror_set.items() :
