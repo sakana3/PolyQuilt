@@ -263,7 +263,7 @@ class move_component_module :
                         if snapTarget.isVert :
                             if self.bmo.is_mirror_mode :
                                 mirror = self.bmo.find_mirror( snapTarget.element , None )
-                                if mirror  :
+                                if mirror and self.mirror_set[vert] :
                                     m =  self.mirror_set[vert]
                                     snaps[m] = mirror
 
