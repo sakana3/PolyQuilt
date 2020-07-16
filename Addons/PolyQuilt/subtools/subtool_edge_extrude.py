@@ -74,6 +74,9 @@ class SubToolEdgeExtrude(SubTool) :
                 # X=0でのスナップをチェック
                 self.is_center_snap = False
                 if self.bmo.is_mirror_mode :
+                    if self.bmo.is_x0_snap( self.targetPos ) :
+                        self.is_center_snap = True
+
                     if not is_center :
                         if not self.currentEdge.is_straddle_x_zero :
                             if self.is_center_snap :
