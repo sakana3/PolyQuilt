@@ -92,7 +92,7 @@ class MainToolEdgeLoop(MainTool) :
             if element.can_extrude() :
                 color = gizmo.preferences.makepoly_color
                 width = gizmo.preferences.highlight_line_width + 1
-            funcs.append( draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , element.both_loops , vertex_size ,width,alpha, color ) )
+            funcs.append( draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , gizmo.bmo.bm, element.both_loops , vertex_size ,width,alpha, color ) )
             def draw() :
                 for func in funcs :
                     func()
@@ -114,7 +114,7 @@ class MainToolEdgeLoop(MainTool) :
             color = self.preferences.highlight_color
             if self.LMBEvent.is_hold :
                 color = self.color_delete()            
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.currentTarget.both_loops , vertex_size ,width,alpha, color )
+            draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_loops , vertex_size ,width,alpha, color )
 
     def OnExit( self ) :
         pass

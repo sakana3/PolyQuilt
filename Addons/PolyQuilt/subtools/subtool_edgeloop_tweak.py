@@ -33,7 +33,6 @@ class SubToolEdgeLoopTweak(MainTool) :
         super().__init__(op,target, button)
 
         self.loop_edges = target.loops
-#       self.loop_edges = self.bmo.sort_edges( target.loops )
 
         self.move_component_module = move_component_module( self.bmo , target , self.mouse_pos , op.move_type , self.preferences.fix_to_x_zero )
         self.move_component_module.set_geoms( self.loop_edges )
@@ -46,9 +45,14 @@ class SubToolEdgeLoopTweak(MainTool) :
         self.ignoreVerts = set()
         self.ignore_edges = set()
         for e in target.both_loops :
+            self.ignore_edges.add(e)
+            self.ignoreVerts.add(e.verts[0])
+            self.ignoreVerts.add(e.verts[1])
             for face in e.link_faces :
                 self.ignoreVerts = self.ignoreVerts | set(face.verts)
                 self.ignore_edges = self.ignore_edges | set(face.edges)
+
+        self.move_component_module.setup_slide( self.loop_edges )
 
     @staticmethod
     def Check( root , target ) :
@@ -56,54 +60,60 @@ class SubToolEdgeLoopTweak(MainTool) :
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
-            move = self.move_component_module.move_to( self.mouse_pos )
 
-            if self.move_component_module.update_geoms(move , snap_type = 'NEAR' ) :
+            slide = self.move_component_module.calc_slide( self.mouse_pos )
+            if slide != None :
+                self.move_component_module.update_geoms_verts( slide )
                 self.bmo.UpdateMesh()
-
-            # Snap 2 Edge
-            self.snap_edges = copy.copy(self.snap_lock)
-            for vert , snap in self.snap_edges.items() :
-                vert.co = snap.co
-
-            dist = self.preferences.distance_to_highlight
-            snap_target = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignore_edges )       
-            if snap_target.isEdge :
-                self.snap_target = snap_target
-                snap_edges = self.move_component_module.snap_loop( self.currentTarget.element , self.loop_edges , self.snap_target.element  )
-                for vert , snap in snap_edges.items() :
-                    if vert not in self.snap_edges :
-                        vert.co = snap.co
-                        self.snap_edges[vert] = snap
-                        if vert in self.move_component_module.mirror_set :
-                            mv = self.move_component_module.mirror_set[vert]
-                            ms = self.bmo.find_mirror( snap , True )
-                            if mv and ms :
-                                mv.co = ms.co
-                                self.snap_edges[mv] = ms
-
             else :
-                self.snap_target = ElementItem.Empty()
+                move = self.move_component_module.move_to( self.mouse_pos )
 
-            # Snap 2 Vert
-            snaps = { v : self.snap_edges[v] if v in self.snap_edges else v.co for v in self.move_component_module.verts }
-            snaps = self.move_component_module.find_snap_vert( snaps , self.ignoreVerts )
-            for v , s in snaps.items() :
-                self.snap_edges[v] = s
-                v.co = s.co
+                if self.move_component_module.update_geoms(move , snap_type = 'NEAR' ) :
+                    self.bmo.UpdateMesh()
+
+                # Snap 2 Edge
+                self.snap_edges = copy.copy(self.snap_lock)
+                for vert , snap in self.snap_edges.items() :
+                    vert.co = snap.co
+
+                dist = self.preferences.distance_to_highlight
+                snap_target = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignore_edges )       
+                if snap_target.isEdge :
+                    self.snap_target = snap_target
+                    snap_edges = self.move_component_module.snap_loop( self.currentTarget.element , self.loop_edges , self.snap_target.element  )
+                    for vert , snap in snap_edges.items() :
+                        if vert not in self.snap_edges :
+                            vert.co = snap.co
+                            self.snap_edges[vert] = snap
+                            if vert in self.move_component_module.mirror_set :
+                                mv = self.move_component_module.mirror_set[vert]
+                                ms = self.bmo.find_mirror( snap , True )
+                                if mv and ms :
+                                    mv.co = ms.co
+                                    self.snap_edges[mv] = ms
+
+                else :
+                    self.snap_target = ElementItem.Empty()
+
+                # Snap 2 Vert
+                snaps = { v : self.snap_edges[v] if v in self.snap_edges else v.co for v in self.move_component_module.verts }
+                snaps = self.move_component_module.find_snap_vert( snaps , self.ignoreVerts )
+                for v , s in snaps.items() :
+                    self.snap_edges[v] = s
+                    v.co = s.co
 
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'RELEASE' :
-                for v,c in self.move_component_module.verts.items() :
-                    v.co = c
-                self.bmo.UpdateMesh()                
-                return 'FINISHED'
+                if  self.snap_lock :
+                     self.snap_lock = {}
+                else:
+                    for v,c in self.move_component_module.verts.items() :
+                        v.co = c
+                    self.bmo.UpdateMesh()                
+                    return 'FINISHED'
         elif event.type == 'SPACE' :
             if event.value == 'RELEASE' :
-                if event.alt :
-                    self.snap_lock = {}
-                else :
-                    self.snap_lock = copy.copy( self.snap_edges )
+                self.snap_lock = copy.copy( self.snap_edges )
         elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 if self.snap_edges :
@@ -129,6 +139,6 @@ class SubToolEdgeLoopTweak(MainTool) :
         vertex_size = self.preferences.highlight_vertex_size        
         width = self.preferences.highlight_line_width
         color = self.preferences.highlight_color
-        draw_util.drawElementsHilight3D( self.bmo.obj , self.loop_edges , vertex_size ,width,alpha, color )
+        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.loop_edges , vertex_size ,width,alpha, color )
 
-        self.move_component_module.draw_3D(context)
+        self.move_component_module.draw_3D(context , self.mouse_pos )

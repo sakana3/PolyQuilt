@@ -85,7 +85,7 @@ class SubToolBrushDelete(SubToolEx) :
         vertex_size = self.preferences.highlight_vertex_size        
         width = self.preferences.highlight_line_width        
         color = self.preferences.delete_color 
-        draw_util.drawElementsHilight3D( self.bmo.obj , self.remove_faces , vertex_size , width , alpha , color )
+        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.remove_faces , vertex_size , width , alpha , color )
 
     def collect_faces( self , context , coord ) :
         radius = self.radius

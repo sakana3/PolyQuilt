@@ -85,12 +85,12 @@ class SubToolDelete(SubToolEx) :
             vertex_size = self.preferences.highlight_vertex_size        
             width = self.preferences.highlight_line_width        
             color = self.preferences.delete_color 
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.removes[0] , vertex_size , width , alpha , color )
+            draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.removes[0] , vertex_size , width , alpha , color )
             if self.bmo.is_mirror_mode :
                 mirrors = [ self.bmo.find_mirror(m) for m in self.removes[0] ]
                 mirrors = [ m for m in mirrors if m ]
                 if mirrors :
-                    draw_util.drawElementsHilight3D( self.bmo.obj , mirrors , vertex_size , width , alpha * 0.5 , color )
+                    draw_util.drawElementsHilight3D( self.bmo.obj , self.bmo.bm , mirrors , vertex_size , width , alpha * 0.5 , color )
 
         if self.startTarget.element == self.currentTarget.element :
             self.startTarget.Draw( self.bmo.obj , self.preferences.delete_color  , self.preferences , marker = False , edge_pivot = True )

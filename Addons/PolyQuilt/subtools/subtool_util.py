@@ -5,6 +5,7 @@ import math
 import mathutils
 import copy
 import collections
+from ..utils.dpi import *
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
@@ -31,6 +32,7 @@ class move_component_module :
         self.mirror_set = {}
         self.move = mathutils.Vector( (0,0,0) )
         self.center_verts = set()
+        self.slide_guid = None
 
     def set_geoms( self , geoms , is_mirror = None ) :
         self.verts = {}
@@ -62,18 +64,32 @@ class move_component_module :
         else :
             self.mirror_set = { v : None for v in self.verts }
 
+    def setup_slide( self , edgeloops : list ) :
+        self.slide_guid = []
+        for loop in self.currentTarget.element.link_loops :
+            link = self.bmo.collect_loops( loop , edgeloops )
+            pair = {}
+            for l in link :
+                pair[ l.vert ] = l.link_loop_prev.vert
+                pair[ l.link_loop_next.vert ] = l.link_loop_next.link_loop_next.vert
+            self.slide_guid.append( pair )
+
     def update_geoms( self , move : mathutils.Vector , snap_type : str = 'VIEW' ) -> bool :
 
         if (self.move - move).length >= sys.float_info.epsilon :
             pos_table = self.update_geoms_pos(move,snap_type)
-            for vert , mirror in self.mirror_set.items() :
-                if vert in pos_table :
-                    vert.co = pos_table[vert]
-                if mirror in pos_table :
-                    mirror.co = pos_table[mirror]
+            self.update_geoms_verts( pos_table )
             return True
 
         return False
+
+    def update_geoms_verts( self , pos_table : list ) -> bool :
+        for vert , mirror in self.mirror_set.items() :
+            if vert and vert in pos_table :
+                vert.co = pos_table[vert]
+                
+            if mirror and mirror in pos_table :
+                mirror.co = pos_table[mirror]
 
     def update_geoms_pos( self , move : mathutils.Vector , snap_type : str = 'VIEW' , move_center : bool = False  ) -> bool :
         ret = {}
@@ -176,6 +192,64 @@ class move_component_module :
 
         return move
 
+
+    def find_slide_side( self ,  mouse_pos: mathutils.Vector ) :
+        vs = self.currentTarget.element.verts
+        rl = ( self.verts[vs[0]] - self.start_pos ).length / ( self.verts[vs[0]] - self.verts[vs[1]] ).length 
+        rr = 1 - rl
+        ray = pqutil.Ray.from_screen( bpy.context , mouse_pos )
+        radius = self.bmo.preferences.distance_to_highlight * dpm()
+
+        r = 1000000
+        side = None
+        hit = None
+        for slide in self.slide_guid :
+            ts = [ slide[v] for v in vs ]        
+            pt = [ self.verts[vs[0]] * rr + self.verts[vs[1]] * rl , ts[0].co * rr + ts[1].co * rl ]
+            hp = ray.hit_to_line( pt[0] , pt[1] )
+            if hp > 0.00000001 and hp < 1.00000001 :
+                line = pqutil.Ray.from_line( pt[0] , pt[1] )
+                q1 , q2 , d = line.distance(ray)
+                if r > d :
+                    p =  pt[0] + ( pt[1] -  pt[0]) * hp
+                    s = pqutil.location_3d_to_region_2d( p )
+                    if (mouse_pos- s).length < radius :
+                        side = slide
+                        r = d
+                        hit = hp
+
+        return side , hit
+
+
+    def calc_slide( self ,  mouse_pos: mathutils.Vector ) :
+        if not self.slide_guid :
+            return None
+
+        ray = pqutil.Ray.from_screen( bpy.context , mouse_pos )
+        radius = self.bmo.preferences.distance_to_highlight * dpm()
+
+        hitSide , hp = self.find_slide_side( mouse_pos )
+
+        if hitSide == None :
+            return None
+
+        side = {} 
+        for v,s in hitSide.items() :
+            p = self.verts[v].lerp( s.co , hp )
+            if QSnap.is_active() :
+                p = QSnap.adjust_point(p)
+            side[v] = p 
+
+        if side :
+            for vert , mirror in self.mirror_set.items() :
+                
+                if vert in side :
+                    p = side[vert]
+                    m = mathutils.Vector( (-p.x,p.y,p.z) )
+                    side[mirror] = m
+
+        return side
+
     @property
     def move_distance( self ) :
         return ( self.currentTarget.hitPosition - self.start_pos ).length
@@ -206,12 +280,30 @@ class move_component_module :
         elif move_type == 'TANGENT' :
             self.move_plane = pqutil.Plane( self.start_pos , self.normal_ray.vector )
 
-    def draw_3D( self , context  ) :
+
+    def draw_3D( self , context , mouse_pos = None ) :
         if self.move_ray != None :
             v0 = self.move_ray.origin
             v1 = v0 + self.move_ray.vector * 10000.0 
             v2 = v0 - self.move_ray.vector * 10000.0 
             draw_util.draw_lines3D( context , (v1,v2) , self.move_color , 1.0 , 0.2 )
+
+        if self.slide_guid :
+            hitSide , hp = self.find_slide_side( mouse_pos )
+            for slide in self.slide_guid :
+                if hitSide == slide :
+                    color = (1,1,1,1)
+                    width = 2
+                else :
+                    color = (1,1,1,0.25)
+                    width = 1
+                vs = self.currentTarget.element.verts
+                rl = ( self.verts[vs[0]] - self.start_pos ).length / ( self.verts[vs[0]] - self.verts[vs[1]] ).length 
+                rr = 1 - rl
+                ts = [ slide[v] for v in vs ]
+                pt = [ self.verts[vs[0]] * rr + self.verts[vs[1]] * rl , ts[0].co * rr + ts[1].co * rl  ]
+
+                draw_util.draw_lines3D( context , verts = pt , color = color , width = width )
 
 
     @staticmethod

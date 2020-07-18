@@ -30,7 +30,7 @@ class SubToolEdgeSlide(MainTool) :
     def __init__(self,op,target : ElementItem , button) :        
         super().__init__(op,target, button)
         self.currentEdge = target.element
-        self.edges = self.bmo.sort_edges( target.both_loops )
+        self.edges = target.both_loops
         self.verts = []
         for e in self.edges :
             for v in e.verts :

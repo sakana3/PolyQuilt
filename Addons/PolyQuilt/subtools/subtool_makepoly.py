@@ -228,10 +228,10 @@ class SubToolMakePoly(MainTool) :
         else :
             draw_util.draw_pivots3D( [self.PlanlagtePos,] , vertex_size , self.color_create() )
 
-        draw_util.drawElementsHilight3D( self.bmo.obj , polyVerts , vertex_size ,width,alpha, self.color_create() )
+        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, polyVerts , vertex_size ,width,alpha, self.color_create() )
 
         if self.EdgeLoops != None :
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.EdgeLoops , vertex_size ,width,alpha, self.color_delete() )
+            draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.EdgeLoops , vertex_size ,width,alpha, self.color_delete() )
 
     def OnDraw( self , context  ) :
         if self.vert_array.vert_count == 1:

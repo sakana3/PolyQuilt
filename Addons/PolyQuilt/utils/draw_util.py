@@ -197,7 +197,7 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glDepthMask(bgl.GL_FALSE)
 
 
-def draw_Face3D( obj , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = True ):
+def draw_Face3D( obj , bm : bmesh.types.BMesh , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = True ):
     bgl.glEnable(bgl.GL_BLEND)
 
     if isFill :
@@ -235,18 +235,18 @@ def draw_Edge3D( obj , edge : bmesh.types.BMEdge , color = (1,1,1,1) , width = 1
     bgl.glDisable(bgl.GL_BLEND)
 
 
-def drawElementsHilight3D( obj , elements, radius,width ,alpha, color = (1,1,1,1) ) :
+def drawElementsHilight3D( obj , bm : bmesh.types.BMesh  , elements, radius,width ,alpha, color = (1,1,1,1) ) :
     for element in elements :
-        drawElementHilight3D(obj , element, radius ,width,alpha, color)
+        drawElementHilight3D(obj , bm , element, radius ,width,alpha, color)
 
-def drawElementsHilight3DFunc( obj , elements, radius,width ,alpha, color = (1,1,1,1) ) :
-    funcs = [ drawElementHilight3DFunc(obj , e, radius ,width,alpha, color) for e in elements ]
+def drawElementsHilight3DFunc( obj , bm : bmesh.types.BMesh , elements, radius,width ,alpha, color = (1,1,1,1) ) :
+    funcs = [ drawElementHilight3DFunc(obj ,bm, e, radius ,width,alpha, color) for e in elements ]
     def func() :
         for f in funcs :
             f()
     return func
 
-def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
+def drawElementHilight3D( obj , bm : bmesh.types.BMesh , element, radius ,width , alpha, color = (1,1,1,1) ) :
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_DEPTH_TEST)
     bgl.glDepthMask(bgl.GL_FALSE)
@@ -255,7 +255,7 @@ def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1
         v = obj.matrix_world @ element.co
         draw_pivots3D( (v,) , radius , color )
     elif isinstance( element , bmesh.types.BMFace  ) :
-        draw_Face3D(obj,element, (color[0],color[1],color[2],color[3] * alpha) )
+        draw_Face3D(obj,bm,element, (color[0],color[1],color[2],color[3] * alpha) )
     elif isinstance( element , bmesh.types.BMEdge ) :
         draw_Edge3D(obj,element,color,width)
 
@@ -263,7 +263,7 @@ def drawElementHilight3D( obj , element, radius ,width , alpha, color = (1,1,1,1
     bgl.glDisable(bgl.GL_BLEND)  
     bgl.glDepthMask(bgl.GL_FALSE)
 
-def drawElementHilight3DFunc( obj , element, radius ,width , alpha, color = (1,1,1,1) ) :
+def drawElementHilight3DFunc( obj  , bm : bmesh.types.BMesh , element, radius ,width , alpha, color = (1,1,1,1) ) :
     matrix_world = copy.copy( obj.matrix_world )
 
     if isinstance( element , bmesh.types.BMVert ) :
@@ -276,6 +276,7 @@ def drawElementHilight3DFunc( obj , element, radius ,width , alpha, color = (1,1
     elif isinstance( element , bmesh.types.BMFace  ) :
         vs = [ matrix_world @ v.vert.co for v in element.loops ]
         polys = mathutils.geometry.tessellate_polygon( (vs,) )
+
         def draw() :
             bgl.glEnable(bgl.GL_BLEND)
             bgl.glDisable(bgl.GL_DEPTH_TEST)

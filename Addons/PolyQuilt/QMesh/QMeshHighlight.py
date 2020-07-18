@@ -270,7 +270,10 @@ class QMeshHighlight :
         return None
 
 
-    def check_hit_element_vert( self , element , mouse_pos ,radius ) :
+    def check_hit_element_vert( self , element , mouse_pos ,radius = None ) :
+        if radius == None :
+            self.preferences.distance_to_highlight * dpm()
+
         rv3d = bpy.context.region_data
         region = bpy.context.region
         halfW = region.width / 2.0

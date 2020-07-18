@@ -75,5 +75,5 @@ class SubToolEdgeloopDissolve(SubTool) :
             vertex_size = self.preferences.highlight_vertex_size        
             width = self.preferences.highlight_line_width
             color = self.color_delete()
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.EdgeLoops , vertex_size ,width,alpha, color )
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.bmo.bm , self.EdgeLoops , vertex_size ,width,alpha, color )
 

@@ -52,7 +52,7 @@ class ElementItem :
 
     @property
     def bm( self ) :
-        return self.qmesh.bm
+        return self.__qmesh.bm if self.__qmesh else None
 
     @property
     def index(self):
@@ -282,7 +282,7 @@ class ElementItem :
             alpha = preferences.highlight_face_alpha
             element = self.element
 
-            funcs.append( draw_util.drawElementHilight3DFunc( obj , element , size , width ,alpha, color ) )
+            funcs.append( draw_util.drawElementHilight3DFunc( obj , self.bm , element , size , width ,alpha, color ) )
             if self.isEdge :
                 if self.__div > 0 :
                     div_col = ( color[0] , color[1] , color[2] , color[3] * 0.5 )
@@ -306,7 +306,7 @@ class ElementItem :
                 pass
             if self.mirror is not None and self.mirror.is_valid :
                 color = ( color[0] , color[1] ,color[2] ,color[3] * 0.5 )
-                funcs.append( draw_util.drawElementHilight3DFunc( obj , self.mirror , size , width ,alpha , color ) )
+                funcs.append( draw_util.drawElementHilight3DFunc( obj , self.bm , self.mirror , size , width ,alpha , color ) )
 
         def draw_all() :
             for func in funcs :

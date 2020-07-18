@@ -86,7 +86,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
             vertex_size = gizmo.preferences.highlight_vertex_size        
             width = gizmo.preferences.highlight_line_width
             color = gizmo.preferences.highlight_color
-            return draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , element.both_loops , vertex_size ,width,alpha, color )
+            return draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj  , gizmo.bmo.bm, element.both_loops , vertex_size ,width,alpha, color )
         return None
 
     def OnUpdate( self , context , event ) :
@@ -131,14 +131,12 @@ class SubToolEdgeLoopExtrude(MainTool) :
             if event.value == 'PRESS' :
                 pass
             elif event.value == 'RELEASE' :
-                return 'FINISHED'
+                if  self.snap_lock :
+                     self.snap_lock = {}
+                else:                
+                    return 'FINISHED'
         elif event.type == 'SPACE' :
-            if event.value == 'RELEASE' :
-                if event.alt :
-                    self.snap_lock = {}
-                else :
-                    self.snap_lock = { v : s for v , s in self.verts.items() if isinstance( s , bmesh.types.BMVert  ) }
-                    print(self.snap_lock)
+                self.snap_lock = { v : s for v , s in self.verts.items() if isinstance( s , bmesh.types.BMVert  ) }
         elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 self.MakePoly()

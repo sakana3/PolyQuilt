@@ -125,6 +125,11 @@ class Ray :
             return None
         return Ray.from_screen( context , coord)
 
+    @staticmethod
+    def from_line( p0 : mathutils.Vector , p1 : mathutils.Vector) :
+        return Ray( p0 , p1 - p0 )
+
+
     def world_to_object( self , obj ) :
         matrix_inv = obj.matrix_world.inverted()
         target = self.origin + self.vector

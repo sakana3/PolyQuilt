@@ -534,23 +534,6 @@ class QMeshOperators :
         else:
             return context.scene.display.shading
 
-    @staticmethod
-    def findOutSideLoop( srcVert ) :
-        startEdges = [e for e in srcVert.link_edges if len(e.link_faces) == 1]
-        if len(startEdges) == 0 :
-            return [],[]
-        edges = [ startEdges[0] ]
-        verts = [ srcVert ]
-        vert = edges[0].other_vert(srcVert)
-        while( vert and vert not in verts ) :
-            verts.append( vert )
-            hits = [ e for e in vert.link_edges if len(e.link_faces) == 1 and e not in edges ]
-            if len(hits) == 1 :
-                vert = hits[0].other_vert(vert)
-                edges.append( hits[0] )
-            else :
-                vert = None
-        return edges , verts
 
     def calc_edge_loop( self , startEdge , check_func = None , is_mirror = None ) :
         if not isinstance( startEdge , bmesh.types.BMEdge ) :
@@ -587,7 +570,9 @@ class QMeshOperators :
             if len(est_edges) == 1 :
                 append_edge = est_edges[0]
                 if len(append_edge.link_faces) == satrt_link_face_cnt and  append_edge not in edges :
-                    loop_verts.append( (append_edge , append_edge.other_vert(cur_vert) ) )
+                    other_vert = append_edge.other_vert(cur_vert)
+#                    if other_vert.is_boundary or  len( other_vert.link_faces ) == len(cur_vert.link_faces ) :
+                    loop_verts.append( (append_edge , other_vert ) )
                     append( edges , append_edge)
                     if cur_vert not in verts :
                         append( verts , cur_vert )
@@ -598,30 +583,40 @@ class QMeshOperators :
 
         return edges , verts
 
-    @staticmethod
-    def sort_edges( edges ) :
-        vs =[]
-        for e in edges :
-            for v in e.verts :
-                vs.append(v)
 
-        border = [ v for v in vs if len( [ e for e in edges if v in e.verts ] ) == 1 ]
 
-        for v in border :
-            result = []
-            tv = v
-            te = [ e for e in edges if tv in e.verts ][0]
-            while(tv != None) :
-                tt = [ e for e in edges if e != te and tv in e.verts ]
-                if len(tt) > 1 :
-                    return None
-                if len(tt) == 0 :
-                    break
-                te = tt[0]
-                tv = te.other_vert(tv)
-                result.append( te )
+    def collect_loops( self , source_loop : bmesh.types.BMLoop , edgeloops ) :
+        def next( loop , rh , start ) :
+            if rh :
+                next_loop = loop.link_loop_next
+                radial = next_loop.link_loop_radial_next
+            else :
+                next_loop = loop.link_loop_prev
+                radial = next_loop.link_loop_radial_next
 
-        return edges
+            if next_loop != radial :
+                t = rh if next_loop.vert != radial.vert else not rh
+                link = radial.link_loop_next if t else radial.link_loop_prev
+                if link != start and link.edge in edgeloops :
+                    return link , t
+
+            return None , rh
+
+        lnext = source_loop
+        rh = True
+        eol = None
+        while( lnext ) :
+            eol = lnext
+            lnext , rh = next(lnext , rh , source_loop )
+
+        loops = []
+        rh = not rh
+        lnext = eol
+        while( lnext ) :
+            loops.append(lnext)
+            lnext , rh = next(lnext , rh , eol)
+
+        return loops
 
     @staticmethod
     def calc_loop_face( edge ) :

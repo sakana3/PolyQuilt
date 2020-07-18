@@ -95,7 +95,7 @@ class SubToolSeam(MainTool) :
                 color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
                 color = (color[0],color[1],color[2],1)
 
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.removes[0] , vertex_size , width , alpha , color )
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.bmo.bm , self.removes[0] , vertex_size , width , alpha , color )
             if self.bmo.is_mirror_mode :
                 mirrors = [ self.bmo.find_mirror(m) for m in self.removes[0] ]
                 mirrors = [ m for m in mirrors if m ]

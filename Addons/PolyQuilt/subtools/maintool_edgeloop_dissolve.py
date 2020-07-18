@@ -65,7 +65,7 @@ class MainToolEdgeLoopDissolve(MainTool) :
         vertex_size = gizmo.preferences.highlight_vertex_size        
         width = gizmo.preferences.highlight_line_width        
         color = gizmo.preferences.delete_color         
-        return draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , e , vertex_size , width , alpha , color )        
+        return draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , gizmo.bmo.bm , e , vertex_size , width , alpha , color )        
 
     def OnDraw( self , context  ) :
         pass
@@ -76,7 +76,7 @@ class MainToolEdgeLoopDissolve(MainTool) :
             vertex_size = self.preferences.highlight_vertex_size        
             width = self.preferences.highlight_line_width        
             color = self.preferences.delete_color         
-            draw_util.drawElementsHilight3D( self.bmo.obj , self.removes , vertex_size , width , alpha , color )        
+            draw_util.drawElementsHilight3D( self.bmo.obj , self.bmo.bm, self.removes , vertex_size , width , alpha , color )        
 
     def OnExit( self ) :
         pass
