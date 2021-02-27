@@ -273,7 +273,7 @@ class SubToolAutoQuad(SubToolEx) :
 
     @classmethod
     def MakePolyByEmpty( cls , bmo , startPos ) :
-        highlight = bmo.highlight.find_quad(bmo , startPos)
+        highlight = bmo.highlight.find_quad2( startPos)
         return highlight , None
 
 
