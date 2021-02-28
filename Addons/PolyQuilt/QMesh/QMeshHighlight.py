@@ -40,6 +40,8 @@ class QMeshHighlight :
         self.current_matrix = None
         self.__boundaryViewPosVerts = None
         self.__boundaryViewPosEdges = None
+        self.__vertsPos = None
+        self.__edgesIdx = None
         self.__local_tag__ = 0
 
     @property
@@ -77,69 +79,22 @@ class QMeshHighlight :
 
     def checkDirty( self ) :
         if QMeshHighlight.__grobal_tag__ != self.__local_tag__ :
-            if self.__viewPosVertsNP is None:
-                del self.__viewPosVertsNP
-            self.__viewPosVertsNP = None
+            def check( val ) :
+                if val is None:
+                    del val
+                return None
 
-            if self.__viewPosVertsIdx is None:
-                del self.__viewPosVertsIdx
-            self.__viewPosVertsIdx = None
-
-            if self.__viewPosEdgeNP is None:
-                del self.__viewPosEdgeNP
-            self.__viewPosEdgeNP = None
-
-            if self.__viewPosEdgeIdx is None:
-                del self.__viewPosEdgeIdx
-            self.__viewPosEdgeIdx = None
-
-            if self.__boundaryViewPosVerts is None:
-                del self.__boundaryViewPosVerts
-            self.__boundaryViewPosVerts = None
-
-            if self.__boundaryViewPosEdges is None:
-                del self.__boundaryViewPosEdges
-            self.__boundaryViewPosEdges = None
+            self.__vertsPos = check(self.__vertsPos)
+            self.__edgesIdx = check(self.__edgesIdx)
+            self.__viewPosVertsNP = check(self.__viewPosVertsNP)
+            self.__viewPosVertsIdx = check(self.__viewPosVertsIdx)
+            self.__viewPosEdgeNP = check(self.__viewPosEdgeNP)
+            self.__viewPosEdgeIdx = check(self.__viewPosEdgeIdx)
+            self.__boundaryViewPosVerts = check(self.__boundaryViewPosVerts)
+            self.__boundaryViewPosEdges = check(self.__boundaryViewPosEdges)
 
             self.current_matrix = None
             self.__local_tag__ = QMeshHighlight.__grobal_tag__
-
-    def UpdateView2( self ,context , forced = False ):
-        start = time.time()
-        rv3d = context.region_data
-        pj_matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
-        self.checkDirty()
-
-        if forced == True or pj_matrix != self.current_matrix :
-            region = context.region
-            halfW = region.width / 2.0
-            halfH = region.height / 2.0
-            mat_scaleX = mathutils.Matrix.Scale( halfW , 4 , (1.0, 0.0, 0.0))
-            mat_scaleY = mathutils.Matrix.Scale( halfH , 4 , (0.0, 1.0, 0.0))
-            matrix = mat_scaleX @ mat_scaleY @ pj_matrix
-            halfWH = Vector( (halfW,halfH) )
-
-            def ProjVert( vt ) :
-                pv = matrix @ vt.co.to_4d()
-                return pv.to_2d() / pv[3] + halfWH if pv[3] > 0.0 else None
-
-            verts = self.pqo.bm.verts
-            viewPos = { p : ProjVert(p) for p in verts }
-#           viewPos = compute( verts , pj_matrix , region.width , region.height )
-
-            edges = self.pqo.bm.edges
-            viewEdges = { e : [ viewPos[e.verts[0]] , viewPos[e.verts[1]] ] for e in edges if not e.hide }
-#           viewEdges = { e : [ viewPos[v1] , viewPos[v2] ] for e , (v1,v2) in [ (e , e.verts) for e in edges if not e.hide ] }
-
-            self.__viewPosEdges = { e : v for e , v in viewEdges.items() if None not in v }
-            self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
-            self.__boundaryViewPosEdges = None
-            self.__boundaryViewPosVerts = None
-
-            self.current_matrix = pj_matrix
-
-            elapsed_time = time.time() - start
-            print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")       
 
     def UpdateView( self ,context , forced = False ):
         start = time.time()
@@ -150,75 +105,50 @@ class QMeshHighlight :
 
         if forced == True or pj_matrix != self.current_matrix :
             region = context.region
-            halfW = region.width / 2.0
-            halfH = region.height / 2.0
+            height = np.float32( region.height )
+            width = np.float32( region.width )
 
+            # 頂点の取り出し
             vts = self.pqo.bm.verts
             vlen = len(vts)
-
-            vco = np.fromiter( [x for v in vts for x in v.co], dtype=np.float32, count = vlen*3)  
-
+            if self.__vertsPos is None :
+                self.__vertsPos = np.fromiter( [x for v in vts for x in v.co], dtype=np.float32, count = vlen*3).reshape((vlen, 3))
             coords = np.empty((vlen, 4), dtype=np.float32 )
             coords[:,3] = 1.0
-            coords[:,:-1] = vco.reshape((vlen, 3))
+            coords[:,:-1] = self.__vertsPos
+
+            # ビューポート変換
             coords = np.dot( coords , np.array( pj_matrix, dtype=np.float32 ).transpose() )
-
             coords = coords[:,:-1] / coords[:,3:4]
-            coords = coords * np.array((halfW,halfH,1), dtype=np.float32) +  np.array((halfW,halfH,0), dtype=np.float32)
-
-#            verts = self.pqo.bm.verts
-#            viewPos = { p : Vector( c[:2] ) for p,c in zip(verts , coords) }
-
-            edges = self.pqo.bm.edges
-#            viewEdges = { e : [ viewPos[e.verts[0]] , viewPos[e.verts[1]] ] for e in edges if not e.hide }
-#           viewEdges = { e : [ viewPos[v1] , viewPos[v2] ] for e , (v1,v2) in [ (e , e.verts) for e in edges if not e.hide ] }
-
-            elen = len(edges)
-            eds = np.fromiter( [v.index for e in edges for v in e.verts ], dtype=np.int32, count = elen *2)
-
+            coords = coords * np.array(( width / 2, height / 2,1), dtype=np.float32) +  np.array(( width / 2, height / 2,0), dtype=np.float32)
             css = coords.reshape(vlen,3)
-            eds = css[eds].reshape(elen,2,3)
-            vidxs = np.where( coords[:,2].reshape(vlen) < 1.0 )
-            self.__viewPosVertsNP = coords[vidxs][:,:2]
-            self.__viewPosVertsIdx = vidxs[0]
 
-            insight = np.all( ( eds[:,:,2] < 1.0 ).reshape(elen,2) , axis = -1 )
-            eidxs = np.where( insight )
-            self.__viewPosEdgeIdx = eidxs[0]
-            self.__viewPosEdgeNP =  eds[eidxs][:,:,0:2]
+            # エッジ情報の取り出し
+            edges = self.pqo.bm.edges
+            elen = len(edges)
+            if self.__edgesIdx is None :
+                self.__edgesIdx = np.fromiter( [v.index for e in edges for v in e.verts ], dtype=np.int32, count = elen *2)
+            eds = css[self.__edgesIdx].reshape(elen,2,3)
 
-#            self.__viewPosEdges = { e : v for e , v in viewEdges.items() if None not in v }
-#            self.__viewPosVerts = { v : p for v,p in viewPos.items() if p and not v.hide }
+            # 範囲内チェック
+            con = (coords[:,2] < 1.0) & ( coords[:,0] >= 0 ) & ( coords[:,0] <= width ) & (coords[:,1] >= 0) & (coords[:,1] <= height)
+
+            # 頂点出力
+            vidxs = np.where( con )
+            self.__viewPosVertsNP , self.__viewPosVertsIdx = coords[vidxs][:,:2] , vidxs[0]
+
+            # エッジ出力
+            coe = con[self.__edgesIdx].reshape(elen,2)
+            eidxs = np.where( coe[:,0] & coe[:,1] )
+            self.__viewPosEdgeNP , self.__viewPosEdgeIdx = eds[eidxs][:,:,0:2] , eidxs[0]
+
             self.__boundaryViewPosEdges = None
             self.__boundaryViewPosVerts = None
 
             self.current_matrix = pj_matrix            
 
-            self.find_quad2( (0,0) )
-
 #            elapsed_time = time.time() - start
 #            print ("__elapsed_time:{0}".format(elapsed_time) + "[sec]")            
-
-    def CollectVerts2( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
-
-        p = Vector( coord )
-        viewPos = self.viewPosVerts
-        rr = Vector( (radius,0) )
-        verts = self.pqo.bm.verts
-        s = [ [v,s] for v,s in viewPos.items() if s - p <= rr and v in verts ]
-        if edgering :
-            s = [ i for i in s if i[0].is_boundary or i[0].is_manifold == False ]
-
-        if backface_culling :
-            ray = pqutil.Ray.from_screen( bpy.context , coord ).world_to_object( self.pqo.obj )
-            s = [ i for i in s if i[0].is_manifold == False or i[0].is_boundary or i[0].normal.dot( ray.vector ) < 0 ]
-
-        s = [ i for i in s if i[0] not in ignore ]
-
-        r = sorted( s , key=lambda i:(i[1] - p).length_squared )
-        matrix_world = self.pqo.obj.matrix_world
-
-        return [ ElementItem( self.pqo ,i[0] , i[1] , matrix_world @ i[0].co ) for i in r ] 
 
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         viewPosVerts , viewPosVertIdx = self.viewPosVerts
@@ -272,7 +202,6 @@ class QMeshHighlight :
 
         t0 = (ba[:,None,:] @ pa[...,None]).ravel()
         t1 = (ab[:,None,:] @ pb[...,None]).ravel()
-
         dist = np.abs( np.cross( ba , pa ) / np.linalg.norm( ba , axis=-1 ) )
 
         hit = (t0 > 0) & (t1 > 0) & (dist < radius)
@@ -298,48 +227,6 @@ class QMeshHighlight :
         
         s = sorted( r , key=lambda i:(i.coord - p).length_squared )
 
-        return s
-
-
-    def CollectEdge2( self ,coord , radius : float , ignore = [] , backface_culling = True , edgering = False ) -> ElementItem :
-        p = Vector( coord )
-        viewPosEdge = self.viewPosEdges
-        ray = pqutil.Ray.from_screen( bpy.context , coord )
-        ray_distance = ray.distance
-        location_3d_to_region_2d = pqutil.location_3d_to_region_2d
-        intersect_line_sphere_2d = geometry.intersect_line_sphere_2d
-        intersect_sphere_sphere_2d = geometry.intersect_sphere_sphere_2d
-        intersect_point_line = geometry.intersect_point_line
-        matrix_world = self.pqo.obj.matrix_world      
-        rr = Vector( (radius,0) )
-
-        def Conv( edge ) -> ElementItem :
-            v1 = matrix_world @ edge.verts[0].co
-            v2 = matrix_world @ edge.verts[1].co
-            h0 , h1 , d = ray_distance( pqutil.Ray( v1 , (v1-v2) ) )
-            c = location_3d_to_region_2d(h1)
-            return ElementItem( self.pqo , edge , c , h1 , d )
-
-        def intersect( p1 , p2 ) :
-            hit , pt = intersect_point_line( p , p1 , p2 )
-            if pt > 0 and pt < 1 :
-                if hit - p <= rr :
-                    return True
-
-            return False
-        edges = self.pqo.bm.edges
-        if edgering :        
-            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if len(e.link_faces) <= 1 and intersect( p1 , p2 ) and e not in ignore ]
-        else :
-            r = [ Conv(e) for e,(p1,p2) in viewPosEdge.items() if intersect( p1 , p2 ) and e in edges and e not in ignore ]
-
-        if backface_culling :
-            ray2 = ray.world_to_object( self.pqo.obj )
-            r = [ i for i in r
-                if not i.element.is_manifold or i.element.is_boundary or
-                    i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray2.vector ) < 0 ]
-        
-        s = sorted( r , key=lambda i:(i.coord - p).length_squared )
         return s
 
     def PickFace( self ,coord , ignore = []  , backface_culling = True ) -> ElementItem :
