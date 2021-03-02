@@ -15,13 +15,13 @@ import bpy
 import bmesh
 import math
 import copy
-import mathutils
-import bpy_extras
 import collections
+import mathutils
 from mathutils import *
 import numpy as np
 from ..utils import pqutil
 from ..utils.dpi import *
+from ..utils import np_math
 from .ElementItem import ElementItem
 from .QSnap import QSnap
 import time
@@ -150,6 +150,14 @@ class QMeshHighlight :
 #            elapsed_time = time.time() - start
 #            print ("__elapsed_time:{0}".format(elapsed_time) + "[sec]")            
 
+    def IntersectPointInSphere( point , points , radius ) :
+        rt = np.sum( (points - point) ** 2 , axis = -1 )
+
+        rr = np.float32( radius * radius )
+        ri = np.where( rt <= rr )
+
+        return ri[0]
+
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         viewPosVerts , viewPosVertIdx = self.viewPosVerts
 
@@ -157,10 +165,9 @@ class QMeshHighlight :
         co = np.array( coord , dtype = np.float32 )
         verts = self.pqo.bm.verts
 
-        rt = np.linalg.norm( viewPosVerts - co , axis=-1 )
- 
-        ri = np.where( rt <= radius )
-        vts = [ [verts[ viewPosVertIdx[i] ] , viewPosVerts[i] ] for i in ri[0] ]
+        ri = np_math.IntersectPointInSphere( co , viewPosVerts , radius )
+
+        vts = [ [verts[ viewPosVertIdx[i] ] , viewPosVerts[i] ] for i in ri ]
 
         if edgering :
             vts = [ v for v in vts if v[0].is_boundary or v[0].is_manifold == False ]
@@ -181,6 +188,7 @@ class QMeshHighlight :
 
 
     def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True , edgering = False ) -> ElementItem :
+        start = time.time()      
         viewPosEdges , viewPosEdgesIdx = self.viewPosEdges
 
         co = np.array( coord , dtype = np.float32 )
@@ -191,21 +199,9 @@ class QMeshHighlight :
         location_3d_to_region_2d = pqutil.location_3d_to_region_2d
         matrix_world = self.pqo.obj.matrix_world      
 
-        edgeNum = viewPosEdges.shape[0]
-        a = viewPosEdges[:,0:1].reshape(edgeNum,2)
-        b = viewPosEdges[:,1:2].reshape(edgeNum,2)
+        hit = np_math.DistancePointToLine2D( co , viewPosEdges , radius )
 
-        ab = a - b
-        ba = -ab
-        pa = co - a 
-        pb = co - b
-
-        t0 = (ba[:,None,:] @ pa[...,None]).ravel()
-        t1 = (ab[:,None,:] @ pb[...,None]).ravel()
-        dist = np.abs( np.cross( ba , pa ) / np.linalg.norm( ba , axis=-1 ) )
-
-        hit = (t0 > 0) & (t1 > 0) & (dist < radius)
-        hit = [ edges[h] for h in viewPosEdgesIdx[np.where(hit)] ]
+        hit = [ edges[h] for h in viewPosEdgesIdx[ hit ] ]
 
         def Conv( edge ) -> ElementItem :
             v1 = matrix_world @ edge.verts[0].co
@@ -226,6 +222,9 @@ class QMeshHighlight :
                     i.element.verts[0].normal.dot( ray.vector ) < 0 or i.element.verts[1].normal.dot( ray2.vector ) < 0 ]
         
         s = sorted( r , key=lambda i:(i.coord - p).length_squared )
+
+#        elapsed_time = time.time() - start
+#        print ("_elapsed_time:{0}".format(elapsed_time) + "[sec]")        
 
         return s
 

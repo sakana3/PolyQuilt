@@ -18,9 +18,11 @@ import math
 import mathutils
 import bmesh
 import bpy_extras
+import numpy as np
 import collections
 from ..utils import pqutil
 from ..utils import draw_util
+from ..utils import np_math
 from ..QMesh import *
 from .subtool import SubTool
 
@@ -70,18 +72,11 @@ class SubToolKnife(SubTool) :
             self.goalElement.Draw( self.bmo.obj , self.color_highlight() , self.preferences )
 
         if self.cut_edges :
-            draw_util.draw_pivots3D( list(self.cut_edges.values()) , 1 , self.color_delete() )
+            draw_util.draw_pivots3D( self.cut_edges.values() , 1 , self.color_delete() )
+            
         if self.cut_edges_mirror :
             draw_util.draw_pivots3D( list(self.cut_edges_mirror.values()) , 1 , self.color_delete(0.5) )
 
-    def CalcKnife( self ,context,startPos , endPos ) :
-        slice_plane , plane0 , plane1 = self.make_slice_planes(context,startPos , endPos)
-        self.cut_edges = self.calc_slice( slice_plane , plane0 , plane1  )
-        if self.bmo.is_mirror_mode :
-            slice_plane.x_mirror()
-            plane0.x_mirror()
-            plane1.x_mirror()
-            self.cut_edges_mirror = self.calc_slice( slice_plane , plane0 , plane1 )
 
     def make_slice_planes( self , context,startPos , endPos ):
         slice_plane_world = pqutil.Plane.from_screen_slice( context,startPos , endPos )
@@ -98,31 +93,16 @@ class SubToolKnife(SubTool) :
 
         return slice_plane_object , plane0 , plane1
 
-    def calc_slice( self ,slice_plane , plane0 , plane1 ) :
-        edges = [ edge for edge in self.bmo.edges if edge.hide is False ]
-        slice_plane_intersect_line = slice_plane.intersect_line
-        plane0_distance_point = plane0.distance_point
-        plane1_distance_point = plane1.distance_point
-        epsilon = sys.float_info.epsilon
-        
-        def chk( edge ) :        
-            p0 = edge.verts[0].co
-            p1 = edge.verts[1].co
-            p = slice_plane_intersect_line( p0 , p1 )
+    def CalcKnife( self ,context, p0 , p1 ) :
+        epos , eids = self.bmo.highlight.viewPosEdges
 
-            if p != None :
-                a0 = plane0_distance_point( p )
-                a1 = plane1_distance_point( p )
-                if (a0 > epsilon and a1 > epsilon ) or (a0 < -epsilon and a1 < -epsilon ):
-                    return None
-            return p
+        hits = np_math.IntersectLine2DLines2D( np.array( (p0,p1) , dtype = np.float32 ) , epos , isRetPoint= False )
 
+        edges = self.bmo.edges
+        edges = [ edges[i] for i in eids[hits] ]
+        plane_intersect_line = pqutil.Plane.from_screen_slice( context,p0 , p1 ).world_to_object( self.bmo.obj ).intersect_line
         matrix = self.bmo.obj.matrix_world
-        cut_edges = { edge : chk( edge ) for edge in edges }
-        cut_edges = { e : matrix @ p for e,p in cut_edges.items() if p != None }
-#        for add_edge in add_edges :
-#            cut_edges[add_edge] = slice_plane_intersect_line( add_edge.verts[0].co , add_edge.verts[1].co )
-        return cut_edges
+        self.cut_edges = { e : matrix @ plane_intersect_line(e.verts[0].co,e.verts[1].co) for e in edges }
 
     def DoKnife( self ,context,startPos , endPos ) :
         bm = self.bmo.bm

@@ -97,6 +97,20 @@ def draw_donuts2D( pos , radius_out , width , rate , color = (1,1,1,1) ):
     draw_lines2D( vertices , (0,0,0,color[3]*0.5) , (width )* dpm()+ 1.0  )
     draw_lines2D( vertices , color , width* dpm()  )
 
+def draw_points2D( poss , radius , color = (1,1,1,1) ):
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)        
+    bgl.glPointSize(radius * dpm() * 2 )
+    
+    shader2D.bind()
+    shader2D.uniform_float("color", color )
+    batch_draw(shader2D, 'POINTS', {"pos": poss} )
+
+    bgl.glPointSize(1 )
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glDisable(bgl.GL_BLEND)
+    
+
 def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glEnable(bgl.GL_LINE_SMOOTH)
     bgl.glLineWidth(width )    
@@ -195,6 +209,7 @@ def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_DEPTH_TEST)
     bgl.glDepthMask(bgl.GL_FALSE)
+
 
 
 def draw_Face3D( obj , bm : bmesh.types.BMesh , face : bmesh.types.BMFace , color = (1,1,1,1) , isFill = True ):
