@@ -33,6 +33,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.subtool = None
         self.tool_table = [None,None,None,None]
         self.tool = None
+        self.invalid = False
 
     def __del__(self) :
         pass
@@ -55,6 +56,10 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         pass
 
     def test_select(self, context, location):
+        if self.invalid :
+            self.bmo.invalid = True
+            self.invalid = False
+
         if PQ_GizmoGroup_Base.running_polyquilt :
             self.DrawHighlight = None
             return -1
@@ -97,7 +102,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def refresh( self , context ) :
         if self.bmo != None :
-            self.bmo.invalid = True
+            self.invalid = True
             self.currentElement = ElementItem.Empty()
             self.DrawHighlight = None
 

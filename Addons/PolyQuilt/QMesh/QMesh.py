@@ -11,6 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from operator import invert
 import bpy
 import bmesh
 import math
@@ -37,9 +38,9 @@ class QMesh(QMeshOperators) :
         self.highlight = QMeshHighlight(self)
         self.invalid = False
 
-    def UpdateMesh( self , updateHighLight = True ) :
-        super().UpdateMesh()
-        if updateHighLight :
+    def UpdateMesh( self , changeTopology = True ) :
+        super().UpdateMesh(changeTopology)
+        if changeTopology :
             self.highlight.setDirty()
 
     def CheckValid( self , context ) :

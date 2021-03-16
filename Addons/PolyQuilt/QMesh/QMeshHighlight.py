@@ -102,7 +102,6 @@ class QMeshHighlight :
         rv3d = context.region_data
         pj_matrix = rv3d.perspective_matrix @ self.pqo.obj.matrix_world
         self.checkDirty()
-
         if forced == True or pj_matrix != self.current_matrix :
             region = context.region
             height = np.float32( region.height )
@@ -160,6 +159,9 @@ class QMeshHighlight :
 
     def CollectVerts( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = True ) -> ElementItem :
         viewPosVerts , viewPosVertIdx = self.viewPosVerts
+        if edgering :
+            viewPosVerts = viewPosVerts[ self.boundaryViewPosVerts ]
+            viewPosVertIdx = viewPosVertIdx[ self.boundaryViewPosVerts ]
 
 #        start = time.time()        
         co = np.array( coord , dtype = np.float32 )
@@ -190,6 +192,9 @@ class QMeshHighlight :
     def CollectEdge( self ,coord , radius : float , ignore = [] , backface_culling = True , edgering = False ) -> ElementItem :
         start = time.time()      
         viewPosEdges , viewPosEdgesIdx = self.viewPosEdges
+        if edgering :
+            viewPosEdges = viewPosEdges[ self.boundaryViewPosEdges ]
+            viewPosEdgesIdx = viewPosEdgesIdx[ self.boundaryViewPosEdges ]
 
         co = np.array( coord , dtype = np.float32 )
         edges = self.pqo.bm.edges

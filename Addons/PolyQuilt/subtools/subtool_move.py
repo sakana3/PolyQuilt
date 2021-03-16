@@ -14,6 +14,7 @@
 import sys
 import bpy
 import math
+import time
 import mathutils
 import bmesh
 import copy
@@ -41,7 +42,7 @@ class SubToolMove(SubTool) :
 
         self.move_color = ( 1.0 , 1.0 ,1.0 ,1.0  )
         self.MoveTo( bpy.context , startMousePos )
-        self.bmo.UpdateMesh(False)
+        self.bmo.UpdateMesh( changeTopology = False )
         self.is_snap = False
 
         # ignore snap target
@@ -97,6 +98,7 @@ class SubToolMove(SubTool) :
                             if self.bmo.check_near(self.currentTarget.element.co , mp ) :
                                 self.currentTarget.element.co = self.bmo.zero_pos(mp)
                                 self.is_snap = True
+
                 elif self.currentTarget.isEdge and self.move_component_module.move_ray == None :
                     self.snapTarget = self.bmo.PickElement( self.mouse_pos , dist , edgering=True , backface_culling = True , elements=['EDGE'] , ignore=self.ignoreSnapTarget ) 
                     if self.snapTarget.isEdge :
@@ -120,8 +122,8 @@ class SubToolMove(SubTool) :
                             self.currentTarget.element.verts[1].co = self.bmo.zero_pos(self.currentTarget.element.verts[1].co)
                             self.currentTarget.mirror.verts[0].co = self.bmo.zero_pos(self.currentTarget.mirror.verts[0].co)
                             self.currentTarget.mirror.verts[1].co = self.bmo.zero_pos(self.currentTarget.mirror.verts[1].co)
+            self.bmo.UpdateMesh( changeTopology = False )
 
-            self.bmo.UpdateMesh(False)
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
                 threshold = bpy.context.scene.tool_settings.double_threshold
@@ -140,7 +142,6 @@ class SubToolMove(SubTool) :
             self.move_component_module.update(event)
 
         self.debugStr = str(self.snapTarget.element)
-
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
@@ -158,7 +159,6 @@ class SubToolMove(SubTool) :
 
     def MoveTo( self ,context ,  mouse_pos ) :
         move = self.move_component_module.move_to( mouse_pos )
-
         self.move_component_module.update_geoms( move )
         return
 

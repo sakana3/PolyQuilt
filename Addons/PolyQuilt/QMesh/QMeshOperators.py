@@ -73,18 +73,18 @@ class QMeshOperators :
             self.__kdtree = None
 
 
-    def UpdateMesh( self ) :
-        self.ensure_lookup_table()
+    def UpdateMesh( self , changeTopology = True ) :
         self.bm.normal_update()
-
+        self.ensure_lookup_table()
         self.obj.data.update_gpu_tag()
         self.obj.data.update_tag()
         self.obj.update_tag()
         bmesh.update_edit_mesh(self.obj.data)
 #       self.obj.update_from_editmode()
-        self.__btree = None
-        self.__kdtree = None
-        self.current_matrix = None    
+        if changeTopology :
+            self.__btree = None
+            self.__kdtree = None
+            self.current_matrix = None    
 
     @property
     def btree(self):

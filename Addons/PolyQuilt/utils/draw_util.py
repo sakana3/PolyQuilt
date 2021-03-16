@@ -25,37 +25,36 @@ from gpu_extras.batch import batch_for_shader
 from .pqutil import *
 from .dpi import *
 
-vertex_shader = '''
-    uniform mat4 viewProjectionMatrix;
+dot_line_vertex_shader = '''
+uniform mat4 ProjectionMatrix;
 
-    in vec3 pos;
+in vec2 pos;
+in float dist;
+out float distance;
 
-    void main()
-    {
-        gl_Position = viewProjectionMatrix * vec4(pos, 1.0f);
-    }
+void main()
+{
+    gl_Position = ProjectionMatrix * vec4(pos,0, 1.0f);
+    distance = dist;
+}
 '''
 
-fragment_shader = '''
-    uniform vec4 color;
+dot_line_fragment_shader = '''
+uniform vec4 color;
+uniform vec2 line_t;
 
-    void main()
-    {
-        gl_FragColor = color;
-    }
+in float distance;
+
+void main()
+{
+    float t = line_t.x + line_t.y;
+    float a = mod( distance / t , 1 );
+    a = step( a , line_t.x / t );
+
+    gl_FragColor = vec4( color.rgb , color.a * a );
+}
 '''
 
-
-
-def begin_draw() :
-    pass
-
-def end_draw() :
-    pass
-
-def clear_draw() :
-    pass
-    
 def batch_draw( shader , primitiveType , content  , indices = None ) :
     if indices :
         batch = batch_for_shader(shader, primitiveType , content , indices=indices )
@@ -64,7 +63,7 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
     batch.draw(shader)
     return batch
 
-#shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
+shaderEx = gpu.types.GPUShader(dot_line_vertex_shader, dot_line_fragment_shader)
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
@@ -121,6 +120,27 @@ def draw_lines2D( verts , color = (1,1,1,1) , width : float = 1.0 ):
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
+
+def draw_dot_lines2D( verts , color = (1,1,1,1) , width : float = 2.0 , pattern = (4,2) ):
+    bgl.glEnable(bgl.GL_LINE_SMOOTH)
+    bgl.glLineWidth(width )    
+    bgl.glEnable(bgl.GL_BLEND)
+    shaderEx.bind()
+    shaderEx.uniform_float("color", color )
+#   shaderEx.uniform_float("ModelViewProjectionMatrix", bpy.context.region_data.perspective_matrix)
+    shaderEx.uniform_float("line_t", (pattern[0] * dpm(),pattern[1] * dpm()) )
+
+    dist = [0,]
+    for i in range( len(verts) - 1 ) :
+        v1 = verts[i]
+        v2 = verts[i+1]
+        dist.append( (v1-v2).length )
+
+    batch_draw(shaderEx, 'LINE_STRIP', {"pos": verts, "dist": dist} )
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_LINE_SMOOTH)    
+    bgl.glDisable(bgl.GL_BLEND)
+
 
 def draw_poly2D( verts , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_LINE_SMOOTH)

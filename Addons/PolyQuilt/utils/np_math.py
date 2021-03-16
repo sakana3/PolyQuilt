@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def IntersectPointInSphere( point , points , radius ) :
     rt = np.sum( (points - point) ** 2 , axis = -1 )
 
@@ -20,7 +21,6 @@ def DistancePointToLine2D( co , lines , radius , isRetPoint = True ) :
 
     t0 = (ba[:,None,:] @ pa[...,None]).ravel()
     t1 = (ab[:,None,:] @ pb[...,None]).ravel()
-
     idx = np.where( (t0 > 0) & (t1 > 0) )
 
     ba = ba[idx]
