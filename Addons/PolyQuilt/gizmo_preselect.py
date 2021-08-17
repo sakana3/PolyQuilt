@@ -134,6 +134,9 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
                     return item
         return None
 
+    def invoke( self , context, event) :
+        print("--")
+
     def get_attr( self , attr ) :
         if self.keyitem :
             if self.keyitem.properties.is_property_set(attr) :

@@ -33,7 +33,7 @@ from .gizmo_preselect import PQ_GizmoGroup_Base
 
 import bpy.utils.previews
 
-__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' , 'MESH_OT_poly_quilt_brush_size']
+__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' ]
 
 if not __package__:
     __package__ = "poly_quilt"
@@ -399,35 +399,3 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     @staticmethod
     def depsgraph_update_pre_handler( scene):
         PQ_GizmoGroup_Base.depsgraph_update_post( scene )
-
-class MESH_OT_poly_quilt_brush_size(bpy.types.Operator):
-    """Change Brush Size"""
-    bl_idname = "mesh.poly_quilt_brush_size"
-    bl_label = "PolyQuiltBrushSize"
-    
-    brush_size_value : bpy.props.FloatProperty(
-        name="Brush Size Value",
-        description="Brush Size Value",
-        default=0.0,
-        min=-1000.0,
-        max=1000.0)
-
-    brush_strong_value : bpy.props.FloatProperty(
-        name="Brush Strong Value",
-        description="Brush Strong Value",
-        default=0.0,
-        min=-1.0,
-        max=1.0)
-
-    def invoke(self, context, event):
-        if context.area.type == 'VIEW_3D' :
-            preferences = context.preferences.addons[__package__].preferences        
-
-            a = (preferences.brush_size * preferences.brush_size) / 40000.0 + 0.1
-            preferences.brush_size += self.brush_size_value * a       
-            strength = min( max( 0 , preferences.brush_strength + self.brush_strong_value ) , 1 )
-            preferences.brush_strength = strength
-            context.area.tag_redraw()
-
-        return {'CANCELLED'}
-

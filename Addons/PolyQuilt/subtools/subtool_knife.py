@@ -107,7 +107,8 @@ class SubToolKnife(SubTool) :
         if self.bmo.is_mirror_mode :
             find_mirror = self.bmo.find_mirror
             mirror_pos = self.bmo.mirror_pos
-            self.cut_edges_mirror = { x : y for x,y in [ (find_mirror( e , False ) , mirror_pos(v) ) for e , v in self.cut_edges.items() ] if x is not None }
+            mirrors =  [ (find_mirror( e , False ) , mirror_pos(v),e ) for e , v in self.cut_edges.items() ]
+            self.cut_edges_mirror = { x : y for x,y,e in mirrors if x is not None }
 
 
     def DoKnife( self ,context,startPos , endPos ) :
