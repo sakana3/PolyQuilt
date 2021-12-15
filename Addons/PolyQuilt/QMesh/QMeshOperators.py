@@ -400,13 +400,13 @@ class QMeshOperators :
                 if (mirror_v0 == v0 and mirror_v1 == v1) or (mirror_v0 == v1 and mirror_v1 == v0) :
                     pass
                 else :
-                    new_face , new_edge = bmesh.utils.face_split( mirror_face , mirror_v0  , mirror_v1 , coords , use_exist )
+                    new_face , new_edge = bmesh.utils.face_split( mirror_face , mirror_v0  , mirror_v1 , coords = coords , use_exist = use_exist )
                     if (v0 not in face.verts or v1 not in face.verts ) and (v0 not in new_face.verts or v1 not in new_face.verts ):
                         return
                     if v0 in new_face.verts and v1 in new_face.verts :
                         return bmesh.utils.face_split( new_face , v0  , v1 )
             
-        return bmesh.utils.face_split( face , v0  , v1 , coords , use_exist )
+        return bmesh.utils.face_split( face , v0  , v1 , coords = coords , use_exist = use_exist )
 
     def __calc_split_fac( self , edge , refPos ) :
         fac = 0.5
