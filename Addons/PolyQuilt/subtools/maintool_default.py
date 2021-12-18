@@ -113,10 +113,7 @@ class MainToolDefault(MainTool) :
                 if element.isFace :
                     funcs.append( element.draw_face_center_marker_func( gizmo.preferences.highlight_color , element.is_hit_center() , element.is_hit_center() ) )
 
-            def draw() :
-                for func in funcs :
-                    func()
-            return draw
+            return funcs
         return None
 
     def OnDraw( self , context  ) :

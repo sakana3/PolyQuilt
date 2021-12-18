@@ -100,7 +100,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
                 p = self.move_component_module.currentTarget.hitPosition
                 self.is_center_snap = self.bmo.is_x0_snap( p )
 
-            pos_tbl = self.move_component_module.update_geoms_pos( move , "NEAR" , move_center = True )
+            pos_tbl = self.move_component_module.update_geoms_pos( move ,  "NEAR" , move_center = True )
             for v in pos_tbl :
                 if v in self.verts :
                     self.verts[v] = pos_tbl[v]

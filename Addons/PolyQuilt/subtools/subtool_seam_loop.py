@@ -85,8 +85,5 @@ class SubToolSeamLoop(SubToolSeam) :
                 funcs.append(draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , gizmo.bmo.bm, edges , vertex_size , width , alpha , color ))
                 if mirrors :
                     funcs.append( draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj  , gizmo.bmo.bm, mirrors , vertex_size , width , alpha * 0.5 , color ))
-                def func() :
-                    for f in funcs :
-                        f()
-                return func
+                return funcs
         return None

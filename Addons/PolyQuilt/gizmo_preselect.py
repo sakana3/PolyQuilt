@@ -34,9 +34,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
         self.tool_table = [None,None,None,None]
         self.tool = None
         self.invalid = False
-
-    def __del__(self) :
-        pass
+        self.temp = bmesh.new()
 
     def setup(self):
         self.bmo = None        
@@ -53,6 +51,7 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             context.window.cursor_set( self.subtool.GetCursor() )
 
     def exit( self , context, cancel) :
+        print("hoge")
         pass
 
     def test_select(self, context, location):
@@ -98,7 +97,11 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             self.DrawHighlight = None
 
         if self.DrawHighlight != None :
-            self.DrawHighlight()
+            if type(self.DrawHighlight) == list :
+                for drawHighlight in self.DrawHighlight :
+                    drawHighlight()
+            else :
+                self.DrawHighlight()
 
     def refresh( self , context ) :
         if self.bmo != None :
@@ -158,6 +161,7 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
     bl_space_type = 'VIEW_3D'
     bl_idname = my_tool.bl_widget
     child_gizmos = []
+
     cursor = 'DEFAULT'
 
     running_polyquilt = False
@@ -166,7 +170,7 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
         self.gizmo = None
 
     def __del__(self) :
-        if hasattr( self , "gizmo" ) :               
+        if hasattr( self , "gizmo" ) :       
             PQ_GizmoGroup_Base.child_gizmos.remove( self.gizmo )
         if not PQ_GizmoGroup_Base.child_gizmos :
             QSnap.remove_ref()
@@ -181,7 +185,9 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
             if tool.widget == cls.bl_idname:
                 break
         else:
+            print("--")
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
+            print("---")
             return False
         if not PQ_GizmoGroup_Base.running_polyquilt :
             context.window.cursor_set( cls.cursor )        

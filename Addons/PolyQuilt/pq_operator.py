@@ -377,6 +377,7 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
             context.window.cursor_set( 'DEFAULT' )
             bpy.app.handlers.depsgraph_update_post.remove( MESH_OT_poly_quilt_daemon.depsgraph_update_post_handler )
             bpy.app.handlers.depsgraph_update_pre.remove( MESH_OT_poly_quilt_daemon.depsgraph_update_pre_handler )
+            gc.collect()
             return {'CANCELLED'}
 
         PQ_GizmoGroup_Base.recive_event( context, event )

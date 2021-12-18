@@ -44,6 +44,16 @@ class QMeshHighlight :
         self.__edgesIdx = None
         self.__local_tag__ = 0
 
+    def __del__(self) :
+        del self.__vertsPos
+        del self.__edgesIdx
+        del self.__viewPosVertsNP
+        del self.__viewPosVertsIdx
+        del self.__viewPosEdgeNP
+        del self.__viewPosEdgeIdx
+        del self.__boundaryViewPosVerts
+        del self.__boundaryViewPosEdges
+
     @property
     def viewPosVerts(self):
         if self.__viewPosVertsNP is None :
@@ -110,8 +120,10 @@ class QMeshHighlight :
             # 頂点の取り出し
             vts = self.pqo.bm.verts
             vlen = len(vts)
+
             if self.__vertsPos is None :
                 self.__vertsPos = np.fromiter( [x for v in vts for x in v.co], dtype=np.float32, count = vlen*3).reshape((vlen, 3))
+
             coords = np.empty((vlen, 4), dtype=np.float32 )
             coords[:,3] = 1.0
             coords[:,:-1] = self.__vertsPos

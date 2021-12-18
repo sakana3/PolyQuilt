@@ -38,8 +38,13 @@ class QMesh(QMeshOperators) :
         self.highlight = QMeshHighlight(self)
         self.invalid = False
 
-    def UpdateMesh( self , changeTopology = True ) :
-        super().UpdateMesh(changeTopology)
+    def __del__(self) :
+        super().__del__()
+        if self.highlight :
+            del self.highlight
+
+    def UpdateMesh( self , changeTopology = True , loop_triangles = True,destructive = True ) :
+        super().UpdateMesh(changeTopology,loop_triangles,destructive)
         if changeTopology :
             self.highlight.setDirty()
 

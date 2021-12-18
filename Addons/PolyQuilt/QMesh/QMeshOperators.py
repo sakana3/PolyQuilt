@@ -35,6 +35,9 @@ class QMeshOperators :
         self.__kdtree = None
         self.preferences = preferences
 
+    def __del__(self) :
+        del self.__btree
+        del self.__kdtree
 
     def _CheckValid( self , context ) :
         active_obj = context.active_object
@@ -73,13 +76,13 @@ class QMeshOperators :
             self.__kdtree = None
 
 
-    def UpdateMesh( self , changeTopology = True ) :
+    def UpdateMesh( self , changeTopology = True , loop_triangles = True,destructive = True ) :
         self.bm.normal_update()
         self.ensure_lookup_table()
         self.obj.data.update_gpu_tag()
         self.obj.data.update_tag()
         self.obj.update_tag()
-        bmesh.update_edit_mesh(self.obj.data)
+        bmesh.update_edit_mesh(self.obj.data , loop_triangles = loop_triangles,destructive = destructive )
 #       self.obj.update_from_editmode()
         if changeTopology :
             self.__btree = None
@@ -158,6 +161,10 @@ class QMeshOperators :
     @staticmethod
     def zero_pos( pos : Vector ) :
         return Vector( (0,pos[1],pos[2]) )
+
+    @staticmethod
+    def zero_vector( norm : Vector ) :
+        return Vector( (0,norm[1],norm[2]) ).normalized() * norm.length
 
     def zero_pos_w2l( self , pos : Vector ) :
         wp = self.world_to_local_pos(pos)
@@ -646,6 +653,36 @@ class QMeshOperators :
             edges = [ step( e ) for e in edges ]
             edges = [ e for e in sum(edges, []) if e ]
         return loops
+
+
+    def calc_edge_boundary_loop( self , startEdge , check_func = None , is_mirror = None ) :
+        if not isinstance( startEdge , bmesh.types.BMEdge ) :
+            return [] ,[]
+
+        if startEdge.is_manifold :
+            return [] ,[]
+
+        edges = [startEdge]
+        verts = [startEdge.verts[0],startEdge.verts[1]]
+
+        for vert in verts :
+            cur = vert
+            while(cur) :
+                if len( [ e for e in cur.link_edges if e in edges ] ) == 2 :
+                    break
+
+                links = [ e for e in cur.link_edges if not e.is_manifold and e not in edges ]
+                if len(links) == 1 :
+                    next = links[0]
+                    edges.append( next )
+                    cur = next.other_vert(cur)
+                    if cur not in verts :
+                        verts.append(cur)
+                    else :
+                        break
+                else :
+                    break
+        return edges , verts
 
 
     def calc_shortest_pass( self , bm , start , end ) :

@@ -28,6 +28,7 @@ from .subtool_edgeloop_dissolve import *
 from .subtool_edgeloop_extrude import SubToolEdgeLoopExtrude
 from .subtool_edgeloop_slide import SubToolEdgeSlide
 from .subtool_edgeloop_tweak import SubToolEdgeLoopTweak
+from .subtool_edgering_extrude import SubToolEdgeRingExtrude
 
 class MainToolEdgeLoop(MainTool) :
     name = "EdgeLoop Tool"
@@ -38,8 +39,8 @@ class MainToolEdgeLoop(MainTool) :
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
-            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] ] ,
-            MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ],[SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
+            MBEventType.LongPressDrag   : [ [SubToolEdgeRingExtrude.CheckMarker , SubToolEdgeRingExtrude ] , [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] ] ,
+            MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
         }
 
     @staticmethod
@@ -93,10 +94,7 @@ class MainToolEdgeLoop(MainTool) :
                 color = gizmo.preferences.makepoly_color
                 width = gizmo.preferences.highlight_line_width + 1
             funcs.append( draw_util.drawElementsHilight3DFunc( gizmo.bmo.obj , gizmo.bmo.bm, element.both_loops , vertex_size ,width,alpha, color ) )
-            def draw() :
-                for func in funcs :
-                    func()
-            return draw
+            return funcs
         return None
 
     def OnDraw( self , context  ) :
@@ -107,14 +105,21 @@ class MainToolEdgeLoop(MainTool) :
                 self.LMBEvent.Draw( None )
 
     def OnDraw3D( self , context  ) :
-        if self.currentTarget.isEdge :
-            alpha = self.preferences.highlight_face_alpha
-            vertex_size = self.preferences.highlight_vertex_size        
-            width = self.preferences.highlight_line_width
-            color = self.preferences.highlight_color
-            if self.LMBEvent.is_hold :
-                color = self.color_delete()            
-            draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_loops , vertex_size ,width,alpha, color )
+        if self.currentTarget.isNotEmpty and not self.isExit:
+            if self.currentTarget.isEdge :
+                alpha = self.preferences.highlight_face_alpha
+                vertex_size = self.preferences.highlight_vertex_size        
+                width = self.preferences.highlight_line_width
+                color = self.preferences.highlight_color
+                if self.currentTarget.can_extrude() :
+                    self.currentTarget.Draw( self.bmo.obj , self.preferences.highlight_color , self.preferences , True )
+                if self.LMBEvent.is_hold :
+                    if self.currentTarget.can_extrude() :
+                        color = self.color_create()            
+                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.rings , vertex_size ,width,alpha, color )
+                    else :
+                        color = self.color_delete() 
+                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_loops , vertex_size ,width,alpha, color )
 
     def OnExit( self ) :
         pass

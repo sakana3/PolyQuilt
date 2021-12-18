@@ -124,23 +124,7 @@ class SubToolBrushRelax(SubToolEx) :
 
         return { c[0]: [c[1],c[2]] for c in coords if c != None } 
 
-    def MirrorVert( self , context , coords ) :
-        # ミラー頂点を検出
-        find_mirror = self.bmo.find_mirror
-        mirrors = { vert : find_mirror( vert ) for vert , coord in coords.items() }
 
-        # 重複する場合は
-        for (vert , coord) , mirror in zip( coords.items() , mirrors.values() ) :
-            if mirror != None :
-                cur = coord[0]
-                dst = coords[mirror][0]
-                coord[0] = cur if dst <= cur else dst
-
-        # 重複しないものを列挙
-        mirrors = { vert : [coords[vert][0] , mirror.co.copy() ] for vert , mirror in mirrors.items() if mirror != None and mirror not in coords }
-
-        coords.update(mirrors)
-        return coords
 
     def DoRelax( self , context , coord ) :
         is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
@@ -200,12 +184,7 @@ class SubToolBrushRelax(SubToolEx) :
                     else :
                         mirror.co = mirror_pos(vert.co)
 
-#        self.bmo.bm.normal_update()
-#        self.bmo.obj.data.update_gpu_tag()
-#        self.bmo.obj.data.update_tag()
-#        self.bmo.obj.update_from_editmode()
-#        self.bmo.obj.update_tag()
-        bmesh.update_edit_mesh(self.bmo.obj.data , loop_triangles = False,destructive = False )
+        self.bmo.UpdateMesh(changeTopology = True , loop_triangles = False ,destructive = False )
 
     @classmethod
     def GetCursor(cls) :

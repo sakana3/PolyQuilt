@@ -246,6 +246,31 @@ class ElementItem :
         return self.loops
 
     @property
+    def rings( self ) :
+        if self.isEdge :        
+            if not hasattr( self , "__rings" ) :
+                self.__rings , v = self.__qmesh.calc_edge_boundary_loop( self.element , is_mirror = False )
+            return self.__rings
+        return []
+
+    @property
+    def mirror_rings( self ) :
+        if self.isEdge :
+            if not hasattr( self , "__mirror_rings" ) :
+                if self.mirror != None :
+                    self.__mirror_rings = [ t for t , s in [ (self.__qmesh.find_mirror(e,False) , e) for e in self.loops ] if t ]
+                else :
+                    self.__mirror_rings = []
+            return self.__mirror_rings
+        return []
+
+    def both_rings( self ) :
+        mp = [ m for m in self.mirror_rings if m not in self.rings ]
+        if mp :
+            return self.rings + mp
+        return self.rings
+
+    @property
     def type_name(self)  :
         if isinstance( self.element , bmesh.types.BMVert ) :
             return 'VERT'

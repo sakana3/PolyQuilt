@@ -194,6 +194,8 @@ class Ray :
         
         return v0 + (v1-v0) * val
 
+    def closest_point( self , c ) :
+        return self.origin + self.vector.dot( c ) * self.vector
 
     @property
     def invert( self ) :

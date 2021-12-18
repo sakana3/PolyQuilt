@@ -193,8 +193,12 @@ class SubToolEdgeLoopCut(MainTool) :
             mirrorEdge = bmo.find_mirror(currentEdge,False)
             if mirrorEdge is not None :
                 if mirrorEdge != currentEdge :
-                    mirrorVert = bmo.find_mirror(currentEdge.verts[0])
-                    startEdges.append( (mirrorEdge, 0 if mirrorEdge.verts[0] == mirrorVert else 1 ) )
+                    if currentEdge.verts[0] in mirrorEdge.verts :
+                        startEdges.append( (mirrorEdge, 0 if currentEdge.verts[0] == mirrorEdge.verts[0] else 1  ) )
+                    else :
+                        mirrorVert = bmo.find_mirror(currentEdge.verts[0] )
+                        if mirrorVert :
+                            startEdges.append( (mirrorEdge, 0 if mirrorEdge.verts[0] == mirrorVert else 1 ) )
                 else :
                     fixCenter = True
 

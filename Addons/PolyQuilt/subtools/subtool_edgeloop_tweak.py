@@ -142,3 +142,7 @@ class SubToolEdgeLoopTweak(MainTool) :
         draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.loop_edges , vertex_size ,width,alpha, color )
 
         self.move_component_module.draw_3D(context , self.mouse_pos )
+
+    @classmethod
+    def GetCursor(cls) :
+        return 'CROSSHAIR'
