@@ -168,8 +168,9 @@ class SubToolEdgeLoopExtrude(MainTool) :
             vt = None
             if isinstance( v , mathutils.Vector ) :
                 vt = v
-            elif isinstance( v , bmesh.types.BMVert ) and v not in e.verts :
+            elif isinstance( v , bmesh.types.BMVert ) :
                 vt = v.co
+
             vt = vt if not mirror else self.bmo.mirror_pos( vt )
             return self.l2w( vt )
 
@@ -183,7 +184,7 @@ class SubToolEdgeLoopExtrude(MainTool) :
 
             for polys in polyss :
                 draw_util.draw_Poly3D( self.bmo.obj , polys , self.color_create(0.5), hide_alpha = 0.5  )        
-                draw_util.draw_lines3D( context , polys , self.color_create(1.0) , 2 , primitiveType = 'LINE_LOOP' , hide_alpha = 0 )        
+                draw_util.draw_lines3D( context , polys , self.color_create(1.0) , 2 , primitiveType = 'LINE_LOOP' , hide_alpha = 0.25 )        
                 if self.snapTarget.isEdge and None not in t :
                     draw_util.draw_lines3D( context , [ t[0] , t[1] ] , (1,1,1,1) , 3 , primitiveType = 'LINE_STRIP' , hide_alpha = 1 )
 

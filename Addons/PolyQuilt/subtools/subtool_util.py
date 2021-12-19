@@ -319,6 +319,7 @@ class move_component_module :
 
     def snap_loop( self , sorce_edge : bmesh.types.BMEdge , sorce_loop  , snap_edge : bmesh.types.BMEdge ) :
         snap_loop , __ = self.bmo.calc_edge_loop( snap_edge )        
+
         p0 = self.bmo.local_to_world_pos( sorce_edge.verts[0].co)
         p1 = self.bmo.local_to_world_pos( sorce_edge.verts[1].co) 
         s0 = self.bmo.local_to_world_pos( snap_edge.verts[0].co) 
