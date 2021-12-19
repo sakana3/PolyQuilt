@@ -39,7 +39,7 @@ class MainToolEdgeLoop(MainTool) :
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
-            MBEventType.LongPressDrag   : [ [SubToolEdgeRingExtrude.CheckMarker , SubToolEdgeRingExtrude ] , [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] ] ,
+            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] , [SubToolEdgeRingExtrude.CheckMarker , SubToolEdgeRingExtrude ] , [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] ] ,
             MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
         }
 
