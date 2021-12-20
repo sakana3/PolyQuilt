@@ -33,11 +33,16 @@ class SubToolEdgeRingExtrude(MainTool) :
     def __init__(self,op,target, button) :
         super().__init__(op,target, button , no_hold = True )      
 
-        self.edges = target.rings
+        l2wp = self.bmo.local_to_world_pos
+        w2lp = self.bmo.world_to_local_nrm        
+        l2wn = self.bmo.local_to_world_nrm
+        w2ln = self.bmo.world_to_local_nrm
+
+        self.edges = target.both_rings
         self.mirrorEdges = target.mirror_rings
 
         self.startPos = target.hitPosition
-        self.startNrm = -target.element.calc_tangent( target.element.link_loops[0] )
+        self.startNrm = -l2wn(target.element.calc_tangent( target.element.link_loops[0] )).normalized()
 
         self.startRay = pqutil.Ray( self.startPos , self.startNrm )
 
@@ -65,7 +70,7 @@ class SubToolEdgeRingExtrude(MainTool) :
                         if self.bmo.is_mirror_mode :
                             if self.bmo.is_x_zero_pos( v.co ) :
                                 nrm = self.bmo.zero_vector( nrm  )
-                        self.verts[v] = nrm
+                        self.verts[v] = -l2wn(nrm)
 
         self.rate = 0.0
         self.result_verts = {}
@@ -126,9 +131,11 @@ class SubToolEdgeRingExtrude(MainTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        size = self.preferences.highlight_vertex_size
+        pass
 
     def OnDraw3D( self , context  ) :
+        l2wp = self.bmo.local_to_world_pos
+
         alpha = self.preferences.highlight_face_alpha
         vertex_size = self.preferences.highlight_vertex_size        
         width = self.preferences.highlight_line_width
@@ -137,15 +144,15 @@ class SubToolEdgeRingExtrude(MainTool) :
         for e in self.edges :
             v0 = e.verts[0]
             v1 = e.verts[1]
-            p0 = self.result_verts[v0]
-            p1 = self.result_verts[v1]
+            p0 = l2wp(self.result_verts[v0])
+            p1 = l2wp(self.result_verts[v1])
 
-            draw_util.draw_Poly3D( context , [v0.co,p0,p1,v1.co] , self.color_create(0.5) , 0.2 )
+            draw_util.draw_Poly3D( context , [ l2wp(v0.co),p0,p1,l2wp(v1.co)] , self.color_create(0.5) , 0.2 )
             draw_util.draw_lines3D( context , [p0,p1]  , self.color_create(1.0) , width , primitiveType = 'LINE_LOOP' , hide_alpha = 0.2 )
 
         for v , n in self.verts.items() :   
-            p0 = v.co
-            p1 = self.result_verts[v]
+            p0 = l2wp(v.co)
+            p1 = l2wp(self.result_verts[v])
             draw_util.draw_lines3D( context , [p0,p1]  , self.color_create(1.0) , width , primitiveType = 'LINE_LOOP' , hide_alpha = 0.2 )
 
     def MakePoly( self ) :

@@ -52,6 +52,7 @@ class SubToolMakePoly(MainTool) :
             vert = self.bmo.AddVertexWorld(p)
             self.bmo.UpdateMesh()
             self.currentTarget = ElementItem( self.bmo , vert , self.mouse_pos , self.bmo.local_to_world_pos(vert.co) , 0 )
+
         elif startElement.isEdge :
             self.currentTarget = self.edge_split( startElement )
             self.bmo.UpdateMesh()

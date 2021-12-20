@@ -116,7 +116,7 @@ class MainToolEdgeLoop(MainTool) :
                 if self.LMBEvent.is_hold :
                     if self.currentTarget.can_extrude() :
                         color = self.color_create()            
-                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.rings , vertex_size ,width,alpha, color )
+                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_rings , vertex_size ,width,alpha, color )
                     else :
                         color = self.color_delete() 
                         draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_loops , vertex_size ,width,alpha, color )

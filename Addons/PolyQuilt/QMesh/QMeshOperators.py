@@ -223,7 +223,7 @@ class QMeshOperators :
         vert = self.bm.verts.new( local_pos )
         if self.check_mirror(is_mirror) and self.is_x_zero_pos(local_pos) is False :
             mirror = self.bm.verts.new( self.mirror_pos(local_pos) )
-
+        self.bm.verts.index_update()
         return vert
 
     def AddVertexWorld( self , world_pos : Vector , is_mirror = None ) :

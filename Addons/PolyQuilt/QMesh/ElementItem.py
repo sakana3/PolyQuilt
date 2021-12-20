@@ -258,12 +258,13 @@ class ElementItem :
         if self.isEdge :
             if not hasattr( self , "__mirror_rings" ) :
                 if self.mirror != None :
-                    self.__mirror_rings = [ t for t , s in [ (self.__qmesh.find_mirror(e,False) , e) for e in self.loops ] if t ]
+                    self.__mirror_rings = [ t for t , s in [ (self.__qmesh.find_mirror(e,False) , e) for e in self.rings ] if t ]
                 else :
                     self.__mirror_rings = []
             return self.__mirror_rings
         return []
 
+    @property
     def both_rings( self ) :
         mp = [ m for m in self.mirror_rings if m not in self.rings ]
         if mp :
