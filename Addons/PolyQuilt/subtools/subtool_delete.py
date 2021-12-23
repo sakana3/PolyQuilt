@@ -45,10 +45,10 @@ class SubToolDelete(SubToolEx) :
             if self.currentTarget.isNotEmpty :
                 vt = None
                 if self.startTarget.isEdge :
-                    vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+                    vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight )
                 ed = None
                 if self.startTarget.isFace :
-                    ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+                    ed = self.bmo.highlight.check_hit_element_edge( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight )
                 if vt :
                     e , v = self.bmo.calc_edge_loop( self.startTarget.element )
                     self.removes = (e,v)

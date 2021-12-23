@@ -30,7 +30,7 @@ class SubToolBrushDelete(SubToolEx) :
 
     def __init__(self, event ,  root ) :
         super().__init__( root )
-        self.radius = self.preferences.brush_size * dpm()
+        self.radius = display.dot( self.preferences.brush_size )
         self.strength = self.preferences.brush_strength
         self.mirror_tbl = {}
         matrix = self.bmo.obj.matrix_world        
@@ -47,7 +47,7 @@ class SubToolBrushDelete(SubToolEx) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         def Draw() :
-            radius = gizmo.preferences.brush_size * dpm()
+            radius = display.dot( gizmo.preferences.brush_size )
             strength = gizmo.preferences.brush_strength  
             color = gizmo.preferences.delete_color
             with draw_util.push_pop_projection2D() :

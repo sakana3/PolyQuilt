@@ -188,7 +188,7 @@ class QMeshOperators :
         return self.is_snap2D(t0,t1)
 
     def is_snap2D( self , p0 : Vector  , p1 : Vector  ) :
-        dist = self.preferences.distance_to_highlight * dpm()
+        dist = display.dot( self.preferences.distance_to_highlight )
         return ( p0 - p1 ).length <= dist
 
     def is_x0_snap( self , p  : Vector  ) :
@@ -196,7 +196,7 @@ class QMeshOperators :
         p1 = pqutil.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
         if p0 == None or p1 == None :
             return False
-        dist = self.preferences.distance_to_highlight * dpm()  
+        dist = display.dot(self.preferences.distance_to_highlight )  
         return ( p0 - p1 ).length <= dist
 
     def mirror_world_pos( self , world_pos ) :
@@ -215,7 +215,7 @@ class QMeshOperators :
         c1 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v1 )        
         if c0 == None or c1 == None :
             return False
-        radius = self.preferences.distance_to_highlight * dpm()
+        radius = display.dot(self.preferences.distance_to_highlight )
         return (c0-c1).length <= radius 
 
 
@@ -684,6 +684,31 @@ class QMeshOperators :
                     break
         return edges , verts
 
+
+    def select_flush( self ) :
+        for face in self.bm.faces :
+            face.select_set(False)
+        for edge in self.bm.edges :
+            edge.select_set(False)
+        for vert in self.bm.verts :
+            vert.select_set(False)
+        self.bm.select_history.clear()                        
+        self.bm.select_flush(False)
+
+    def select_component( self , component , select = True ) :
+        component.select_set(select)
+        if select :
+            self.bm.select_history.add( component )
+        else :
+            self.bm.select_history.remove( component )
+
+    def select_components( self , components , select = True ) :
+        for component in components :
+            component.select_set(select)
+            if select :
+                self.bm.select_history.add( component )
+            else :
+                self.bm.select_history.remove( component )
 
     def calc_shortest_pass( self , bm , start , end ) :
         from .QMesh import SelectStack        

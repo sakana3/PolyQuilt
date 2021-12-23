@@ -179,7 +179,7 @@ class QMeshHighlight :
         co = np.array( coord , dtype = np.float32 )
         verts = self.pqo.bm.verts
 
-        ri = np_math.IntersectPointInSphere( co , viewPosVerts , radius )
+        ri = np_math.IntersectPointInSphere( co , viewPosVerts , display.dot(radius) )
 
         vts = [ [verts[ viewPosVertIdx[i] ] , viewPosVerts[i] ] for i in ri ]
 
@@ -216,7 +216,7 @@ class QMeshHighlight :
         location_3d_to_region_2d = pqutil.location_3d_to_region_2d
         matrix_world = self.pqo.obj.matrix_world      
 
-        hit = np_math.DistancePointToLine2D( co , viewPosEdges , radius )
+        hit = np_math.DistancePointToLine2D( co , viewPosEdges , display.dot(radius) )
 
         hit = [ edges[h] for h in viewPosEdgesIdx[ hit ] ]
 
@@ -404,7 +404,8 @@ class QMeshHighlight :
 
     def check_hit_element_vert( self , element , mouse_pos ,radius = None ) :
         if radius == None :
-            self.preferences.distance_to_highlight * dpm()
+            radius = self.preferences.distance_to_highlight
+        radius = display.dot(radius)
 
         rv3d = bpy.context.region_data
         region = bpy.context.region
@@ -426,6 +427,7 @@ class QMeshHighlight :
         return None
 
     def check_hit_element_edge( self , element , mouse_pos ,radius ) :
+        radius = display.dot(radius)        
         rv3d = bpy.context.region_data
         region = bpy.context.region
         halfW = region.width / 2.0

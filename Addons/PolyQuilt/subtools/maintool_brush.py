@@ -72,7 +72,7 @@ class MainToolBrush(MainTool) :
             drawAutoQuad = None
 
         def Draw() :
-            radius = gizmo.preferences.brush_size * dpm()
+            radius = display.dot( gizmo.preferences.brush_size )
             strength = gizmo.preferences.brush_strength  
             if drawAutoQuad :
                 drawAutoQuad()
@@ -86,7 +86,7 @@ class MainToolBrush(MainTool) :
         return True
 
     def OnDraw( self , context  ) :
-        radius = self.preferences.brush_size * dpm()
+        radius = display.dot( self.preferences.brush_size )
         strength = self.preferences.brush_strength          
         draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
         draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )        
@@ -95,7 +95,7 @@ class MainToolBrush(MainTool) :
 
         if self.LMBEvent.is_hold :
             draw_util.DrawFont( "Strenght = " + '{:.0f}'.format(self.preferences.brush_strength * 100) , 10 , self.mouse_pos , (0,0) )
-            draw_util.DrawFont( "Radius = " + '{:.0f}'.format(self.preferences.brush_size * dpm() ) , 10 , self.mouse_pos , (0,-8) )
+            draw_util.DrawFont( "Radius = " + '{:.0f}'.format( display.dot(self.preferences.brush_size ) ) , 10 , self.mouse_pos , (0,-8) )
 
     def OnDraw3D( self , context  ) :
         if not self.LMBEvent.presureComplite :        

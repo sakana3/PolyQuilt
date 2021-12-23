@@ -161,7 +161,7 @@ class SubToolEdgeLoopCut(MainTool) :
             r = (i+1.0) / (self.preferences.loopcut_division + 1.0)
             v = self.bmo.local_to_2d( p0.lerp( p1 , r ) )
             l = ( coord - v ).length
-            if l <= self.preferences.distance_to_highlight* dpm() :
+            if l <= display.dot( self.preferences.distance_to_highlight ) :
                 if dst > l :
                     dst = l
                     val = r
@@ -169,7 +169,7 @@ class SubToolEdgeLoopCut(MainTool) :
             return val
 
         ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
-        dist = self.preferences.distance_to_highlight* dpm()
+        dist = display.dot( self.preferences.distance_to_highlight )
         d = pqutil.CalcRateEdgeRay( self.bmo.obj , context , baseEdge , baseEdge.verts[0] , coord , ray , dist )
 
         self.is_forcus = d > 0 and d < 1

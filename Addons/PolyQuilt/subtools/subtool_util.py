@@ -198,7 +198,7 @@ class move_component_module :
         rl = ( self.verts[vs[0]] - self.start_pos ).length / ( self.verts[vs[0]] - self.verts[vs[1]] ).length 
         rr = 1 - rl
         ray = pqutil.Ray.from_screen( bpy.context , mouse_pos )
-        radius = self.bmo.preferences.distance_to_highlight * dpm()
+        radius = display.dot( self.bmo.preferences.distance_to_highlight )
 
         r = 1000000
         side = None
@@ -226,7 +226,7 @@ class move_component_module :
             return None
 
         ray = pqutil.Ray.from_screen( bpy.context , mouse_pos )
-        radius = self.bmo.preferences.distance_to_highlight * dpm()
+        radius = display.dot( self.bmo.preferences.distance_to_highlight )
 
         hitSide , hp = self.find_slide_side( mouse_pos )
 

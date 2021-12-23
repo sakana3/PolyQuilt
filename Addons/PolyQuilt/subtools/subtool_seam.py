@@ -51,7 +51,7 @@ class SubToolSeam(MainTool) :
             if self.currentTarget.isNotEmpty :
                 vt = None
                 if self.startTarget.isEdge :
-                    vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , self.preferences.distance_to_highlight * dpm())
+                    vt = self.bmo.highlight.check_hit_element_vert( self.startTarget.element , self.mouse_pos , display.dot( self.preferences.distance_to_highlight ))
                 if vt :
                     e = self.find_seam_loop( self.bmo , self.startTarget.element )
                     self.removes = (e,[])

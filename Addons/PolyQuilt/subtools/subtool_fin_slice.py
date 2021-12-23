@@ -101,7 +101,7 @@ class SubToolFinSlice(SubTool) :
         rate = 0.0
         dist = 0.0
         ray = pqutil.Ray.from_screen( context , coord ).world_to_object( self.bmo.obj )
-        d = self.preferences.distance_to_highlight* dpm()
+        d = display.dot( self.preferences.distance_to_highlight )
         for edge in self.currentTarget.element.link_edges :
             if not hit.isFace or edge in hit.element.edges :
                 r = pqutil.CalcRateEdgeRay( self.bmo.obj , context , edge , self.currentTarget.element , coord , ray , d )

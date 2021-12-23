@@ -40,12 +40,7 @@ class SubToolMakePoly(MainTool) :
         self.mouse_pos = op.mouse_pos
         self.currentTarget = startElement
 
-        if self.operator.plane_pivot == 'OBJ' :
-            self.pivot = self.bmo.obj.location
-        elif self.operator.plane_pivot == '3D' :
-            self.pivot = bpy.context.scene.cursor.location
-        elif self.operator.plane_pivot == 'Origin' :
-            self.pivot = (0,0,0)
+        self.pivot = self.default_pivot
 
         if startElement.isEmpty :
             p = self.calc_planned_construction_position()

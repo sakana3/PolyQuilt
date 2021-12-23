@@ -250,7 +250,6 @@ class PQ_GizmoGroup_Extrude(PQ_GizmoGroup_Base):
     bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Extrude Gizmo"
 
-
 class PQ_GizmoGroup_EdgeLoop(PQ_GizmoGroup_Base):
     my_tool = ToolPolyQuiltEdgeLoop
     bl_idname = my_tool.bl_widget
@@ -271,8 +270,12 @@ class PQ_GizmoGroup_Seam(PQ_GizmoGroup_Base):
     bl_idname = my_tool.bl_widget
     bl_label = "PolyQuilt Seam Gizmo"
 
+class PQ_GizmoGroup_QuadPatch(PQ_GizmoGroup_Base):
+    my_tool = ToolPolyQuiltQuadPatch
+    bl_idname = my_tool.bl_widget
+    bl_label = "PolyQuilt QuadOatch Gizmo"
 
-all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_EdgeLoop, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush, PQ_GizmoGroup_Seam )
+all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_EdgeLoop, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush, PQ_GizmoGroup_Seam, PQ_GizmoGroup_QuadPatch )
 
 
 # ursor (enum in ['DEFAULT', 'NONE', 'WAIT', 'CROSSHAIR', 'MOVE_X', 'MOVE_Y', 'KNIFE', 'TEXT', 'PAINT_BRUSH', 'PAINT_CROSS', 'DOT', 'ERASER', 'HAND', 'SCROLL_X', 'SCROLL_Y', 'SCROLL_XY', 'EYEDROPPER'], (optional)) – cursor

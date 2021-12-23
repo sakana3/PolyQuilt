@@ -143,6 +143,18 @@ class ToolPolyQuiltEdgeLoop(ToolPolyQuiltBase):
     bl_widget = "MESH_GGT_PQ_EdgeLoop"
     bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
 
+class ToolPolyQuiltQuadPatch(ToolPolyQuiltBase):
+    pq_main_tool = 'QUADPATCH'
+    pq_description = 'QuadPatch Tool'
+
+    # The prefix of the idname should be your add-on name.
+    bl_idname = "mesh_tool.poly_quilt_quad_patch"
+    bl_label = "PolyQuilt:QuadPatch"
+    bl_description = ( "QuadPatch Tool" )
+    bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_quad_patch_icon")
+    bl_widget = "MESH_GGT_PQ_QuadPatch"
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
+
 class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     pq_main_tool = 'LOOPCUT'
     pq_description = 'LoopCut Tool'
@@ -189,4 +201,5 @@ PolyQuiltTools = (
     { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltBrush  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltSeam , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
+    { 'tool' : ToolPolyQuiltQuadPatch , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
 )

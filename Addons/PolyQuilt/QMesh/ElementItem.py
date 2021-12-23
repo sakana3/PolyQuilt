@@ -101,7 +101,7 @@ class ElementItem :
                     p = p0.lerp( p1 , r )
                     v = self.__qmesh.local_to_2d( p )
                     l = ( self.__coord - v ).length
-                    if l <= self.__qmesh.preferences.distance_to_highlight* dpm() :
+                    if l <= display.dot( self.__qmesh.preferences.distance_to_highlight ) :
                         if dst > l :
                             dst = l
                             val = p
@@ -369,7 +369,7 @@ class ElementItem :
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
             norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
-            radius = min( [ length / 10 * size , dpm() * 4 * size ] )
+            radius = min( [ length / 10 * size , display.dot(2 * size) ] )
 
             tangents = []
             for face in element.link_faces :
@@ -381,7 +381,7 @@ class ElementItem :
 
             can_extrude = False
             if len( [ t for t in tangents if t.dot( norm ) > 0 ] ) <= 0 :
-                offset = center + norm * 2 * dpm()
+                offset = center + norm * display.dot(2)
                 if (p1 - center).length <= radius :
                     vs = [ offset + vec * radius , offset - vec * radius , offset + norm * radius ]
                     draw_util.draw_poly2D( vs , (1,1,1,1) )
@@ -391,7 +391,7 @@ class ElementItem :
                     can_extrude = True
 
             if len( [ t for t in tangents  if t.dot( norm ) < 0 ] ) <= 0 :
-                offset = center - norm * 2 * dpm()
+                offset = center - norm * display.dot(2)
                 if (p1 - center).length <= radius :
                     vs = [ offset + vec * radius , offset - vec * radius , offset - norm * radius ]
                     draw_util.draw_poly2D( vs , (1,1,1,1) )
@@ -416,7 +416,7 @@ class ElementItem :
             center = ((v0 + v1 ) / 2)
             vec = (v1 - v0 ).normalized()
             norm = (mathutils.Matrix.Rotation(math.radians(90.0), 2, 'Z') @ vec).normalized()
-            radius = min( [ length / 10 * size , dpm() * 5 * size ] )
+            radius = min( [ length / 10 * size , display.dot( 5 * size ) ] )
 
             return (p1 - center).length <= radius
         return False
@@ -428,7 +428,7 @@ class ElementItem :
                 pos = self.__qmesh.local_to_world_pos(center)
                 p0 = pqutil.location_3d_to_region_2d( pos )            
                 p1 = pqutil.location_3d_to_region_2d( self.hitPosition )            
-                dist = self.__qmesh.preferences.distance_to_highlight * dpm()  
+                dist = display( self.__qmesh.preferences.distance_to_highlight )
                 return ( p0 - p1 ).length <= dist
         return False
 

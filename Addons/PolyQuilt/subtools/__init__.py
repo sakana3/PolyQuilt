@@ -25,6 +25,7 @@ from .maintool_edgeloop_dissolve import MainToolEdgeLoopDissolve
 from .subtool_edgeloop_extrude import SubToolEdgeLoopExtrude
 from .subtool_seam import SubToolSeam
 from .subtool_seam_loop import SubToolSeamLoop
+from .maintool_quad_patch import MainToolQuadPatch
 
 maintools = {
     'NONE'              : None ,
@@ -41,6 +42,7 @@ maintools = {
     'EDGELOOP_DISSOLVE' : MainToolEdgeLoopDissolve ,
     'MARK_SEAM'         : SubToolSeam ,
     'MARK_SEAM_LOOP'    : SubToolSeamLoop ,
+    'QUADPATCH'         : MainToolQuadPatch ,
 }
 
 def enum_tool_callback(scene, context ):

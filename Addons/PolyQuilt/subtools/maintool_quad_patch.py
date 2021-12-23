@@ -30,22 +30,24 @@ from .subtool_edgeloop_slide import SubToolEdgeSlide
 from .subtool_edgeloop_tweak import SubToolEdgeLoopTweak
 from .subtool_edgering_extrude import SubToolEdgeRingExtrude
 
-class MainToolEdgeLoop(MainTool) :
-    name = "EdgeLoop Tool"
+class MainToolQuadPatch(MainTool) :
+    name = "QuadPatch Tool"
 
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button , no_hold = False )        
-        self.callback = { 
-            MBEventType.Release         : [] ,
-            MBEventType.Click           : [] ,
-            MBEventType.LongClick       : [] ,
-            MBEventType.LongPressDrag   : [ [SubToolEdgeLoopCut.Check , SubToolEdgeLoopCut ] , [SubToolEdgeRingExtrude.CheckMarker , SubToolEdgeRingExtrude ] , [SubToolEdgeLoopExtrude.Check , SubToolEdgeLoopExtrude ] ] ,
-            MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
-        }
+
+        self.plane = self.default_plane
+
+        self.stroke2D = [self.mouse_pos]
+        ray = pqutil.Ray.from_screen( bpy.context , self.mouse_pos )
+        self.stroke3D = [self.plane.intersect_ray( ray )]
+
+        selected = [ edge for edge in self.bmo.bm.edges if edge.select ]
 
     @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
+
 
         if event.type == MBEventType.LongClick :                
             if self.currentTarget.isEdge :
@@ -59,16 +61,20 @@ class MainToolEdgeLoop(MainTool) :
                 self.bmo.select_components( self.currentTarget.both_loops , True )
                 self.bmo.UpdateMesh()
                 self.isExit = True
+        elif event.type == MBEventType.Drag :
+            self.stroke2D.append( self.mouse_pos )
+            ray = pqutil.Ray.from_screen( bpy.context , self.mouse_pos )
+            coord = self.plane.intersect_ray( ray )
+            if coord :
+                self.stroke3D.append( coord )
 
-        if event.type in self.callback.keys() :
-            tools = [ t[1]( self.operator , self.currentTarget , self.buttonType ) for t in self.callback[event.type] if t[0]( self , self.currentTarget ) ]
-            if tools :
-                self.SetSubTool( tools )
+        elif event.type == MBEventType.Release :
+            self.MakeQuad()
             self.isExit = True
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
-        element = qmesh.PickElement( location , preferences.distance_to_highlight, elements = ['EDGE'] )
+        element = qmesh.PickElement( location , preferences.distance_to_highlight, elements = ['EDGE'] , edgering = True )        
         return element
 
     @staticmethod
@@ -95,31 +101,58 @@ class MainToolEdgeLoop(MainTool) :
         return None
 
     def OnDraw( self , context  ) :
-        if self.LMBEvent.isPresure :
-            if self.currentTarget.isNotEmpty :
-                self.LMBEvent.Draw( self.currentTarget.coord )
-            else:
-                self.LMBEvent.Draw( None )
+        if self.stroke2D :
+            draw_util.draw_dot_lines2D( self.stroke2D , self.color_create() , self.preferences.highlight_line_width )        
 
     def OnDraw3D( self , context  ) :
-        if self.currentTarget.isNotEmpty and not self.isExit:
-            if self.currentTarget.isEdge :
-                alpha = self.preferences.highlight_face_alpha
-                vertex_size = self.preferences.highlight_vertex_size        
-                width = self.preferences.highlight_line_width
-                color = self.preferences.highlight_color
-                if self.currentTarget.can_extrude() :
-                    self.currentTarget.Draw( self.bmo.obj , self.preferences.highlight_color , self.preferences , True )
-                if self.LMBEvent.is_hold :
-                    if self.currentTarget.can_extrude() :
-                        color = self.color_create()            
-                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_rings , vertex_size ,width,alpha, color )
-                    else :
-                        color = self.color_delete() 
-                        draw_util.drawElementsHilight3D( self.bmo.obj  , self.bmo.bm, self.currentTarget.both_loops , vertex_size ,width,alpha, color )
+        pass
 
     def OnExit( self ) :
         pass
+
+    def MakeQuad( self , divide = 5 ) :
+        p1 =self.stroke3D[0]
+        totalLen = 0
+        for i in range(1,len(self.stroke3D)) :
+            totalLen = totalLen + (p1 - self.stroke3D[i] ).length
+            p1 =self.stroke3D[i]
+
+        if ( totalLen <= 0.01 ) :
+            return
+
+        segmentLen = totalLen / (divide-1)
+        segment = 0
+        newVerts = []
+        newVerts.append( self.bmo.AddVertexWorld( self.stroke3D[0] ) )
+        p1 =self.stroke3D[0]
+        for i in range(1,len(self.stroke3D)) :
+            p2 =self.stroke3D[i]
+            length = (p1 - p2 ).length
+            tmp = segment
+            segment += length
+            while segment >= segmentLen :
+                t = ( segmentLen - tmp ) / length
+                p1 = p2 * t + p1 * (1-t)
+                newVerts.append( self.bmo.AddVertexWorld( p1 ) )
+                tmp = 0
+                length = (p1-p2).length
+                segment -= segmentLen
+            p1 =self.stroke3D[i]
+
+        newVerts.append( self.bmo.AddVertexWorld( self.stroke3D[-1] ) )
+
+        v1 = newVerts[0]
+        for  i in range(1,len(newVerts)) :
+            edge = self.bmo.add_edge( v1 , newVerts[i]  )
+            self.bmo.select_component(edge)
+            v1 = newVerts[i]
+
+#        bmesh.ops.bridge_loops(self.bmo.bm, edges = edges, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0.0 )
+
+        self.bmo.select_flush()
+        self.bmo.select_components( newVerts , True )
+
+        self.bmo.UpdateMesh()
 
     @classmethod
     def GetCursor(cls) :

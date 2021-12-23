@@ -241,6 +241,19 @@ class MainTool(SubToolRoot) :
 
         return True
 
+    @property
+    def default_pivot(self):
+        if self.operator.plane_pivot == 'OBJ' :
+            return self.bmo.obj.location
+        elif self.operator.plane_pivot == '3D' :
+            return bpy.context.scene.cursor.location
+
+        return  (0,0,0)
+
+    @property
+    def default_plane(self):
+        return pqutil.Plane.from_screen( bpy.context , self.default_pivot )
+
     @classmethod
     def UpdateHighlight( cls , gizmo , element ) :
         return True
@@ -250,7 +263,6 @@ class MainTool(SubToolRoot) :
         element = qmesh.PickElement( location , preferences.distance_to_highlight )        
         element.set_snap_div( preferences.loopcut_division )
         return element
-
 
 class SubTool(SubToolRoot) :
     def __init__( self, op ) :

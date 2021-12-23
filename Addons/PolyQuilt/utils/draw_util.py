@@ -69,9 +69,10 @@ shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
 def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True, width : float = 1.0  ):
     if dpi :
-        r = radius * dpm()
+        r = display.dot( radius )
     else :
         r = radius
+
     dr = math.pi * 2 / subdivide
     vertices = [( pos[0] + r * math.cos(i*dr), pos[1] + r * math.sin(i*dr)) for i in range(subdivide+1)]
 
@@ -87,19 +88,19 @@ def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
 
 def draw_donuts2D( pos , radius_out , width , rate , color = (1,1,1,1) ):
-    r = radius_out * dpm()
+    r = display.dot(radius_out )
     subdivide = 100
     t = int( max(min(rate,1),0)*subdivide)
     dr = math.pi * 2 / subdivide
     vertices = [( pos[0] + r * math.sin(i*dr), pos[1] + r * math.cos(i*dr)) for i in range(t+1)]
 
-    draw_lines2D( vertices , (0,0,0,color[3]*0.5) , (width )* dpm()+ 1.0  )
-    draw_lines2D( vertices , color , width* dpm()  )
+    draw_lines2D( vertices , (0,0,0,color[3]*0.5) , display.dot(width )+ 1.0  )
+    draw_lines2D( vertices , color ,  display.dot( width )  )
 
 def draw_points2D( poss , radius , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)        
-    bgl.glPointSize(radius * dpm() * 2 )
+    bgl.glPointSize( display.dot( radius * 2) )
     
     shader2D.bind()
     shader2D.uniform_float("color", color )
@@ -128,13 +129,15 @@ def draw_dot_lines2D( verts , color = (1,1,1,1) , width : float = 2.0 , pattern 
     shaderEx.bind()
     shaderEx.uniform_float("color", color )
 #   shaderEx.uniform_float("ModelViewProjectionMatrix", bpy.context.region_data.perspective_matrix)
-    shaderEx.uniform_float("line_t", (pattern[0] * dpm(),pattern[1] * dpm()) )
+    shaderEx.uniform_float("line_t", ( display.dot( pattern[0] ) , display.dot(  pattern[1] )) )
 
     dist = [0,]
+    length = 0
     for i in range( len(verts) - 1 ) :
         v1 = verts[i]
         v2 = verts[i+1]
-        dist.append( (v1-v2).length )
+        length += (v1-v2).length
+        dist.append( length )
 
     batch_draw(shaderEx, 'LINE_STRIP', {"pos": verts, "dist": dist} )
     bgl.glLineWidth(1)
@@ -212,7 +215,7 @@ def draw_Poly3D( context , verts , color = (1,1,1,1) , hide_alpha = 0.5 ):
 def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)        
-    bgl.glPointSize(radius * dpm() * 2 )
+    bgl.glPointSize( display.dot(radius * 2) )
     bgl.glDisable(bgl.GL_DEPTH_TEST)
     bgl.glDepthMask(bgl.GL_FALSE)
     
@@ -350,9 +353,10 @@ def drawElementHilight3DFunc( obj  , bm : bmesh.types.BMesh , element, radius ,w
 
 def DrawFont( text , size , positon , offset = (0,0) ) :
     font_id = 0
-    blf.size(font_id, size, dpi() )
+
+    blf.size(font_id, 10 , display.inch() )
     w,h = blf.dimensions(font_id, text )
-    blf.position(font_id, positon[0] - w / 2 + offset[0] * dpm() , positon[1] + h + offset[1] * dpm() , 0)
+    blf.position(font_id, positon[0] - w / 2 + display.dot( offset[0] ) , positon[1] + h + display.dot( offset[1] ) , 0)
     blf.draw(font_id, text )
 
 

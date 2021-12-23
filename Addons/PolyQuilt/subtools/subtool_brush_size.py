@@ -31,7 +31,7 @@ class SubToolBrushSize(SubToolEx) :
     def __init__(self, event , root ) :
         super().__init__(root)
         self.preMousePos = self.startMousePos
-        self.start_radius = self.preferences.brush_size * dpm()
+        self.start_radius = display.dot( self.preferences.brush_size )
         self.radius = self.start_radius
         self.strength = self.preferences.brush_strength
         self.start_strength = self.strength
@@ -46,7 +46,7 @@ class SubToolBrushSize(SubToolEx) :
             if nrm.x > ang or nrm.x < -ang :
                 self.radius = self.radius + vec.x
                 self.radius = min( max( 50 , self.radius ) , 500 )
-                self.preferences.brush_size = self.radius / dpm()
+                self.preferences.brush_size = self.radius / display.mm()
 
             if nrm.y > ang or nrm.y < -ang :
                 self.strength = self.strength + vec.y / self.radius
