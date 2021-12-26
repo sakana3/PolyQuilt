@@ -39,6 +39,7 @@ class SubToolRoot :
         self.preferences = op.preferences
         self.activeSubTool = None
         self.buttonType = button
+        self.singleton = True 
 
     @staticmethod
     def Check( root  ,target ) :
@@ -56,7 +57,10 @@ class SubToolRoot :
             return self.GetCursor()
         return self.activeSubTool.CurrentCursor()
 
-    def SetSubTool( self , subTool ) :
+    def SetSubTool( self , subTool , replace = False ) :
+        if replace :
+            self.subTool = None
+
         if isinstance( subTool , list) :
             self.__enterySubTool = subTool
         else :
@@ -71,6 +75,9 @@ class SubToolRoot :
     def OnForcus( self , context , event  ) :
         return True
 
+    def Invoke( self , context , event ) :
+        pass
+
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
 
@@ -81,9 +88,32 @@ class SubToolRoot :
         pass
 
     def Update( self , context , event ) :
-
-        ret = None
         self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))
+
+        self.Invoke( context , event )
+        ret = self.do_subtool( context ,event )
+
+        if ret == 'PASS_THROUGH' :
+            ret = 'RUNNING_MODAL'
+
+        if ret == None or not self.singleton :
+            if self.OnForcus(context , event) :            
+                ret = self.OnUpdate(context,event)
+                if self.__enterySubTool != None :
+                    sub = self.do_subtool( context , event )
+                    ret = ret if sub == None else sub
+            else :
+                return 'PASS_THROUGH'
+
+        if ret != 'RUNNING_MODAL'  :
+            self.subTool = []
+            self.OnExit()
+
+        self.step += 1
+        return ret
+
+    def do_subtool( self , context , event ) :
+        ret = None
 
         if self.__enterySubTool != None :
             self.subTool = self.__enterySubTool
@@ -92,6 +122,7 @@ class SubToolRoot :
                 self.OnEnterSubTool( context , subTool)
 
         self.activeSubTool = None
+        exits = []
         if self.subTool :
             for subTool in self.subTool :
                 ret = subTool.Update(context , event)
@@ -102,26 +133,17 @@ class SubToolRoot :
                     break
                 elif ret == 'PASS_THROUGH' :
                     ret = None
+                elif ret == 'QUIT' :
+                    exits.append( subTool )
+                    ret = 'PASS_THROUGH'
+
+            for exit in exits :
+                subTool.OnExit()
+                self.subTool.remove(exit)
 
             if ret == 'FINISHED' :
                 for subTool in self.subTool :
                     subTool.OnExit()
-                    self.OnExitSubTool( context , subTool)
-
-        if ret == 'PASS_THROUGH' :
-            ret = 'RUNNING_MODAL'
-
-        if ret == None :
-            if self.OnForcus(context , event) :            
-                ret = self.OnUpdate(context,event)
-            else :
-                return 'PASS_THROUGH'
-
-        if ret != 'RUNNING_MODAL'  :
-            self.subTool = []
-            self.OnExit()
-
-        self.step += 1
         return ret
 
     def check_animated( self , context ) :
@@ -148,9 +170,6 @@ class SubToolRoot :
 
     def OnEnterSubTool( self ,context,subTool ):
         pass
-
-    def OnExitSubTool( self ,context,subTool ):
-        return 'RUNNING_MODAL'
 
     def color_highlight( self , alpha = 1.0 ) :
         col = self.preferences.highlight_color
@@ -187,17 +206,29 @@ class SubToolRoot :
     def recive_event( cls , gizmo , context , event ) :
         pass
 
+    @property
+    def default_pivot(self):
+        if self.operator.plane_pivot == 'OBJ' :
+            return self.bmo.obj.location
+        elif self.operator.plane_pivot == '3D' :
+            return bpy.context.scene.cursor.location
+
+        return  (0,0,0)
+
+    @property
+    def default_plane(self):
+        return pqutil.Plane.from_screen( bpy.context , self.default_pivot )
+
 class MainTool(SubToolRoot) :
     def __init__(self,op,currentTarget, button , no_hold = False ) :
         super().__init__(op, button)        
         self.currentTarget = currentTarget
-        self.LMBEvent = ButtonEventUtil( button ,self, self.LMBEventCallback , op , True , no_hold )
+        self.LMBEvent = ButtonEventUtil( button , self.LMBEventCallback , op , True , no_hold )
         self.isExit = False
 
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
 
-    @staticmethod
     def LMBEventCallback(self , event ):
         pass
 
@@ -205,16 +236,13 @@ class MainTool(SubToolRoot) :
         if self.isExit :
             return 'FINISHED'
 
-        self.LMBEvent.Update(context,event)
+        return self.LMBEvent.Update(context,event)
 
-        return 'RUNNING_MODAL'
 
     def OnEnterSubTool( self ,context,subTool ):
-        self.currentTarget = ElementItem.Empty()
-        self.LMBEvent.Reset(context)
-
-    def OnExitSubTool( self ,context,subTool ):
-        self.currentTarget = ElementItem.Empty()
+#        self.currentTarget = ElementItem.Empty()
+#        self.LMBEvent.Reset(context)
+        pass
 
     def do_empty_space( self , event ) :
         if self.preferences.space_drag_op == "ORBIT" :
@@ -241,19 +269,6 @@ class MainTool(SubToolRoot) :
 
         return True
 
-    @property
-    def default_pivot(self):
-        if self.operator.plane_pivot == 'OBJ' :
-            return self.bmo.obj.location
-        elif self.operator.plane_pivot == '3D' :
-            return bpy.context.scene.cursor.location
-
-        return  (0,0,0)
-
-    @property
-    def default_plane(self):
-        return pqutil.Plane.from_screen( bpy.context , self.default_pivot )
-
     @classmethod
     def UpdateHighlight( cls , gizmo , element ) :
         return True
@@ -265,8 +280,38 @@ class MainTool(SubToolRoot) :
         return element
 
 class SubTool(SubToolRoot) :
-    def __init__( self, op ) :
-        super().__init__(op )        
+    def __init__( self, root ) :
+        if issubclass( type(root) , SubToolRoot ) :
+            super().__init__( root.operator )
+            self.rootTool = root
+        else :
+            super().__init__( root )
+            self.rootTool = None
+        self.currentTarget = root.currentTarget
+        self.startTargte = root.currentTarget
+        self.startMousePos = root.mouse_pos.copy()
+
+        self.LMBEvent = None
+        if hasattr( root , "LMBEvent" ) :
+            if hasattr( self , "LMBEventCallback" ) :
+                self.LMBEvent = root.LMBEvent.copy( self.LMBEventCallback )
+
+        self.isExit = False
+
+    def is_animated( self , context ) :
+        if self.LMBEvent :
+            return self.LMBEvent.is_animated()
+
+        return False
+
+    def OnUpdate( self , context , event ) :
+        if self.isExit :
+            return 'FINISHED'
+
+        if self.LMBEvent :
+            return self.LMBEvent.Update(context,event)
+
+        return 'RUNNING_MODAL'
 
 class SubToolEx(SubTool) :
     def __init__( self, root ) :

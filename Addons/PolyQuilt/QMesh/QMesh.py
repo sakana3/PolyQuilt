@@ -59,7 +59,7 @@ class QMesh(QMeshOperators) :
     def UpdateView( self ,context , forced = False ):
         self.highlight.UpdateView(context)
 
-    def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = None , elements = ['FACE','EDGE','VERT'] ) -> ElementItem :
+    def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = None , elements = ['FACE','EDGE','VERT'] , check_func = None ) -> ElementItem :
         if backface_culling == None :
             backface_culling = self.get_shading(bpy.context).show_backface_culling
         rv3d = bpy.context.region_data
@@ -75,6 +75,9 @@ class QMesh(QMeshOperators) :
             ignoreVerts =  [ i for i in ignore if isinstance( i , bmesh.types.BMVert ) ]
             candidateVerts = self.highlight.CollectVerts( coord , radius , ignoreVerts , edgering , backface_culling = backface_culling  )
             for vert in candidateVerts :
+                if check_func and not check_func( vert ) :
+                    continue
+
                 # 各点からRayを飛ばす
                 if QSnap.is_target( vert.hitPosition ) :
                     hitTemp = self.highlight.PickFace( vert.coord , ignoreFaces , backface_culling = False  )
@@ -102,9 +105,10 @@ class QMesh(QMeshOperators) :
             candidateEdges = self.highlight.CollectEdge( coord , radius , ignoreEdges , backface_culling = backface_culling , edgering= edgering )
 
             for edge in candidateEdges :
+                if check_func and not check_func( edge ) :
+                    continue
                 if QSnap.is_target( edge.hitPosition ) :                
                     hitTemp = self.highlight.PickFace( edge.coord , ignoreFaces , backface_culling = False )
-                
                     if hitTemp.isEmpty :
                         hitEdge = edge
                         break
@@ -128,8 +132,9 @@ class QMesh(QMeshOperators) :
                 hitFace = self.highlight.PickFace( coord , ignoreFaces , backface_culling = backface_culling  )
                 # 候補頂点/エッジがないなら面を返す
                 if hitFace.isNotEmpty :
-                    if QSnap.is_target( hitFace.hitPosition ) :                
-                        hitElement = hitFace
+                    if check_func == None or check_func( hitFace ) :
+                        if QSnap.is_target( hitFace.hitPosition ) :                
+                            hitElement = hitFace
         elif hitVert.isNotEmpty and hitEdge.isNotEmpty :
             if hitVert.element in hitEdge.element.verts :
                 return hitVert

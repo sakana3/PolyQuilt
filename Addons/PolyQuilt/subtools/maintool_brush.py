@@ -55,7 +55,6 @@ class MainToolBrush(MainTool) :
             MBEventType.Drag            : [brush_type] ,
         }
 
-    @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
         if event.type in self.callback.keys() :

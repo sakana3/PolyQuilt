@@ -185,9 +185,7 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
             if tool.widget == cls.bl_idname:
                 break
         else:
-            print("--")
             context.window_manager.gizmo_group_type_unlink_delayed(cls.bl_idname)
-            print("---")
             return False
         if not PQ_GizmoGroup_Base.running_polyquilt :
             context.window.cursor_set( cls.cursor )        

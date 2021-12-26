@@ -63,7 +63,7 @@ class SubToolMakePoly(MainTool) :
         self.PlanlagtePos =  self.calc_planned_construction_position()
         self.targetElement = None
         self.isEnd = False
-        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self , SubToolMakePoly.LMBEventCallback , op )
+        self.LMBEvent = ButtonEventUtil('LEFTMOUSE' , self.LMBEventCallback , op )
         self.mode = op.geometry_type if mode == None else mode
         self.EdgeLoops = None
         self.VertLoops = None
@@ -71,12 +71,12 @@ class SubToolMakePoly(MainTool) :
             self.isEnd = True
         self.original_mode = self.mode
         self.currentTarget = ElementItem.Empty()
-        self.will_split = False
+        self.will_splite = False
+        self.delay = True
 
     def is_animated( self , context ) :
         return self.LMBEvent.is_animated()
 
-    @staticmethod
     def LMBEventCallback(self , event ):
         if event.type == MBEventType.Down :
             pass
@@ -156,7 +156,9 @@ class SubToolMakePoly(MainTool) :
 
 
     def OnUpdate( self , context , event ) :
-        self.LMBEvent.Update( context , event )
+        if not self.delay :
+            self.LMBEvent.Update( context , event )
+        self.delay = False
 
         if event.type == 'RIGHTMOUSE' and event.value == 'RELEASE' :
             if self.mode == 'SPLITE' and len(self.vert_array.verts) > 1 :

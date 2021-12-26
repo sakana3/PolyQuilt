@@ -40,7 +40,6 @@ class MainToolHold(MainTool) :
     def __init__(self,op,currentTarget, button) :
         super().__init__(op,currentTarget, button)        
 
-    @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
         if event.type == MBEventType.Down :

@@ -107,6 +107,18 @@ class QSnap :
         return world_pos
 
     @classmethod
+    def screen_adjust( cls , coord : mathutils.Vector ) -> mathutils.Vector :
+        if cls.instance != None :
+            ray = pqutil.Ray.from_screen( bpy.context , coord )
+            if ray == None :
+                return None
+            location , norm , obj = cls.instance.__raycast( ray )
+            if location != None :
+                return location
+        return None
+
+
+    @classmethod
     def adjust_point( cls , world_pos : mathutils.Vector , is_fix_to_x_zero = False) :
         if cls.instance != None :
             location , norm , index = cls.instance.__find_nearest( world_pos )

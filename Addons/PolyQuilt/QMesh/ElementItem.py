@@ -310,17 +310,17 @@ class ElementItem :
 
             funcs.append( draw_util.drawElementHilight3DFunc( obj , self.bm , element , size , width ,alpha, color ) )
             if self.isEdge :
-                if self.__div > 0 :
+                if edge_pivot and self.__div > 0 :
                     div_col = ( color[0] , color[1] , color[2] , color[3] * 0.5 )
                     l2w = self.__qmesh.local_to_world_pos
                     rs = [ (i+1.0) / (self.__div + 1.0) for i in range(self.__div) ]
                     div_points = [ l2w( element.verts[0].co.lerp( element.verts[1].co , r) ) for r in rs ]
                     def draw_div() :
-                        draw_util.draw_pivots3D( div_points , 0.75 , div_col )                
+                        draw_util.draw_pivots3D( div_points , preferences.highlight_line_width * 3 , div_col )                
                     funcs.append( draw_div )
                 if edge_pivot :
                     def draw_pivot() :
-                        draw_util.draw_pivots3D( (self.hitPosition,) , 1.0 , color )
+                        draw_util.draw_pivots3D( (self.hitPosition,) , preferences.highlight_line_width * 3 , (1,1,1,1) )
                     funcs.append( draw_pivot )
                 if marker and len(element.link_faces) <= 1 :
                     v0 = pqutil.location_3d_to_region_2d(  self.__qmesh.local_to_world_pos(element.verts[0].co) )
@@ -428,7 +428,7 @@ class ElementItem :
                 pos = self.__qmesh.local_to_world_pos(center)
                 p0 = pqutil.location_3d_to_region_2d( pos )            
                 p1 = pqutil.location_3d_to_region_2d( self.hitPosition )            
-                dist = display( self.__qmesh.preferences.distance_to_highlight )
+                dist = display.dot( self.__qmesh.preferences.distance_to_highlight )
                 return ( p0 - p1 ).length <= dist
         return False
 

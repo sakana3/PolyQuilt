@@ -696,11 +696,25 @@ class QMeshOperators :
         self.bm.select_flush(False)
 
     def select_component( self , component , select = True ) :
-        component.select_set(select)
+        select_mode_log = self.bm.select_mode
+        if isinstance( component , bmesh.types.BMVert ) :
+            self.bm.select_mode = {'VERT'}
+            component.select_set(select)
+        elif isinstance( component , bmesh.types.BMEdge ) :
+            self.bm.select_mode = {'EDGE'}
+            component.select_set(select)
+        elif isinstance( component , bmesh.types.BMFace ) :
+            self.bm.select_mode = {'FACE'}
+            component.select_set(select)
+        else :
+            return
+
         if select :
             self.bm.select_history.add( component )
         else :
-            self.bm.select_history.remove( component )
+            self.bm.select_history.discard( component )
+
+        self.bm.select_mode = select_mode_log
 
     def select_components( self , components , select = True ) :
         for component in components :
@@ -708,7 +722,7 @@ class QMeshOperators :
             if select :
                 self.bm.select_history.add( component )
             else :
-                self.bm.select_history.remove( component )
+                self.bm.select_history.discard( component )
 
     def calc_shortest_pass( self , bm , start , end ) :
         from .QMesh import SelectStack        

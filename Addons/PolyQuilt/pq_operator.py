@@ -206,6 +206,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if self.currentSubTool is not None :
             ret = self.currentSubTool.Update(context, event)
             context.window.cursor_set( self.currentSubTool.CurrentCursor() )
+            if hasattr( self.currentSubTool , "report_message" ) :
+                self.report({self.currentSubTool.report_message[0]}, self.currentSubTool.report_message[1] )
+                hasattr( self.currentSubTool , "report_message" )
 
         if self.preferences.is_debug :
             self.count = self.count + 1
@@ -253,6 +256,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 return {'CANCELLED'}
 
             element = self.preselect.currentElement
+            self.currentTarget = element
 
             if element == None or ( element.isEmpty == False and element.is_valid == False ) :
                 self.report({'WARNING'}, "Invalid Data..." )
@@ -264,7 +268,8 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
                 return {'CANCELLED'}
             if not maintools[self.tool_mode].Check( None , element ) :
                 return {'CANCELLED'}
-            self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))                
+            self.mouse_pos = mathutils.Vector((event.mouse_region_x, event.mouse_region_y))      
+            self.start_mouse_pos = self.mouse_pos          
             self.currentSubTool = maintools[self.tool_mode](self , element, event.type )
             self.currentSubTool.OnInit(context )
 #            self.currentSubTool.Update(context, event)

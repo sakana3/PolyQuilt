@@ -82,6 +82,9 @@ class Plane :
         d = mathutils.geometry.distance_point_to_plane(pt , self.origin , self.vector )
         return  d
 
+    def closest_point( self , pt : Vector ) :
+        return pt + self.vector * self.distance_point(pt)
+
     def world_to_object( self , obj ) :
         matrix = obj.matrix_world
         origin_obj = matrix.inverted() @ self.origin
@@ -253,32 +256,6 @@ def region_2d_to_vector_3d(region, rv3d, coord):
 
 
 def region_2d_to_origin_3d(region, rv3d, coord, clamp=None):
-    """
-    Return the 3d view origin from the region relative 2d coords.
-
-    .. note::
-
-       Orthographic views have a less obvious origin,
-       the far clip is used to define the viewport near/far extents.
-       Since far clip can be a very large value,
-       the result may give with numeric precision issues.
-
-       To avoid this problem, you can optionally clamp the far clip to a
-       smaller value based on the data you're operating on.
-
-    :arg region: region of the 3D viewport, typically bpy.context.region.
-    :type region: :class:`bpy.types.Region`
-    :arg rv3d: 3D region data, typically bpy.context.space_data.region_3d.
-    :type rv3d: :class:`bpy.types.RegionView3D`
-    :arg coord: 2d coordinates relative to the region;
-       (event.mouse_region_x, event.mouse_region_y) for example.
-    :type coord: 2d vector
-    :arg clamp: Clamp the maximum far-clip value used.
-       (negative value will move the offset away from the view_location)
-    :type clamp: float or None
-    :return: The origin of the viewpoint in 3d space.
-    :rtype: :class:`mathutils.Vector`
-    """
     viewinv = rv3d.view_matrix.inverted()
 
     if rv3d.is_perspective:
@@ -309,23 +286,7 @@ def region_2d_to_origin_3d(region, rv3d, coord, clamp=None):
 
 
 def region_2d_to_location_3d(region, rv3d, coord, depth_location):
-    """
-    Return a 3d location from the region relative 2d coords, aligned with
-    *depth_location*.
 
-    :arg region: region of the 3D viewport, typically bpy.context.region.
-    :type region: :class:`bpy.types.Region`
-    :arg rv3d: 3D region data, typically bpy.context.space_data.region_3d.
-    :type rv3d: :class:`bpy.types.RegionView3D`
-    :arg coord: 2d coordinates relative to the region;
-       (event.mouse_region_x, event.mouse_region_y) for example.
-    :type coord: 2d vector
-    :arg depth_location: the returned vectors depth is aligned with this since
-       there is no defined depth with a 2d region input.
-    :type depth_location: 3d vector
-    :return: normalized 3d vector.
-    :rtype: :class:`mathutils.Vector`
-    """
     from mathutils import Vector
 
     coord_vec = region_2d_to_vector_3d(region, rv3d, coord)
@@ -450,3 +411,34 @@ def CalcRateEdgeRay( obj , context , edge , vert , coord , ray , dist ) :
         return 0.0
     else :
         return max( 0 , min( 1 , d0 / dt ))        
+
+def sort_edgeloop( loop ) :
+    if len(loop) == 1 :
+        return loop , [loop[0].verts[0],loop[0].verts[1]]
+
+    end_edges = []
+    end_verts = []
+    for edge in loop :
+        for vert in edge.verts :
+            if len( [ e for e in loop if vert in e.verts ] ) == 1 :
+                if edge not in end_edges :
+                    end_edges.append(edge)
+                end_verts.append(vert)
+
+    if len( end_verts ) != 2 :
+        return None , None
+
+    cur_vert = end_verts[0]
+    cur_edge = end_edges[0]
+    ret_verts = [cur_vert]
+    ret_edges = []
+    while cur_vert != end_verts[-1] :
+        ret_edges.append( cur_edge )
+        cur_vert = cur_edge.other_vert( cur_vert )
+        ret_verts.append( cur_vert )
+        t = [ e for e in loop if e != cur_edge and cur_vert in e.verts ]
+        if len(t) != 1 :
+            break
+        cur_edge = t[0]
+
+    return ret_edges , ret_verts

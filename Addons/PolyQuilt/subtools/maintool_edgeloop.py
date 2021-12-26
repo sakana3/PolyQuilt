@@ -43,7 +43,6 @@ class MainToolEdgeLoop(MainTool) :
             MBEventType.Drag            : [ [SubToolEdgeLoopExtrude.CheckMarker , SubToolEdgeLoopExtrude ] , [SubToolEdgeLoopTweak.Check ,SubToolEdgeLoopTweak]] ,
         }
 
-    @staticmethod
     def LMBEventCallback(self , event ):
         self.debugStr = str(event.type)
 

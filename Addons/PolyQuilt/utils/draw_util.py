@@ -215,7 +215,7 @@ def draw_Poly3D( context , verts , color = (1,1,1,1) , hide_alpha = 0.5 ):
 def draw_pivots3D( poss , radius , color = (1,1,1,1) ):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glDisable(bgl.GL_LINE_SMOOTH)        
-    bgl.glPointSize( display.dot(radius * 2) )
+    bgl.glPointSize( display.dot(radius ) )
     bgl.glDisable(bgl.GL_DEPTH_TEST)
     bgl.glDepthMask(bgl.GL_FALSE)
     
@@ -334,7 +334,7 @@ def drawElementHilight3DFunc( obj  , bm : bmesh.types.BMesh , element, radius ,w
             bgl.glEnable(bgl.GL_BLEND)
 
             bgl.glEnable(bgl.GL_LINE_SMOOTH)
-            bgl.glLineWidth(width)    
+            bgl.glLineWidth( display.dot( width) )    
             bgl.glDepthFunc(bgl.GL_ALWAYS)
             bgl.glDepthMask(bgl.GL_FALSE)
 

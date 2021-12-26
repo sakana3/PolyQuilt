@@ -162,15 +162,15 @@ class PolyQuiltPreferences(AddonPreferences):
     highlight_vertex_size : FloatProperty(
         name="Highlight Vertex Size",
         description="Highlight Vertex Size",
-        default= 1.25,
+        default= 2,
         min=0.5,
         max=8.0)
 
     highlight_line_width : FloatProperty(
         name="Highlight Line Width",
         description="Highlight Line Width",
-        default=2.0,
-        min=1.0,
+        default=0.5,
+        min=0.1,
         max=10.0)
 
     highlight_face_alpha : FloatProperty(
