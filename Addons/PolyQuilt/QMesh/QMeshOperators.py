@@ -724,7 +724,7 @@ class QMeshOperators :
             else :
                 self.bm.select_history.discard( component )
 
-    def calc_shortest_pass( self , bm , start , end ) :
+    def calc_shortest_pass( self , bm , start , end , boundaryOnly = False ) :
         from .QMesh import SelectStack        
 
         if isinstance( start , bmesh.types.BMFace ) :
@@ -774,6 +774,11 @@ class QMeshOperators :
         select = SelectStack( bpy.context , bm )
         select.push()
 
+        if boundaryOnly :
+            hides = [ e for e in bm.edges if not (e.is_boundary or e.is_wire) and not e.hide ]
+            for hide in hides :
+                hide.hide_set(True)
+
         if isinstance( start , bmesh.types.BMVert ) and isinstance( end , bmesh.types.BMEdge ) :
             c0 = calc( start , end.verts[0] )
             c1 = calc( start , end.verts[1] )
@@ -794,4 +799,9 @@ class QMeshOperators :
             collect = calc( start , end )
 
         select.pop()
+
+        if boundaryOnly :
+            for hide in hides :
+                hide.hide_set(False)
+
         return ( collect , [] )

@@ -30,8 +30,10 @@ from .pq_icon import *
 from .subtools import *
 from .QMesh import *
 from .gizmo_preselect import PQ_GizmoGroup_Base            
-
 import bpy.utils.previews
+
+from _bpy import types as bpy_types
+StructRNA = bpy_types.bpy_struct
 
 __all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' ]
 
@@ -83,18 +85,21 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     tool_mode : bpy.props.EnumProperty(
         name="Tool Mode",
         description="Tool Mode",
+        options = {'HIDDEN'} ,
         items=enum_tool_callback,
     )
 
     geometry_type : bpy.props.EnumProperty(
         name="Geometry Type",
         description="Geometry Type.",
+        options = {'HIDDEN'} ,
         items=enum_geometry_type_callback 
     )
 
     plane_pivot : bpy.props.EnumProperty(
         name="Plane Pivot",
         description="Plane Pivot",
+        options = {'HIDDEN'} ,
         items=[('OBJ' , "Object Center", "" , "PIVOT_MEDIAN" , 0),
                ('3D' , "3D Cursor", "" , "PIVOT_CURSOR" , 1 ) ],
         default='OBJ',
@@ -103,12 +108,14 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     move_type : bpy.props.EnumProperty(
         name="Move Type",
         description="Move Type.",
+        options = {'HIDDEN'} ,
         items=enum_move_type_callback,
     )
 
     snap_mode : bpy.props.EnumProperty(
         name="Snap Mode",
         description="Snap Mode",
+        options = {'HIDDEN'} ,
         items=[('ON' , "On", "" ),
                ('OFF' , "Off", "" ) ,
                ('AUTO' , "Auto", "" ) ],
@@ -118,6 +125,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     loopcut_mode : bpy.props.EnumProperty(
         name="LoopCut Mode",
         description="LoopCut Mode",
+        options = {'HIDDEN'} ,
         items=[('EQUAL' , "Equal", "" ),
                ('EVEN' , "Even", "" ) ],
         default='EQUAL',
@@ -126,6 +134,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     extrude_mode : bpy.props.EnumProperty(
         name="Extrude Mode",
         description="Extrude Mode",
+        options = {'HIDDEN'} ,
         items=[('PARALLEL' , "Parallel", "" ),
                ('BEND' , "Bend", "" ) ,
                ('FLEXIBLE' , "Flex", "" ) ],
@@ -136,6 +145,7 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
     brush_type : bpy.props.EnumProperty(
         name="Brush Type",
         description="Brush Type.",
+        options = {'HIDDEN'} ,
         items=enum_brush_type_callback,
     )
 
@@ -148,6 +158,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
     def __del__(self):
         MESH_OT_poly_quilt.handle_remove()
+
+    def execute(self, context):
+        return {'FINISHED'}
 
     def modal(self, context, event):
         def Exit() :
