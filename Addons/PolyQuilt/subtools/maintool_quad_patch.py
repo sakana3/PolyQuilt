@@ -28,8 +28,7 @@ from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
 from .subtool import *
 from .subtool_select_boundary_edge import SubToolSelectBoundaryEdge
 from .subtool_draw_patch import SubToolDrawPatch
-
-
+from .subtool_cooper import SubToolCooper
 class MainToolQuadPatch(MainTool) :
     name = "QuadPatch Tool"
 
@@ -39,8 +38,8 @@ class MainToolQuadPatch(MainTool) :
             MBEventType.Release         : [] ,
             MBEventType.Down            : [ [ SubToolSelectBoundaryEdge.Check , SubToolSelectBoundaryEdge ] ],
             MBEventType.Click           : [],
-            MBEventType.LongClick       : [] ,
-            MBEventType.LongPressDrag   : [] ,
+            MBEventType.LongPress       : [ [SubToolCooper.Check , SubToolCooper ] ] ,
+            MBEventType.LongPressDrag   : [ [SubToolCooper.Check , SubToolCooper ] ] ,
             MBEventType.Drag            : [ [SubToolDrawPatch.Check , SubToolDrawPatch ] ] ,
         }
 

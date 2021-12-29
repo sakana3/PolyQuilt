@@ -40,6 +40,13 @@ class Plane :
         vector.normalize()
         return Plane( origin , vector )
 
+    def from_screen_near( context ) :
+        rv3d = context.region_data
+        origin = rv3d.view_matrix.inverted() @ Vector( (0,0,0) )
+        vector = -rv3d.view_matrix.inverted().col[2].xyz
+        vector.normalize()
+        return Plane( origin , vector )
+
     def from_screen_slice( context , startPos , endPos ) :
         rv3d = context.region_data   
         region = context.region
@@ -413,32 +420,85 @@ def CalcRateEdgeRay( obj , context , edge , vert , coord , ray , dist ) :
         return max( 0 , min( 1 , d0 / dt ))        
 
 def sort_edgeloop( loop ) :
+    '''
+    sorting edgeloop
+    '''
+
     if len(loop) == 1 :
         return loop , [loop[0].verts[0],loop[0].verts[1]]
 
-    end_edges = []
-    end_verts = []
+    start_edge = None
+    start_vert = None
     for edge in loop :
         for vert in edge.verts :
             if len( [ e for e in loop if vert in e.verts ] ) == 1 :
-                if edge not in end_edges :
-                    end_edges.append(edge)
-                end_verts.append(vert)
+                start_edge = edge 
+                start_vert = vert
 
-    if len( end_verts ) != 2 :
-        return None , None
+    if start_edge == None :
+        # ループしている可能性
+        start_edge = loop[0]
+        start_vert = loop[0].verts[0]
 
-    cur_vert = end_verts[0]
-    cur_edge = end_edges[0]
-    ret_verts = [cur_vert]
+    cur_edge = start_edge
+    cur_vert = start_edge.other_vert(start_vert)
     ret_edges = []
-    while cur_vert != end_verts[-1] :
-        ret_edges.append( cur_edge )
-        cur_vert = cur_edge.other_vert( cur_vert )
-        ret_verts.append( cur_vert )
-        t = [ e for e in loop if e != cur_edge and cur_vert in e.verts ]
-        if len(t) != 1 :
-            break
-        cur_edge = t[0]
+    ret_verts = [start_vert]
+    for i in range(0,len(loop)) :
+        ret_edges.append(cur_edge)
+        ret_verts.append(cur_vert)
+        nexts = [ e for e in cur_vert.link_edges if e != cur_edge and e in loop and e != start_edge ]
+        if len( nexts ) != 1  :
+            break 
+        cur_edge = nexts[0]
+        cur_vert = cur_edge.other_vert(cur_vert)
 
     return ret_edges , ret_verts
+
+def make_slice_planes( context ,startPos , endPos ):
+    '''
+    make screenspace cut planes
+    '''
+
+    slice_plane = Plane.from_screen_slice( context,startPos , endPos )
+
+    ray0 = Ray.from_screen( context , startPos )
+    vec0 = slice_plane.vector.cross(ray0.vector).normalized()
+    ofs0 = vec0 * 0.0001
+    plane0 = Plane( ray0.origin - ofs0 , vec0 )
+
+    ray1 = Ray.from_screen( context ,endPos )
+    vec1 = slice_plane.vector.cross(ray1.vector).normalized()
+    ofs1 = vec1 * 0.0001
+    plane1 = Plane( ray1.origin + ofs1 , -vec1 )
+
+    return slice_plane , plane0 , plane1
+
+def grouping_loop_edge( edges ) :
+    '''
+    make group edgeloop
+    '''
+    selected ={ edge : -1 for edge in edges }
+    index = 0
+    for edge in list( selected.keys() ) :
+        if selected[edge] == -1 :
+            selected[edge] = index
+            for vert in edge.verts :
+                tar = edge
+                while tar :
+                    boundarys = [ e for e in vert.link_edges if e != tar and e in selected.keys() and selected[e] == -1 ]
+                    if len(boundarys) == 1 :
+                        tar = boundarys[0]
+                        vert = tar.other_vert(vert)
+                        selected[tar] = index
+                    else :
+                        tar = None
+            index += 1
+
+    group_loops = {}
+    for edge , idx in selected.items() :
+        if idx not in group_loops.keys() :
+            group_loops[idx] = []
+        group_loops[idx].append(edge)
+
+    return list( group_loops.values() )

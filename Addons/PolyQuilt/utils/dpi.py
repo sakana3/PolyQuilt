@@ -33,5 +33,5 @@ class display :
 
     @staticmethod
     def dot( val ) :
-        return bpy.context.preferences.system.dpi / 25.4 * bpy.context.preferences.system.ui_scale * bpy.context.preferences.system.pixel_size * val
+        return bpy.context.preferences.system.dpi / 25.4 * bpy.context.preferences.system.pixel_size * val
         

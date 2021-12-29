@@ -121,7 +121,7 @@ class SubToolSelectBoundaryEdge(SubTool) :
 
         if element.isEdge and element.element.select :
             if SubToolSelectBoundaryEdge.check_end_of_loop( element.element ):
-                color = ( 0.5 , 0.25 , 0.3 , 1 )
+                color = ( 0 , 0 , 0.3 , 1 )
 
         funcs.append( element.DrawFunc( gizmo.bmo.obj , color , gizmo.preferences , marker = False, edge_pivot = False ) )
 
@@ -150,8 +150,8 @@ class SubToolSelectBoundaryEdge(SubTool) :
                 draw_util.draw_dot_lines2D( verts , self.color_highlight(0.5) , display.dot( self.preferences.highlight_line_width ) , pattern= (1,0.5)  )
 
     def OnDraw3D( self , context  ) :
-        
-        self.currentTarget.Draw( self.bmo.obj , self.preferences.highlight_color , self.preferences , marker = False, edge_pivot = False )    
+        if not self.shortest_path :
+            self.currentTarget.Draw( self.bmo.obj , self.preferences.highlight_color , self.preferences , marker = False, edge_pivot = False )    
 
     @staticmethod
     def check_end_of_loop( edge ) :

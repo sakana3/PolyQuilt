@@ -78,6 +78,9 @@ class SubToolRoot :
     def Invoke( self , context , event ) :
         pass
 
+    def OnUpdatePre( self , context , event ) :
+        pass
+
     def OnUpdate( self , context , event ) :
         return 'FINISHED'
 
