@@ -75,6 +75,11 @@ def draw_settings_ui(context, layout, tool  , ui ):
 
         col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
         col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
+
+    if "RETOPO" in ui or "BRUSH" in ui :
+        row = layout.row(align=True)
+        row.prop( preferences, "line_segment_length" , text = "Line Length" , expand = True, slider = True  )
+        
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
 #            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))
@@ -87,6 +92,7 @@ def draw_settings_ui(context, layout, tool  , ui ):
 
 def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTION']  ):
     props = tool.operator_properties("mesh.poly_quilt")
+    preferences = bpy.context.preferences.addons[__package__].preferences
 
     if "MASTER" in ui or "LOWPOLY" in ui :
         row = layout.row( align=True)
@@ -97,6 +103,11 @@ def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTIO
         row = layout.row( align=True)
         row.label( text = "Brush" )
         row.prop( props , "brush_type" , text = "Brush", toggle = True , expand = True, icon_only = True )
+
+    if "RETOPO" in ui or "BRUSH" in ui :
+        row = layout.row( align=True)
+        row.label( text = "Line Length" )
+        row.prop( preferences, "line_segment_length" , text = "Line Length" , expand = True, slider = True  )
 
     # Expand panels from the side-bar as popovers.
     popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}

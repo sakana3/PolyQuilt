@@ -13,13 +13,8 @@
 
 
 import bpy
-import math
-import mathutils
 import bmesh
-import bpy_extras
-import collections
-import copy
-from functools import cmp_to_key
+import math
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
@@ -44,7 +39,7 @@ class SubToolCooper(SubTool) :
             if (self.startPos-self.currentPos).length > 10 :
                 self.MakeQuad(bpy.context)
             else :
-                self.FillHole(bpy.context)
+                self.FillHoleQuad(bpy.context)
             self.isExit = True
 
 
@@ -70,8 +65,8 @@ class SubToolCooper(SubTool) :
     def OnExit( self ) :
         pass
 
-    def MakeQuad( self , context ) :
-        targetLoop, targetVerts = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
+    def MakeQuad( self , context , segment = 0.1 ) :
+        targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
 
         loops = self.select_circle(context)
 
@@ -81,13 +76,16 @@ class SubToolCooper(SubTool) :
         if targetLoop and targetVerts[0] == targetVerts[-1] :
             pts = SubToolDrawPatch.calc_new_points( loops[0] ,targetLoop, targetVerts )
         else :
-            pts = SubToolDrawPatch.make_loop_by_stroke( loops[0] , [1,1,1,1,1,1,1,1,1,1,1,1,1,1] )
+            ttl = sum( (e1-e2).length for e1,e2 in zip( loops[0][ 0 : len(loops[0]) - 1 ] , loops[0][ 1 : len(loops[0]) ] ) )
+            num = int( ttl / segment + 0.5 )
+            num = max( 8 , num )
+            pts = SubToolDrawPatch.make_loop_by_stroke( loops[0] , [1] * num )
 
         self.bmo.select_flush()
 
         verts = []
         for pt in pts[ 0 : - 1] :
-            vt = self.bmo.AddVertex( pt )
+            vt = self.bmo.AddVertex( self.bmo.world_to_local_pos( pt ) )
             verts.append(vt)
 
         newEdges = []
@@ -109,19 +107,62 @@ class SubToolCooper(SubTool) :
         if not pivot :
             return
 
-        selected = [ edge for edge in self.bmo.bm.edges if edge.select and (edge.is_boundary or edge.is_wire) ]
-        targetLoops =  pqutil.grouping_loop_edge( selected )
-        if len(targetLoops) != 1 :
+        targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
+        if not targetLoop:
             return
 
-        vt = self.bmo.AddVertex( pivot )
+        vt = self.bmo.AddVertex(  self.bmo.world_to_local_pos(pivot) )
 
-        for edge in targetLoops[0] :
+        for edge in targetLoop :
             self.bmo.AddFace( [ edge.verts[0] , edge.verts[1] , vt ] )
 
         self.bmo.select_flush()
         self.bmo.UpdateMesh()
 
+    def FillHoleQuad( self , context ) :
+        pivot = None
+        if QSnap.is_active() :
+            pivot = QSnap.screen_adjust(self.startPos)
+
+        if not pivot :
+            return
+
+        targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
+        if not targetLoop:
+            return
+
+        #
+        seg = len(targetLoop)
+        half1 = math.ceil( seg / 2 )
+        half2 = seg - half1
+
+        quad1 = math.ceil( half1 / 2 )
+        quad2 = half1 - quad1
+        quad3 = quad1
+        quad4 = half2 - quad3
+
+        fillEdges = list(targetLoop[0:quad1])
+        fillEdges.extend( list( targetLoop[quad1+quad2:quad1+quad2+quad3] ) )
+        newFaces = bmesh.ops.grid_fill( self.bmo.bm, edges = fillEdges, mat_nr = 0, use_smooth = False, use_interp_simple = False)
+
+        if newFaces['faces'] :
+            if QSnap.is_active() :
+                vertsets = set()
+                facesets = []
+                for face in newFaces['faces'] :
+                    facesets.append(face)
+                    for vert in face.verts :
+                        vertsets.add(vert)
+#                bmesh.ops.join_triangles(self.bmo, faces = facesets)                        
+                for vert in vertsets :
+                    vert.normal_update()
+                for vert in vertsets :
+                    vert.co = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
+#                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
+
+
+        self.bmo.select_flush()
+        self.bmo.UpdateMesh()
 
     def select_circle( self, context  ) :
         depsgraph = context.evaluated_depsgraph_get()

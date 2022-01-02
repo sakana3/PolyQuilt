@@ -42,9 +42,9 @@ class MainToolQuadPatch(MainTool) :
             MBEventType.LongPressDrag   : [ [SubToolCooper.Check , SubToolCooper ] ] ,
             MBEventType.Drag            : [ [SubToolDrawPatch.Check , SubToolDrawPatch ] ] ,
         }
-
+        if self.currentTarget.isEmpty :
+            self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = ["EDGE"], edgering = True  )
         self.activeTarget = ElementItem.Empty()
-        self.currentTarget = currentTarget
         self.singleton = False 
 
     def LMBEventCallback(self , event ):

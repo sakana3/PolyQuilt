@@ -291,7 +291,7 @@ class SubTool(SubToolRoot) :
             super().__init__( root )
             self.rootTool = None
         self.currentTarget = root.currentTarget
-        self.startTargte = root.currentTarget
+        self.startTarget = root.currentTarget
         self.startMousePos = root.mouse_pos.copy()
 
         self.LMBEvent = None

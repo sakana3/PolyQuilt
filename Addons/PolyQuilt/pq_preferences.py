@@ -155,21 +155,21 @@ class PolyQuiltPreferences(AddonPreferences):
     distance_to_highlight : FloatProperty(
         name="distance_to_highlight",
         description="distance_to_highlight",
-        default=2.0,
+        default=4.0,
         min=1.0,
         max=10.0)
 
     highlight_vertex_size : FloatProperty(
         name="Highlight Vertex Size",
         description="Highlight Vertex Size",
-        default= 2,
+        default= 3,
         min=0.5,
         max=8.0)
 
     highlight_line_width : FloatProperty(
         name="Highlight Line Width",
         description="Highlight Line Width",
-        default=0.5,
+        default=1.0,
         min=0.1,
         max=10.0)
 
@@ -235,6 +235,13 @@ class PolyQuiltPreferences(AddonPreferences):
         default=0.5,
         min=0.0,
         max=1.0)    
+
+    line_segment_length : bpy.props.FloatProperty(
+        name="Line segment length",
+        description="Line segment length",
+        default=0.1,
+        min=0.01,
+        max=10.0)    
 
     fix_to_x_zero : bpy.props.BoolProperty(
               name = "fix_to_x_zero" ,

@@ -34,6 +34,7 @@ class SubToolSelectBoundaryEdge(SubTool) :
         self.buttonType = button
         self.shortest_path = [ ]
         self.shortest_path_Verts = []
+        self.loops = []
 
     @staticmethod
     def Check( root , target ) :
@@ -48,34 +49,46 @@ class SubToolSelectBoundaryEdge(SubTool) :
         if event.type == MBEventType.Drag :
             self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = ["EDGE"], edgering = True  )
 
-            if self.startTargte.isEdge and self.currentTarget.isEdge and self.currentTarget.element != self.startTargte.element :
-                self.shortest_path = self.bmo.calc_shortest_pass( self.bmo.bm , self.startTargte.element , self.currentTarget.element , boundaryOnly = True )[0]
+            if self.startTarget.isEdge and self.currentTarget.isEdge and self.currentTarget.element != self.startTarget.element :
+                self.shortest_path = self.bmo.calc_shortest_pass( self.bmo.bm , self.startTarget.element , self.currentTarget.element , boundaryOnly = True )[0]
                 self.shortest_path , self.shortest_path_Verts =  pqutil.sort_edgeloop( self.shortest_path )
-                if self.shortest_path and self.shortest_path_Verts[0] not in self.startTargte.element.verts :
+                if self.shortest_path and self.shortest_path_Verts[0] not in self.startTarget.element.verts :
                     self.shortest_path.reverse()
                     self.shortest_path_Verts.reverse()
             else :
                 self.shortest_path =  []
 
+        elif event.type == MBEventType.LongPress :
+            selected = [ edge for edge in self.bmo.bm.edges if edge.select and (edge.is_boundary or edge.is_wire) ]
+            if set(selected) == set(self.startTarget.loops) :
+                self.loops = self.startTarget.rings
+            else :            
+                self.loops = self.startTarget.loops
+
         elif event.type == MBEventType.LongClick :
-            self.bmo.select_flush()
-            self.bmo.select_components( self.startTargte.loops , True )
-            self.bmo.select_component( self.startTargte.element , True )
-            self.bmo.UpdateMesh()                    
+            if self.loops :
+                if not SubToolSelectBoundaryEdge.check_connect_of_loop( self.currentTarget.element ) :
+                    self.bmo.select_flush()
+                self.bmo.select_components( self.loops , True )
+                self.bmo.select_component( self.startTarget.element , True )
+                self.bmo.UpdateMesh()
             return MBEventResult.Quit
 
         elif event.type == MBEventType.Click :                
             if self.currentTarget.isEdge :
                 edge = self.currentTarget.element
                 if not edge.select :
-                    if not any( v.select and ( v.is_wire or v.is_boundary ) for v in  edge.verts ) :
+                    if not SubToolSelectBoundaryEdge.check_connect_of_loop(edge) :
                         self.bmo.select_flush()
                     self.bmo.select_component( edge , True )
 #                       self.bmo.bm.select_flush(True)
                 else :
                     if SubToolSelectBoundaryEdge.check_end_of_loop( edge ) :
                         self.bmo.select_component( edge , False )
-#                       self.bmo.bm.select_flush(False)
+                    elif not SubToolSelectBoundaryEdge.check_connect_of_loop(edge) :
+                        self.bmo.select_flush()
+                        self.bmo.select_component( edge , True )
+
                 self.bmo.UpdateMesh()
             else :
                 self.bmo.select_flush()
@@ -86,11 +99,15 @@ class SubToolSelectBoundaryEdge(SubTool) :
 
         elif event.type == MBEventType.Release :
             if self.shortest_path and self.currentTarget.isEdge :
-                if not self.startTargte.element.select and not self.currentTarget.element.select :
-                    self.bmo.select_flush()
-                if ( self.check_end_of_loop(self.startTargte.element) and  self.currentTarget.element.select ) or ( self.check_end_of_loop(self.currentTarget.element) and not self.startTargte.element.select )  :
+                start = self.startTarget.element                
+                end = self.currentTarget.element                
+                if SubToolSelectBoundaryEdge.check_connect_of_loop(start) :
+                    self.bmo.select_components( self.shortest_path , True )
+                elif SubToolSelectBoundaryEdge.check_end_of_loop( start ) and end.select :
                     self.bmo.select_components( self.shortest_path , False )
-                else :
+                    self.bmo.bm.select_flush(True)
+                else :                    
+                    self.bmo.select_flush()
                     self.bmo.select_components( self.shortest_path , True )
                 self.bmo.UpdateMesh()                    
 
@@ -130,12 +147,12 @@ class SubToolSelectBoundaryEdge(SubTool) :
     def OnDraw( self , context  ) :
         if self.shortest_path :
             vertex_size = self.preferences.highlight_vertex_size        
-            width = display.dot( self.preferences.highlight_line_width )
+            width = display.dot( self.preferences.highlight_line_width + 1)
             color = self.preferences.highlight_color
-            if ( self.check_end_of_loop(self.startTargte.element) and self.currentTarget.element.select ) or ( self.check_end_of_loop(self.currentTarget.element) and not self.startTargte.element.select )  :
-                color = ( 0.5 , 0.25 , 0.3 , 1 )
+            if ( self.check_end_of_loop(self.startTarget.element) and self.currentTarget.element.select ) or ( self.check_end_of_loop(self.currentTarget.element) and not self.startTarget.element.select )  :
+                color = ( 0.25 , 0.1 , 0.1 , 1 )
             verts = [ self.bmo.local_to_2d( v.co ) for v in self.shortest_path_Verts  ]
-            draw_util.draw_dot_lines2D( verts , color , width , pattern= (1,0.5) )
+            draw_util.draw_dot_lines2D( verts , color , width , pattern= (2,1) )
         else :
             if self.LMBEvent.isPresure :
                 if self.currentTarget.isNotEmpty :
@@ -144,18 +161,28 @@ class SubToolSelectBoundaryEdge(SubTool) :
                     self.LMBEvent.Draw( None )
 
             if self.currentTarget.isEdge and self.LMBEvent.is_hold :
-                loop = self.currentTarget.loops
+                loop = self.loops
                 le , vt =  pqutil.sort_edgeloop( loop )
-                verts = [ pqutil.location_3d_to_region_2d( v.co ) for v in vt ]
-                draw_util.draw_dot_lines2D( verts , self.color_highlight(0.5) , display.dot( self.preferences.highlight_line_width ) , pattern= (1,0.5)  )
+                verts = [ self.bmo.local_to_2d( v.co ) for v in vt ]
+                draw_util.draw_dot_lines2D( verts , self.color_highlight(0.5) , display.dot( self.preferences.highlight_line_width + 1 ) , pattern= (2,1)  )
 
     def OnDraw3D( self , context  ) :
         if not self.shortest_path :
-            self.currentTarget.Draw( self.bmo.obj , self.preferences.highlight_color , self.preferences , marker = False, edge_pivot = False )    
+            color = self.preferences.highlight_color
+            if self.currentTarget.isEdge :
+                if SubToolSelectBoundaryEdge.check_end_of_loop( self.currentTarget.element ):
+                    color = ( 0 , 0 , 0.3 , 1 )
+            self.currentTarget.Draw( self.bmo.obj , color  , self.preferences , marker = False, edge_pivot = False )    
 
     @staticmethod
     def check_end_of_loop( edge ) :
         return edge.select and any( not any( e.select and e != edge and ( e.is_wire or e.is_boundary ) for e in v.link_edges ) for v in edge.verts )
+
+    @staticmethod
+    def check_connect_of_loop( edge ) :
+        v1=  any( e.select and e != edge and ( e.is_wire or e.is_boundary ) for e in edge.verts[0].link_edges )
+        v2=  any( e.select and e != edge and ( e.is_wire or e.is_boundary ) for e in edge.verts[1].link_edges )
+        return not edge.select and (v1 != v2)
 
 #                    if any( not any( e.select and e != edge and ( e.is_wire or e.is_boundary ) for e in v.link_edges ) for v in verts ) :
 

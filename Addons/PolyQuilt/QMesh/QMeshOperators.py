@@ -718,7 +718,7 @@ class QMeshOperators :
 
     def select_components( self , components , select = True ) :
         for component in components :
-            component.select_set(select)
+            self.select_component(component,select)
             if select :
                 self.bm.select_history.add( component )
             else :

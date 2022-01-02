@@ -22,6 +22,7 @@ from .pq_keymap_editor import draw_tool_keymap_ui
 class ToolPolyQuiltBase(WorkSpaceTool):
     pq_main_tool = 'MASTER'
     pq_description = 'Master Tool'
+    pq_tools = [ "MASTER" ]
 
     bl_space_type='VIEW_3D'
     bl_context_mode='EDIT_MESH'
@@ -56,10 +57,10 @@ class ToolPolyQuiltBase(WorkSpaceTool):
     def draw_settings( cls ,context, layout, tool):
         reg = context.region.type
 
-#       keyconfigs = context.window_manager.keyconfigs.user            
-#       keymap = keyconfigs.keymaps["3D View Tool: Edit Mesh, " + cls.bl_label ]            
+#        keyconfigs = context.window_manager.keyconfigs.user      
+#        keymap = keyconfigs.keymaps["3D View Tool: Edit Mesh, " + cls.bl_label ]            
 #       tools = [ item.properties.tool_mode for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' and hasattr( item.properties , "tool_mode" ) ]
-        tools = [ "MASTER" ]
+        tools = cls.pq_tools
 
         if reg == 'UI' :
             draw_settings_ui( context , layout , tool  , ui = tools)
@@ -146,6 +147,7 @@ class ToolPolyQuiltEdgeLoop(ToolPolyQuiltBase):
 class ToolPolyQuiltQuadPatch(ToolPolyQuiltBase):
     pq_main_tool = 'QUADPATCH'
     pq_description = 'QuadPatch Tool'
+    pq_tools = [ "MASTER" , "RETOPO" ]    
 
     # The prefix of the idname should be your add-on name.
     bl_idname = "mesh_tool.poly_quilt_quad_patch"
@@ -192,6 +194,7 @@ class ToolPolyQuiltSeam(ToolPolyQuiltBase):
     bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool], ctrl = ['MARK_SEAM_LOOP'] ) 
 
 PolyQuiltTools = (
+    { 'tool' : ToolPolyQuiltQuadPatch , 'after' : {"builtin.poly_build"} , 'group' : True },
     { 'tool' : ToolPolyQuilt       , 'after' : {"builtin.poly_build"} , 'group' : True },
     { 'tool' : ToolPolyQuiltPoly  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltExtrude  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
@@ -201,5 +204,4 @@ PolyQuiltTools = (
     { 'tool' : ToolPolyQuiltDelete  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltBrush  , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
     { 'tool' : ToolPolyQuiltSeam , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
-    { 'tool' : ToolPolyQuiltQuadPatch , 'after' : {"mesh_tool.poly_quilt"} , 'group' : False },
 )
