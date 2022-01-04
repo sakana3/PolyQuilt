@@ -20,7 +20,7 @@ import inspect
 import rna_keymap_ui
 from bpy.types import AddonPreferences
 
-def draw_tool_keymap( layout ,keyconfing,keymapname ) :
+def draw_tool_keymap( operator , layout ,keyconfing,keymapname ) :
     keymap = keyconfing.keymaps[keymapname]            
     layout.context_pointer_set('keymap', keymap)
     cnt = 0
@@ -33,7 +33,7 @@ def draw_tool_keymap( layout ,keyconfing,keymapname ) :
         if True in (item.oskey,item.shift,item.ctrl,item.alt) :
             it = layout.row( )
 #            it.prop(item , "active" , text = "" )
-            if item.idname == 'mesh.poly_quilt' :
+            if item.idname == operator :
 #               for i3d in keyconfing.keymaps["Mesh"].keymap_items :
 #                    if i3d.type == 'LEFTMOUSE' and i3d.shift == item.shift and i3d.ctrl == item.ctrl and i3d.alt == item.alt and i3d.oskey == item.oskey :
 #                        ic = layout.row(align = True)
@@ -94,10 +94,9 @@ def draw_tool_keymap( layout ,keyconfing,keymapname ) :
 #                                print(m)
 
 
-def draw_tool_keymap_ui( context , _layout , text , tool) :
+def draw_tool_keymap_ui( operator , context , _layout , text , tool) :
 
     preferences = context.preferences.addons[__package__].preferences
-
     column = _layout.box().column()    
     row = column.row()
     row.prop( preferences, "keymap_setting_expanded", text="",
@@ -107,7 +106,7 @@ def draw_tool_keymap_ui( context , _layout , text , tool) :
 
     if preferences.keymap_setting_expanded :
         keyconfing = context.window_manager.keyconfigs.user
-        draw_tool_keymap( column, keyconfing,"3D View Tool: Edit Mesh, " + tool.bl_label )
+        draw_tool_keymap( operator , column, keyconfing,"3D View Tool: Edit Mesh, " + tool.bl_label )
 
 class PQ_OT_DirtyKeymap(bpy.types.Operator) :
     bl_idname = "addon.polyquilt_dirty_keymap"

@@ -35,7 +35,7 @@ import bpy.utils.previews
 from _bpy import types as bpy_types
 StructRNA = bpy_types.bpy_struct
 
-__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_daemon' ]
+__all__ = ['MESH_OT_poly_quilt', 'MESH_OT_poly_quilt_retopo' , 'MESH_OT_poly_quilt_daemon' ]
 
 if not __package__:
     __package__ = "poly_quilt"
@@ -71,7 +71,7 @@ def enum_override_brush_type_callback(scene, context):
                ('DELETE' , "Delete", "" , custom_icon("icon_brush_delete") , 3 ) )
         return items
 
-class MESH_OT_poly_quilt(bpy.types.Operator):
+class MESH_OT_poly_quilt_base(bpy.types.Operator):
     """Draw Polygons with the mouse"""
     bl_idname = "mesh.poly_quilt"
     bl_label = "PolyQuilt"
@@ -160,7 +160,9 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def execute(self, context):
-        return {'FINISHED'}
+        if hasattr( self , 'OnRedo' ) and self.OnRedo :
+            return {self.OnRedo( context )}
+        return {'CANCELLED'}
 
     def modal(self, context, event):
         def Exit() :
@@ -187,7 +189,6 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
 
         if 'CANCELLED' in val or 'FINISHED' in val :
             Exit()
-#           self.preselect.test_select( context , mathutils.Vector((event.mouse_region_x, event.mouse_region_y)) )
         return val
 
     def update(self, context, event):
@@ -371,6 +372,30 @@ class MESH_OT_poly_quilt(bpy.types.Operator):
         if self.snap_mode == 'OFF' :
             return False
         return bpy.context.scene.tool_settings.use_snap
+
+class MESH_OT_poly_quilt(MESH_OT_poly_quilt_base):
+    """Draw Polygons with the mouse"""
+    bl_idname = "mesh.poly_quilt"
+    bl_label = "PolyQuilt"
+class MESH_OT_poly_quilt_retopo(MESH_OT_poly_quilt_base):
+    """Retopology with the mouse"""
+    bl_idname = "mesh.poly_quilt_retopo"
+    bl_label = "PolyQuilt::Retopo"
+
+    edge_divide : bpy.props.IntProperty(
+        name="Edge Divide",
+        description="Edge Divide",
+        default=0,
+        min=0,
+        max=64)
+
+    edge_offset : bpy.props.FloatProperty(
+        name="Edge Offset",
+        description="Edge Offset",
+        default=0,
+        min=-100,
+        max=100)
+
 
 class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""

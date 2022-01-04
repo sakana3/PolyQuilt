@@ -23,23 +23,24 @@ class ToolPolyQuiltBase(WorkSpaceTool):
     pq_main_tool = 'MASTER'
     pq_description = 'Master Tool'
     pq_tools = [ "MASTER" ]
+    pq_operator = "mesh.poly_quilt"
 
     bl_space_type='VIEW_3D'
     bl_context_mode='EDIT_MESH'
     bl_widget = "MESH_GGT_PQ_Preselect"
 
-    @staticmethod
-    def tool_keymaps( main_tool , shift = ["NONE"] , ctrl = ["NONE"] , alt = ["NONE"] ) :
+    @classmethod
+    def tool_keymaps( cls , main_tools , operator = pq_operator , shift = ["NONE"] , ctrl = ["NONE"] , alt = ["NONE"] ) :
         def keyitem( mods , tool ) :
             key = {"type": 'LEFTMOUSE', "value": 'PRESS', "shift" : 's' in mods  , "ctrl" : 'c' in mods , "alt" : 'a' in mods , "oskey": 'o' in mods }
             prop = {"properties": [("tool_mode", tool[0] )]}
             if len(tool) > 1 and tool[0] == 'BRUSH' :
                 prop["properties"].append( ('brush_type' ,  tool[1] ) )
-            item = ("mesh.poly_quilt", key , prop )
+            item = (operator, key , prop )
             return item
 
-        return (
-            keyitem( ""  , main_tool ) ,  
+        ret = (
+            keyitem( ""  , main_tools ) ,  
             keyitem( "s" , shift ) ,  
             keyitem( "c" , ctrl ) ,  
             keyitem( "a" , alt ) ,  
@@ -52,6 +53,7 @@ class ToolPolyQuiltBase(WorkSpaceTool):
 
             ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
         )
+        return ret
 
     @classmethod
     def draw_settings( cls ,context, layout, tool):
@@ -61,15 +63,14 @@ class ToolPolyQuiltBase(WorkSpaceTool):
 #        keymap = keyconfigs.keymaps["3D View Tool: Edit Mesh, " + cls.bl_label ]            
 #       tools = [ item.properties.tool_mode for item in keymap.keymap_items if item.idname == 'mesh.poly_quilt' and hasattr( item.properties , "tool_mode" ) ]
         tools = cls.pq_tools
-
         if reg == 'UI' :
-            draw_settings_ui( context , layout , tool  , ui = tools)
-            draw_tool_keymap_ui( context , layout , cls.pq_description , cls)
+            draw_settings_ui( cls.pq_operator , context , layout , tool  , ui = tools)
+            draw_tool_keymap_ui( cls.pq_operator , context , layout , cls.pq_description , cls)
         elif reg == 'WINDOW' :
-            draw_settings_ui( context , layout , tool  , ui = tools)
-            draw_tool_keymap_ui( context , layout , cls.pq_description , cls )
+            draw_settings_ui( cls.pq_operator , context , layout , tool  , ui = tools)
+            draw_tool_keymap_ui( cls.pq_operator , context , layout , cls.pq_description , cls )
         elif reg == 'TOOL_HEADER' :
-            draw_settings_toolheader( context , layout , tool , ui = tools )
+            draw_settings_toolheader( cls.pq_operator , context , layout , tool , ui = tools )
 
 class ToolPolyQuilt(ToolPolyQuiltBase):
     pq_main_tool = 'MASTER'
@@ -148,6 +149,7 @@ class ToolPolyQuiltQuadPatch(ToolPolyQuiltBase):
     pq_main_tool = 'QUADPATCH'
     pq_description = 'QuadPatch Tool'
     pq_tools = [ "MASTER" , "RETOPO" ]    
+    pq_operator = "mesh.poly_quilt_retopo"
 
     # The prefix of the idname should be your add-on name.
     bl_idname = "mesh_tool.poly_quilt_quad_patch"
@@ -155,7 +157,8 @@ class ToolPolyQuiltQuadPatch(ToolPolyQuiltBase):
     bl_description = ( "QuadPatch Tool" )
     bl_icon = os.path.join(os.path.join(os.path.dirname(__file__), "icons") , "addon.poly_quilt_quad_patch_icon")
     bl_widget = "MESH_GGT_PQ_QuadPatch"
-    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , shift = ['BRUSH'] )
+    bl_keymap = ToolPolyQuiltBase.tool_keymaps( [pq_main_tool] , operator = pq_operator , shift = ['BRUSH'] )
+
 
 class ToolPolyQuiltLoopCut(ToolPolyQuiltBase):
     pq_main_tool = 'LOOPCUT'

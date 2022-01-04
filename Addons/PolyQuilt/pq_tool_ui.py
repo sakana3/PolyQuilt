@@ -21,8 +21,8 @@ import rna_keymap_ui
 from bpy.app.translations import pgettext_iface as iface_
 from bpy.app.translations import contexts as i18n_contexts
 from bpy.types import AddonPreferences
-def draw_settings_ui(context, layout, tool  , ui ):
-    props = tool.operator_properties("mesh.poly_quilt")
+def draw_settings_ui( opetator , context, layout, tool  , ui ):
+    props = tool.operator_properties(opetator)
     preferences = bpy.context.preferences.addons[__package__].preferences
 
     hoge =  bpy.props.EnumProperty(
@@ -90,8 +90,8 @@ def draw_settings_ui(context, layout, tool  , ui ):
 #       layout.prop(tool_settings, "double_threshold")
 #       layout.prop(tool_settings, "edge_path_mode")
 
-def draw_settings_toolheader(context, layout, tool , ui = ['GEOM','BRUSH','OPTION']  ):
-    props = tool.operator_properties("mesh.poly_quilt")
+def draw_settings_toolheader( operator , context, layout, tool , ui = ['GEOM','BRUSH','OPTION']  ):
+    props = tool.operator_properties(operator)
     preferences = bpy.context.preferences.addons[__package__].preferences
 
     if "MASTER" in ui or "LOWPOLY" in ui :

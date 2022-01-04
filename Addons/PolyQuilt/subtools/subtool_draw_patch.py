@@ -12,6 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 import bpy
 import math
 import mathutils
@@ -80,7 +81,7 @@ class SubToolDrawPatch(SubTool) :
 
         elif event.type == 'LEFTMOUSE' : 
             if event.value == 'RELEASE' :
-                self.MakeQuad()
+                self.execute(context)
                 return 'FINISHED'
         elif event.type == 'RIGHTMOUSE': 
             if event.value == 'RELEASE' :
@@ -130,7 +131,25 @@ class SubToolDrawPatch(SubTool) :
     def OnExit( self ) :
         pass
 
-    def MakeQuad( self , segment = 0.1  ) :
+    def execute( self , context ) :
+        startVert = self.startTarget.element.index if self.startTarget.isVert else None
+        endVert = self.currentTarget.element.index if self.currentTarget.isVert else None
+
+        self.MakeQuad( context , startVert , endVert , self.preferences.line_segment_length )
+
+        obj = context.active_object
+        mesh = obj.data
+        bm = bmesh.from_edit_mesh(mesh)
+
+        def func( context ) :
+            print("Hoge")
+
+        self.operator.OnRedo = func
+
+    def MakeStrokeLine( self , stroke ) :
+        pass
+
+    def MakeQuad( self , context , start_vert , end_vert , segment = 0.1  ) :
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop( self.bmo.bm )
         if num > 1 :
             self.report_message = ("ERROR" , "Choose one boundary edge loop first." )
@@ -178,20 +197,22 @@ class SubToolDrawPatch(SubTool) :
         newEdges = []
         for  v1,v2 in zip( newVerts[0: -1] , newVerts[1:len(newVerts)] ) :
             edge = self.bmo.add_edge( v1 , v2 )
-            self.bmo.select_component(edge)
             newEdges.append( edge )
 
+        self.bmo.select_components(newEdges , True)
+        self.bmo.select_components(newVerts , True)
+        self.bmo.bm.select_flush(True)
+        
         if num == 1 :
             if not isLoop :
                 if self.connected_loop_1st and not self.currentTarget.isVert :
                     _ , self.connected_loop_2nd = self.add_auxiliary_Edge( self.connected_loop_1st , targetVerts , newVerts )
                 elif self.connected_loop_2nd and not self.startTarget.isVert :
                     _ , self.connected_loop_1st  = self.add_auxiliary_Edge( self.connected_loop_2nd , targetVerts , newVerts )
+            SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd , segment = segment )
 
-            SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd )
-
-    #       self.bmo.select_components( newEdges , True )
-        self.bmo.select_components( newVerts , True )
+        self.bmo.select_components( newEdges , True )
+        self.bmo.bm.select_flush(True)
         self.bmo.UpdateMesh()
 
     def add_auxiliary_Edge( self , connected_loop ,targetVerts , newVerts ) :
@@ -277,22 +298,23 @@ class SubToolDrawPatch(SubTool) :
         return connected_loop        
 
     @staticmethod
-    def bridge_loops( bmo , edge1 , edge2 , connect1 = [] , connect2 = [] ) :
+    def bridge_loops( bmo , edge1 , edge2 , connect1 = None , connect2 = None , segment = None, divide = None ) :
         bmo.bm.edges.index_update()
         loopPair = copy.copy(edge1)
         loopPair.extend( edge2 )
 
         hides = []
-        verts = set()
-        allverts = set( itertools.chain( connect1 if connect1 != None else [] , connect2 if connect2 != None else [] ) )
-        for e in itertools.chain( edge1 , edge2) :
-            allverts.update( tuple(e.verts) )
-        for v in allverts :
-            for e in v.link_edges :
-                t = e.other_vert( v )
-                if not t.hide and t not in verts :
-                    t.hide_set(True)
-                    hides.append(t)
+        if connect1 != None and connect2 != None :
+            verts = set()
+            allverts = set( itertools.chain( connect1 if connect1 != None else [] , connect2 if connect2 != None else [] ) )
+            for e in itertools.chain( edge1 , edge2) :
+                allverts.update( tuple(e.verts) )
+            for v in allverts :
+                for t in [ e.other_vert( v ) for e in  v.link_edges ] :
+                    if not t.hide and t not in verts :
+                        t.hide_set(True)
+                        hides.append(t)
+
         newFaces = bmesh.ops.grid_fill( bmo.bm, edges = loopPair, mat_nr = 0, use_smooth = False, use_interp_simple = True)
 
         if not newFaces['faces'] and connect1 and connect2 :
@@ -321,8 +343,22 @@ class SubToolDrawPatch(SubTool) :
 #                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
                     pass
         else :
-            bmesh.ops.bridge_loops(bmo.bm, edges = loopPair, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0.0 )
+            Geom = bmesh.ops.bridge_loops(bmo.bm, edges = loopPair, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0.0 )
+            if segment != None and divide == None :
+                lengths = [ ( bmo.local_to_world_pos( e.verts[0].co ) - bmo.local_to_world_pos( e.verts[1].co )).length for e in Geom['edges'] ]
+                avarage = sum(lengths) / len(lengths)
+                divide = max( 0 , int( avarage / segment ) )
 
+            if divide :
+                #bmesh.ops.subdivide_edges(bm, edges, smooth, smooth_falloff, fractal, along_normal, cuts, seed, custom_patterns, edge_percents, quad_corner_type, use_grid_fill, use_single_edge, use_only_quads, use_sphere, use_smooth_even
+                div = bmesh.ops.subdivide_edges( bmo.bm , edges = Geom['edges'] , smooth = 1.0 , cuts = divide , use_grid_fill=True )
+                if QSnap.is_active() :
+                    vs = [ t for t in div['geom_inner'] if isinstance( t , bmesh.types.BMVert ) ]
+                    for v in vs  :
+                        v.normal_update()
+                    for v in vs  :
+                        v.co = QSnap.adjust_by_normal( bmo.world_to_local_pos(v.co) , bmo.world_to_local_nrm(v.normal) )
+        return divide if divide != None else 0
 
     @staticmethod
     def find_target_loop( bm ) :
@@ -338,7 +374,7 @@ class SubToolDrawPatch(SubTool) :
         return  targetLoop, targetVerts , 1
 
     @staticmethod
-    def calc_new_points( stroke , edges , verts ) :
+    def calc_new_points( stroke , edges , verts, offset =0 ) :
         '''
         新しいポイントを作る
         '''
@@ -354,8 +390,8 @@ class SubToolDrawPatch(SubTool) :
             stroke.append( stroke[0] )
 
             loop = [ e.calc_length() for e in edges ]
-            pts1 = SubToolDrawPatch.make_loop_by_stroke( stroke , loop )
-            pts2 = SubToolDrawPatch.make_loop_by_stroke( list(reversed(stroke)) , loop )
+            pts1 = SubToolDrawPatch.make_loop_by_stroke( stroke , loop , offset )
+            pts2 = SubToolDrawPatch.make_loop_by_stroke( list(reversed(stroke)) , loop , offset )
 
             if ( pts1[1] - verts[1].co ).length < ( pts2[1] - verts[1].co ).length :
                 pts = pts1
@@ -365,40 +401,50 @@ class SubToolDrawPatch(SubTool) :
             if (verts[0].co - stroke[0]).length > (verts[0].co - stroke[-1]).length :
                 edges.reverse()
                 verts.reverse()
-            pts = SubToolDrawPatch.make_loop_by_stroke( stroke , [ ( e.verts[0].co - e.verts[1].co ).length for e in edges ] )
+            pts = SubToolDrawPatch.make_loop_by_stroke( stroke , [ ( e.verts[0].co - e.verts[1].co ).length for e in edges ] , offset )
 
         return pts
 
 
     @staticmethod
-    def make_loop_by_stroke( stroke , targets ) :
+    def make_loop_by_stroke( stroke , targets , offset = 0 ) :
+        isLoop = (stroke[0] - stroke[-1]).length <= sys.float_info.epsilon
+
         stroke_length = [ ( s - e ).length for s,e in zip( stroke[0: len(stroke)-1] , stroke[1: len(stroke)] ) ]
 
         stroke_total  = sum( stroke_length )
         targets_total = sum( targets )
         segments = [ t / targets_total * stroke_total for t in targets ]
 
-        retPositions = [ stroke[0] ]
+        if isLoop :
+            stroke = stroke[0:len(stroke)] + stroke[1 : len(stroke)]
+            stroke_length = stroke_length + stroke_length[1 : len(stroke_length)]
+
+        offset =  ((offset % 1.0) + 1.0) % 1.0
+        offset = offset * stroke_total
+        retPositions = []
         cur = 0
-        segment = 0
-        segmentLen = segments[cur]
+        segment = - offset
+        segmentLen = 0
         for pre ,pos , length in zip( stroke[0:len(stroke)-1] , stroke[1:len(stroke)] , stroke_length ) :
             tmp = segment
             segment = segment + length
-            while segment > segmentLen :
-                pre = pre.lerp( pos , ( segmentLen - tmp ) / length )
+            while segment >= segmentLen :
+                if length > sys.float_info.epsilon :
+                    pre = pre.lerp( pos , ( segmentLen - tmp ) / length )
+                else :
+                    pre = pos
                 retPositions.append(pre)
                 segment = segment - segmentLen
                 tmp = 0
                 length = (pre-pos).length
+                segmentLen = segments[cur % len(segments) ]
                 cur += 1
-                if cur >= len(segments) :
-                    break
-                segmentLen = segments[cur]
+            if cur > len(segments) :
+                break
 
         if len(retPositions) < len(targets) + 1 :
             retPositions.append( stroke[-1] )
-
         return retPositions
 
 

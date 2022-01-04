@@ -37,6 +37,7 @@ from .translation import pq_translation_dict
 
 classes = (
     MESH_OT_poly_quilt ,
+    MESH_OT_poly_quilt_retopo ,   
     MESH_OT_poly_quilt_daemon ,
     PQ_OT_SetupUnityLikeKeymap ,
     PolyQuiltPreferences ,
@@ -51,6 +52,9 @@ def register():
     bpy.app.translations.register(__name__, pq_translation_dict)    
     register_icons()
     register_updater(bl_info)
+
+    print( MESH_OT_poly_quilt.bl_idname )
+    print( MESH_OT_poly_quilt_retopo.bl_idname )
 
     # 空メッシュ追加
     bpy.utils.register_class(pq_operator_add_empty_object.OBJECT_OT_add_object)

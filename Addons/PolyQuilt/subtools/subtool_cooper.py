@@ -15,6 +15,7 @@
 import bpy
 import bmesh
 import math
+import copy
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
@@ -37,7 +38,11 @@ class SubToolCooper(SubTool) :
             self.currentPos = self.mouse_pos
         elif event.type == MBEventType.Release :
             if (self.startPos-self.currentPos).length > 10 :
-                self.MakeQuad(bpy.context)
+                self.loops = self.select_circle( bpy.context)
+                if self.loops :
+                    div = self.MakeQuad(bpy.context , offset = 0 , segment = self.preferences.line_segment_length)
+                    self.operator.edge_divide = div
+                    self.operator.OnRedo = self.execute
             else :
                 self.FillHoleQuad(bpy.context)
             self.isExit = True
@@ -65,21 +70,28 @@ class SubToolCooper(SubTool) :
     def OnExit( self ) :
         pass
 
-    def MakeQuad( self , context , segment = 0.1 ) :
-        targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
+    def execute( self , context ) :
+        self.bmo.CheckValid( context )
+        self.MakeQuad( bpy.context , offset = self.operator.edge_offset/ 100  , segment = None , divide = self.operator.edge_divide )
+        return 'FINISHED'
 
-        loops = self.select_circle(context)
+    def MakeQuad( self , context , offset , segment = None , divide = None ) :
+        targetLoop, targetVerts , _ = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
 
+        loops = copy.copy(self.loops[0])
         if not loops :
-            return
-
+            return 0
+        div = 0
         if targetLoop and targetVerts[0] == targetVerts[-1] :
-            pts = SubToolDrawPatch.calc_new_points( loops[0] ,targetLoop, targetVerts )
+            pts = SubToolDrawPatch.calc_new_points( loops ,targetLoop, targetVerts, offset  )
         else :
-            ttl = sum( (e1-e2).length for e1,e2 in zip( loops[0][ 0 : len(loops[0]) - 1 ] , loops[0][ 1 : len(loops[0]) ] ) )
-            num = int( ttl / segment + 0.5 )
-            num = max( 8 , num )
-            pts = SubToolDrawPatch.make_loop_by_stroke( loops[0] , [1] * num )
+            if divide != None :
+                div = divide
+            else :
+                ttl = sum( (e1-e2).length for e1,e2 in zip( loops[ 0 : len(loops) - 1 ] , loops[ 1 : len(loops) ] ) )
+                div = int( ttl / segment + 0.5 )
+            div = max( 8 , div )
+            pts = SubToolDrawPatch.make_loop_by_stroke( loops , [1] * div , offset )
 
         self.bmo.select_flush()
 
@@ -93,11 +105,13 @@ class SubToolCooper(SubTool) :
             ed = self.bmo.add_edge( verts[i] , verts[(i + 1) % len(verts) ] )
             self.bmo.select_component(ed)
             newEdges.append(ed)
+        self.bmo.bm.select_flush(True)
 
         if targetLoop and targetVerts[0] == targetVerts[-1]  :
-            SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop )
-
+            div = SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , segment = segment , divide = divide )
         self.bmo.UpdateMesh()
+
+        return div
 
     def FillHole( self , context ) :
         pivot = None
