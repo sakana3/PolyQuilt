@@ -34,7 +34,7 @@ class QMeshOperators :
         self.__btree = None
         self.__kdtree = None
         self.preferences = preferences
-
+        
     def __del__(self) :
         del self.__btree
         del self.__kdtree

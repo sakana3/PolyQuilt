@@ -133,7 +133,7 @@ class SubToolFaceInsert(SubTool) :
                     vert.normal_update()
                     v = self.bmo.local_to_world_pos(vert.co)
                     n = self.bmo.local_to_world_nrm(vert.normal)
-                    p = QSnap.adjust_by_normal( v , n , self.preferences.fix_to_x_zero )
+                    p , _ = QSnap.adjust_by_normal( v , n , self.preferences.fix_to_x_zero )
                     vert.co = self.bmo.world_to_local_pos( p )
                     vert.normal_update()
             self.bmo.UpdateMesh()
@@ -146,7 +146,7 @@ class SubToolFaceInsert(SubTool) :
                     for vert in face.verts :
                         v = self.bmo.local_to_world_pos(vert.co)
                         n = self.bmo.local_to_world_nrm(vert.normal)
-                        p = QSnap.adjust_by_normal( v , n , self.preferences.fix_to_x_zero )
+                        p , _ = QSnap.adjust_by_normal( v , n , self.preferences.fix_to_x_zero )
                         vert.co = self.bmo.world_to_local_pos( p )
                 for face in new_geoms['faces'] :
                     for vert in face.verts :

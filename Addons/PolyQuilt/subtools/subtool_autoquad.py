@@ -93,7 +93,8 @@ class SubToolAutoQuad(SubToolEx) :
 
             def calcVert( v ) :
                 if isinstance( v , mathutils.Vector ) :
-                    return  QSnap.adjust_point( mat @ v , is_x_zero )
+                    v , _ = QSnap.adjust_point( mat @ v , is_x_zero )
+                    return  v
                 else :
                     return mat @ v.co
 

@@ -141,7 +141,7 @@ class SubToolBrushMove(SubToolEx) :
             coord = p + move
             x = region_2d_to_location_3d( region = region , rv3d = rv3d , coord = coord , depth_location = co)
             x = co.lerp( x , 1 - r )
-            x = QSnap.adjust_point( x )
+            x , _ = QSnap.adjust_point( x )
             x = matrix_inv @ x
             if is_fix_zero and is_x_zero_pos(orig) :
                 x.x = 0 

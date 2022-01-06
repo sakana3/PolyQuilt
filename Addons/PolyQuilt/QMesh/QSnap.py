@@ -124,11 +124,13 @@ class QSnap :
             location , norm , index = cls.instance.__find_nearest( world_pos )
             if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(location) :
                 location.x = 0
-            return location
-        return world_pos
+                norm.x = 0
+                norm.normalize()
+            return location , norm
+        return world_pos , mathutils.Vector(0,0,1)
 
     @classmethod
-    def adjust_by_normal( cls , world_pos : mathutils.Vector , world_normal : mathutils.Vector  , is_fix_to_x_zero = False) :
+    def adjust_by_normal( cls , world_pos : mathutils.Vector , world_normal : mathutils.Vector  , is_fix_to_x_zero = False ) :
         if cls.instance != None :
             ray = pqutil.Ray( world_pos , world_normal )
             location , norm , index = cls.instance.__raycast_double( ray )
@@ -137,8 +139,11 @@ class QSnap :
             if location != None :
                 if is_fix_to_x_zero and QMeshOperators.is_x_zero_pos(location) :
                     location.x = 0
-                return location
-        return world_pos
+                    norm.x = 0
+                    norm.normalize()                    
+                return location , norm
+        return world_pos , world_normal
+
 
     @classmethod
     def adjust_local( cls , matrix_world : mathutils.Matrix , local_pos : mathutils.Vector , is_fix_to_x_zero ) :

@@ -184,7 +184,7 @@ class SubToolCooper(SubTool) :
                     for vert in newVerts :
                         vert.normal_update()
                     for vert in newVerts :
-                        vert.co = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
+                        vert.co , _ = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
     #                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
 
                 bmesh.ops.smooth_vert(  self.bmo.bm, verts =newVerts , factor = 1.0 ,

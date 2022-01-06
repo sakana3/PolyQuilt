@@ -115,7 +115,7 @@ class SubToolEdgeRingExtrude(MainTool) :
             for v,n in self.verts.items() :
                 self.result_verts[v] = v.co + n * self.rate
                 if QSnap.is_active() :
-                    self.result_verts[v] = QSnap.adjust_point(self.result_verts[v])
+                    self.result_verts[v] , _ = QSnap.adjust_point(self.result_verts[v])
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'PRESS' :
                 pass

@@ -54,6 +54,9 @@ class SubToolDrawPatch(SubTool) :
             self.connected_loop_1st = self.fine_connected_loop( self.startTarget.element )
         self.is_loop_stroke = None
 
+        self.view_vector = -bpy.context.region_data.view_matrix.inverted().col[2].xyz
+        self.view_vector.normalize()
+
     def LMBEventCallback(self , event ):
         if event.type == MBEventType.Drag :
             if not self.is_loop_stroke :
@@ -78,9 +81,9 @@ class SubToolDrawPatch(SubTool) :
                         self.stroke3D.append( self.stroke3D[0] )
                         self.is_loop_stroke = True
         elif event.type == MBEventType.Release :
-            div = self.MakeQuad( bpy.context , self.preferences.line_segment_length )
-            self.operator.edge_divide = div
-            self.operator.redo_info = [ self.execute , ['edge_divide'] if div else [] ]
+            div , loop = self.MakeQuad( bpy.context , self.preferences.line_segment_length )
+            self.operator.edge_divide = div if div != None else 0
+            self.operator.redo_info = [ self.execute , [ x for x , t in zip( ['edge_divide' , 'edge_offset' ] ,[ div != None , loop ] ) if t ] ]
             return MBEventResult.Quit
         return MBEventResult.Do
 
@@ -133,14 +136,18 @@ class SubToolDrawPatch(SubTool) :
         self.bmo.CheckValid( context )
         self.startTarget.CheckValid( self.bmo )
         self.currentTarget.CheckValid( self.bmo )
-        self.MakeQuad( context , self.preferences.line_segment_length , divide = self.operator.edge_divide  )
+        if self.startTarget.isVert :
+            self.connected_loop_1st = self.fine_connected_loop( self.startTarget.element )
+        if self.currentTarget.isVert :
+            self.connected_loop_2nd = self.fine_connected_loop( self.currentTarget.element )
+        self.MakeQuad( context , self.preferences.line_segment_length , divide = self.operator.edge_divide ,  offset = self.operator.edge_offset/ 100   )
         return 'FINISHED'
 
     def MakeStrokeLine( self , stroke ) :
         pass
 
-    def MakeQuad( self , context , segment = 0.1 , divide = None ) :
-        div = 0
+    def MakeQuad( self , context , segment = 0.1 , divide = None , offset = 0 ) :
+        div = None
 
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop( self.bmo.bm )
         if num > 1 :
@@ -156,10 +163,10 @@ class SubToolDrawPatch(SubTool) :
                 ttl = sum( (e1-e2).length for e1,e2 in zip( loop[ 0 : len(loop) - 1 ] , loop[ 1 : len(loop) ] ) )
                 div = max( 1 , int( ttl / segment + 0.5 ) )
             div = max( 3 if isLoop else 1 , div )            
-            pts = SubToolDrawPatch.make_loop_by_stroke( loop , [1] * div )
+            pts = SubToolDrawPatch.make_loop_by_stroke( loop , [1] * div , offset = offset )
         else :
             isLoop = targetVerts[0] == targetVerts[-1]
-            pts = SubToolDrawPatch.calc_new_points( self.stroke3D ,targetLoop ,targetVerts )
+            pts = SubToolDrawPatch.calc_new_points( self.stroke3D ,targetLoop ,targetVerts, offset )
 
         if isLoop :
             if len(pts) < 4 :
@@ -205,12 +212,14 @@ class SubToolDrawPatch(SubTool) :
                     _ , self.connected_loop_2nd = self.add_auxiliary_Edge( self.connected_loop_1st , targetVerts , newVerts )
                 elif self.connected_loop_2nd and not self.startTarget.isVert :
                     _ , self.connected_loop_1st  = self.add_auxiliary_Edge( self.connected_loop_2nd , targetVerts , newVerts )
-            div = SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd , segment = segment , divide= divide )
+            div = SubToolDrawPatch.bridge_loops( self.bmo , 
+                newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd , 
+                view_vector= self.view_vector, segment = segment , divide= divide )
 
         self.bmo.select_components( newEdges , True )
         self.bmo.bm.select_flush(True)
         self.bmo.UpdateMesh()
-        return div
+        return div , isLoop
 
     def add_auxiliary_Edge( self , connected_loop ,targetVerts , newVerts ) :
         '''
@@ -295,10 +304,30 @@ class SubToolDrawPatch(SubTool) :
         return connected_loop        
 
     @staticmethod
-    def bridge_loops( bmo , edge1 , edge2 , connect1 = None , connect2 = None , segment = None, divide = None ) :
+    def adjust_faces_normal( bmo , faces , view_vector ) :
+        cnt = 0
+        for face in faces :
+            face.normal_update()
+            normal = face.normal
+            if QSnap.is_active() :
+                center = face.calc_center_median()
+                snappos , snapnrm = QSnap.adjust_by_normal( bmo.world_to_local_pos(center) , bmo.world_to_local_nrm(normal) )
+                cnt = cnt + (1 if snapnrm.dot(normal) > 0 else -1)
+            elif view_vector != None :
+                cnt = cnt - (1 if view_vector.dot(normal) > 0 else -1)
+                print(cnt)
+        if cnt < 0 :
+            for face in faces :
+                face.normal_flip()
+
+    @staticmethod
+    def bridge_loops( bmo , edge1 , edge2 , connect1 = None , connect2 = None , view_vector = None , segment = None, divide = None ) :
         bmo.bm.edges.index_update()
         loopPair = copy.copy(edge1)
         loopPair.extend( edge2 )
+
+        is_wire = all( e.is_wire for e in edge1 + edge2 + (connect1 if connect1 != None else []) + (connect2 if connect2 != None else [])  )
+#        is_loop = edge1[0].verts[0] in edge1[-1].verts or edge1[0].verts[1] in edge1[-1].verts
 
         hides = []
         if connect1 != None and connect2 != None :
@@ -312,23 +341,25 @@ class SubToolDrawPatch(SubTool) :
                         t.hide_set(True)
                         hides.append(t)
 
-        newFaces = bmesh.ops.grid_fill( bmo.bm, edges = loopPair, mat_nr = 0, use_smooth = False, use_interp_simple = True)
+        newGeoms = bmesh.ops.grid_fill( bmo.bm, edges = loopPair, mat_nr = 0, use_smooth = False, use_interp_simple = True)
+        newFaces = newGeoms['faces']
 
-        if not newFaces['faces'] and connect1 and connect2 :
+        if not newFaces and connect1 and connect2 :
             connect1 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect1[0 : -1] , connect1[1 : len(connect1)] ) ]
             connect2 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect2[0 : -1] , connect2[1 : len(connect2)] ) ]
             loopPair1 = copy.copy(connect1)
             loopPair1.extend( connect2 )
-            newFaces = bmesh.ops.grid_fill( bmo.bm, edges = loopPair1, mat_nr = 0, use_smooth = False, use_interp_simple = True)
+            newGeoms = bmesh.ops.grid_fill( bmo.bm, edges = loopPair1, mat_nr = 0, use_smooth = False, use_interp_simple = True)
+            newFaces = newGeoms['faces']
 
         for hide in hides :
             hide.hide_set(False)
 
-        if newFaces['faces'] :
+        if newFaces :
             if QSnap.is_active() :
                 vertsets = set()
                 facesets = []
-                for face in newFaces['faces'] :
+                for face in newFaces :
                     facesets.append(face)
                     for vert in face.verts :
                         vertsets.add(vert)
@@ -336,26 +367,31 @@ class SubToolDrawPatch(SubTool) :
                 for vert in vertsets :
                     vert.normal_update()
                 for vert in vertsets :
-                    vert.co = QSnap.adjust_by_normal( bmo.world_to_local_pos(vert.co) , bmo.world_to_local_nrm(vert.normal) )
-#                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
-                    pass
+                    vert.co , _ = QSnap.adjust_by_normal( bmo.world_to_local_pos(vert.co) , bmo.world_to_local_nrm(vert.normal) )
+                if is_wire :
+                    SubToolDrawPatch.adjust_faces_normal( bmo , newFaces , view_vector )
         else :
             Geom = bmesh.ops.bridge_loops(bmo.bm, edges = loopPair, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0.0 )
+            newFaces = Geom['faces']
             if segment != None and divide == None :
                 lengths = [ ( bmo.local_to_world_pos( e.verts[0].co ) - bmo.local_to_world_pos( e.verts[1].co )).length for e in Geom['edges'] ]
                 avarage = sum(lengths) / len(lengths)
                 divide = max( 0 , int( avarage / segment ) )
+            if is_wire :
+                SubToolDrawPatch.adjust_faces_normal( bmo , newFaces , view_vector )
 
             if divide :
                 #bmesh.ops.subdivide_edges(bm, edges, smooth, smooth_falloff, fractal, along_normal, cuts, seed, custom_patterns, edge_percents, quad_corner_type, use_grid_fill, use_single_edge, use_only_quads, use_sphere, use_smooth_even
                 div = bmesh.ops.subdivide_edges( bmo.bm , edges = Geom['edges'] , smooth = 1.0 , cuts = divide , use_grid_fill=True )
+                newFaces = [ f for f in div['geom_split'] if isinstance( f , bmesh.types.BMFace ) ]
                 if QSnap.is_active() :
                     vs = [ t for t in div['geom_inner'] if isinstance( t , bmesh.types.BMVert ) ]
                     for v in vs  :
                         v.normal_update()
                     for v in vs  :
-                        v.co = QSnap.adjust_by_normal( bmo.world_to_local_pos(v.co) , bmo.world_to_local_nrm(v.normal) )
-        return divide if divide != None else 0
+                        v.co , _ = QSnap.adjust_by_normal( bmo.world_to_local_pos(v.co) , bmo.world_to_local_nrm(v.normal) )
+
+        return divide
 
     @staticmethod
     def find_target_loop( bm ) :

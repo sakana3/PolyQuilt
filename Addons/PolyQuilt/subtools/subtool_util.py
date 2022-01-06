@@ -114,7 +114,7 @@ class move_component_module :
                     if snap_type == 'VIEW' :
                         p = QSnap.view_adjust(p)
                     elif snap_type == 'NEAR' :
-                        p = QSnap.adjust_point(p)
+                        p , _ = QSnap.adjust_point(p)
                 p = im @ p
 
                 if is_center_snap and self.bmo.is_x_zero_pos( initial_pos ) and ( move_center == False or vert not in self.center_verts ) :
@@ -237,7 +237,7 @@ class move_component_module :
         for v,s in hitSide.items() :
             p = self.verts[v].lerp( s.co , hp )
             if QSnap.is_active() :
-                p = QSnap.adjust_point(p)
+                p , _ = QSnap.adjust_point(p)
             side[v] = p 
 
         if side :
