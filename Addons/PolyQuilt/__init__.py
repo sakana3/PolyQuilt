@@ -53,9 +53,6 @@ def register():
     register_icons()
     register_updater(bl_info)
 
-    print( MESH_OT_poly_quilt.bl_idname )
-    print( MESH_OT_poly_quilt_retopo.bl_idname )
-
     # 空メッシュ追加
     bpy.utils.register_class(pq_operator_add_empty_object.OBJECT_OT_add_object)
     bpy.utils.register_manual_map(pq_operator_add_empty_object.add_object_manual_map)

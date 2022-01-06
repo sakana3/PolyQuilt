@@ -50,6 +50,23 @@ class ElementItem :
         self.__div = 0
         self.setup_mirror()
 
+    def CheckValid( self , qmesh ) :
+        if qmesh != self.__qmesh :
+            self.__qmesh = qmesh
+            if self.isVert :
+                element = self.__qmesh.bm.verts[self.__index]
+            elif self.isEdge :
+                element = self.__qmesh.bm.edges[self.__index]
+            elif self.isFace :
+                element = self.__qmesh.bm.faces[self.__index]
+            else :
+                element = None
+            self.__element = element
+            self.__mirror = None
+            self.__qmesh = qmesh
+            self.__div = 0            
+            self.setup_mirror()
+
     @property
     def bm( self ) :
         return self.__qmesh.bm if self.__qmesh else None

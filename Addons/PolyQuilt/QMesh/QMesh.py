@@ -60,6 +60,19 @@ class QMesh(QMeshOperators) :
         self.highlight.UpdateView(context)
 
     def PickElement( self , coord , radius : float , ignore = [] , edgering = False , backface_culling = None , elements = ['FACE','EDGE','VERT'] , check_func = None ) -> ElementItem :
+        if 'SELECT' in elements :
+            select = set()
+            if 'VERT' in self.bm.select_mode :
+                select.add('VERT')
+                select.add('EDGE')
+                select.add('FACE')
+            if 'EDGE' in self.bm.select_mode :
+                select.add('EDGE')
+                select.add('FACE')
+            if 'FACE' in self.bm.select_mode :
+                select.add('FACE')
+            elements = set(elements) & select
+
         if backface_culling == None :
             backface_culling = self.get_shading(bpy.context).show_backface_culling
         rv3d = bpy.context.region_data

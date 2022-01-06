@@ -160,9 +160,19 @@ class MESH_OT_poly_quilt_base(bpy.types.Operator):
         MESH_OT_poly_quilt.handle_remove()
 
     def execute(self, context):
-        if hasattr( self , 'OnRedo' ) and self.OnRedo :
-            return {self.OnRedo( context )}
+        if hasattr( self , 'redo_info' ) and self.redo_info :
+            return {self.redo_info[0]( context )}
         return {'CANCELLED'}
+
+    def draw_prop(self, context):
+        if hasattr( self , 'redo_info' ) and self.redo_info :
+            layout = self.layout
+            col = layout.column()
+            properties = StructRNA.path_resolve(self, "properties")
+            l_rna = getattr(properties, "bl_rna", None)
+            for prop in self.redo_info[1] : 
+                if prop in l_rna.properties.keys() :
+                    col.prop(self.properties, prop , expand  = True)
 
     def modal(self, context, event):
         def Exit() :
@@ -389,6 +399,13 @@ class MESH_OT_poly_quilt_retopo(MESH_OT_poly_quilt_base):
         min=0,
         max=64)
 
+    edge_slide : bpy.props.IntProperty(
+        name="Edge Slide",
+        description="Edge Slide",
+        default=0,
+        min=0,
+        max=64)
+
     edge_offset : bpy.props.FloatProperty(
         name="Edge Offset",
         description="Edge Offset",
@@ -396,6 +413,8 @@ class MESH_OT_poly_quilt_retopo(MESH_OT_poly_quilt_base):
         min=-100,
         max=100)
 
+    def draw(self, context):
+        self.draw_prop(context)
 
 class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""

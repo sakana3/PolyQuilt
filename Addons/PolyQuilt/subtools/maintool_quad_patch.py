@@ -67,7 +67,7 @@ class MainToolQuadPatch(MainTool) :
             if target.isVert :
                 return target.element.select == False
             return True
-        element = qmesh.PickElement( location , preferences.distance_to_highlight, elements = ['VERT','EDGE'] , edgering = True , check_func = check )        
+        element = qmesh.PickElement( location , preferences.distance_to_highlight, elements = ['SELECT','VERT','EDGE'] , edgering = True , check_func = check )        
         return element
 
     @staticmethod

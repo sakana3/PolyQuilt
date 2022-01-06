@@ -26,9 +26,8 @@ from ..utils.dpi import display
 from ..utils import pqutil
 from ..utils import draw_util
 from ..QMesh import *
-from ..utils.mouse_event_util import ButtonEventUtil, MBEventType
+from ..utils.mouse_event_util import MBEventType, MBEventResult
 from .subtool import *
-
 class SubToolDrawPatch(SubTool) :
     name = "DrawPatch Tool"
 
@@ -55,8 +54,8 @@ class SubToolDrawPatch(SubTool) :
             self.connected_loop_1st = self.fine_connected_loop( self.startTarget.element )
         self.is_loop_stroke = None
 
-    def OnUpdate( self , context , event ) :
-        if event.type == 'MOUSEMOVE':
+    def LMBEventCallback(self , event ):
+        if event.type == MBEventType.Drag :
             if not self.is_loop_stroke :
                 self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = ['VERT'] )
                 if self.currentTarget.isVert :
@@ -78,15 +77,14 @@ class SubToolDrawPatch(SubTool) :
                         self.stroke2D.append( self.stroke2D[0] )
                         self.stroke3D.append( self.stroke3D[0] )
                         self.is_loop_stroke = True
+        elif event.type == MBEventType.Release :
+            div = self.MakeQuad( bpy.context , self.preferences.line_segment_length )
+            self.operator.edge_divide = div
+            self.operator.redo_info = [ self.execute , ['edge_divide'] if div else [] ]
+            return MBEventResult.Quit
+        return MBEventResult.Do
 
-        elif event.type == 'LEFTMOUSE' : 
-            if event.value == 'RELEASE' :
-                self.execute(context)
-                return 'FINISHED'
-        elif event.type == 'RIGHTMOUSE': 
-            if event.value == 'RELEASE' :
-                return 'FINISHED'
-        return 'RUNNING_MODAL'
+
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
@@ -132,24 +130,18 @@ class SubToolDrawPatch(SubTool) :
         pass
 
     def execute( self , context ) :
-        startVert = self.startTarget.element.index if self.startTarget.isVert else None
-        endVert = self.currentTarget.element.index if self.currentTarget.isVert else None
-
-        self.MakeQuad( context , startVert , endVert , self.preferences.line_segment_length )
-
-        obj = context.active_object
-        mesh = obj.data
-        bm = bmesh.from_edit_mesh(mesh)
-
-        def func( context ) :
-            print("Hoge")
-
-        self.operator.OnRedo = func
+        self.bmo.CheckValid( context )
+        self.startTarget.CheckValid( self.bmo )
+        self.currentTarget.CheckValid( self.bmo )
+        self.MakeQuad( context , self.preferences.line_segment_length , divide = self.operator.edge_divide  )
+        return 'FINISHED'
 
     def MakeStrokeLine( self , stroke ) :
         pass
 
-    def MakeQuad( self , context , start_vert , end_vert , segment = 0.1  ) :
+    def MakeQuad( self , context , segment = 0.1 , divide = None ) :
+        div = 0
+
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop( self.bmo.bm )
         if num > 1 :
             self.report_message = ("ERROR" , "Choose one boundary edge loop first." )
@@ -158,9 +150,13 @@ class SubToolDrawPatch(SubTool) :
         if num == 0 :
             isLoop = self.is_loop_stroke
             loop = self.stroke3D
-            ttl = sum( (e1-e2).length for e1,e2 in zip( loop[ 0 : len(loop) - 1 ] , loop[ 1 : len(loop) ] ) )
-            seg = max( 1 , int( ttl / segment + 0.5 ) )
-            pts = SubToolDrawPatch.make_loop_by_stroke( loop , [1] * seg )
+            if divide != None :
+                div = divide
+            else :            
+                ttl = sum( (e1-e2).length for e1,e2 in zip( loop[ 0 : len(loop) - 1 ] , loop[ 1 : len(loop) ] ) )
+                div = max( 1 , int( ttl / segment + 0.5 ) )
+            div = max( 3 if isLoop else 1 , div )            
+            pts = SubToolDrawPatch.make_loop_by_stroke( loop , [1] * div )
         else :
             isLoop = targetVerts[0] == targetVerts[-1]
             pts = SubToolDrawPatch.calc_new_points( self.stroke3D ,targetLoop ,targetVerts )
@@ -209,11 +205,12 @@ class SubToolDrawPatch(SubTool) :
                     _ , self.connected_loop_2nd = self.add_auxiliary_Edge( self.connected_loop_1st , targetVerts , newVerts )
                 elif self.connected_loop_2nd and not self.startTarget.isVert :
                     _ , self.connected_loop_1st  = self.add_auxiliary_Edge( self.connected_loop_2nd , targetVerts , newVerts )
-            SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd , segment = segment )
+            div = SubToolDrawPatch.bridge_loops( self.bmo , newEdges , targetLoop , self.connected_loop_1st , self.connected_loop_2nd , segment = segment , divide= divide )
 
         self.bmo.select_components( newEdges , True )
         self.bmo.bm.select_flush(True)
         self.bmo.UpdateMesh()
+        return div
 
     def add_auxiliary_Edge( self , connected_loop ,targetVerts , newVerts ) :
         '''

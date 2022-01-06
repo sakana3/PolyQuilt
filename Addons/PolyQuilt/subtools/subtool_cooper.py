@@ -42,9 +42,23 @@ class SubToolCooper(SubTool) :
                 if self.loops :
                     div = self.MakeQuad(bpy.context , offset = 0 , segment = self.preferences.line_segment_length)
                     self.operator.edge_divide = div
-                    self.operator.OnRedo = self.execute
+
+                    def execute( context ) :
+                        self.bmo.CheckValid( context )
+                        self.MakeQuad( context , offset = self.operator.edge_offset/ 100  , segment = None , divide = self.operator.edge_divide )
+                        return 'FINISHED'
+                    self.operator.redo_info = [ execute , ['edge_divide','edge_offset'] ]
             else :
-                self.FillHoleQuad(bpy.context)
+                self.pivot = None
+                if QSnap.is_active() :
+                    self.pivot = QSnap.screen_adjust(self.startPos)                
+                divide = self.FillHoleQuad(bpy.context)
+                self.operator.edge_divide = divide
+                def execute( context ) :
+                    self.bmo.CheckValid( context )
+                    self.FillHoleQuad( context , self.operator.edge_slide , self.operator.edge_divide )
+                    return 'FINISHED'
+                self.operator.redo_info = [ execute , ['edge_divide','edge_slide'] ]
             self.isExit = True
 
 
@@ -69,11 +83,6 @@ class SubToolCooper(SubTool) :
 
     def OnExit( self ) :
         pass
-
-    def execute( self , context ) :
-        self.bmo.CheckValid( context )
-        self.MakeQuad( bpy.context , offset = self.operator.edge_offset/ 100  , segment = None , divide = self.operator.edge_divide )
-        return 'FINISHED'
 
     def MakeQuad( self , context , offset , segment = None , divide = None ) :
         targetLoop, targetVerts , _ = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
@@ -118,14 +127,14 @@ class SubToolCooper(SubTool) :
         if QSnap.is_active() :
             pivot = QSnap.screen_adjust(self.startPos)
 
-        if not pivot :
+        if not self.pivot :
             return
 
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
         if not targetLoop:
             return
 
-        vt = self.bmo.AddVertex(  self.bmo.world_to_local_pos(pivot) )
+        vt = self.bmo.AddVertex(  self.bmo.world_to_local_pos(self.pivot) )
 
         for edge in targetLoop :
             self.bmo.AddFace( [ edge.verts[0] , edge.verts[1] , vt ] )
@@ -133,12 +142,8 @@ class SubToolCooper(SubTool) :
         self.bmo.select_flush()
         self.bmo.UpdateMesh()
 
-    def FillHoleQuad( self , context ) :
-        pivot = None
-        if QSnap.is_active() :
-            pivot = QSnap.screen_adjust(self.startPos)
-
-        if not pivot :
+    def FillHoleQuad( self , context , slide = 0 , divide = None ) :
+        if not self.pivot :
             return
 
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop(  self.bmo.bm )
@@ -150,33 +155,46 @@ class SubToolCooper(SubTool) :
         half1 = math.ceil( seg / 2 )
         half2 = seg - half1
 
-        quad1 = math.ceil( half1 / 2 )
+        if divide != None :
+            quad1 = max( 1 , min( half1 - 1 , divide ) )
+        else :
+            quad1 = min( half1 - 1 , math.ceil( half1 / 2 ) )
         quad2 = half1 - quad1
         quad3 = quad1
         quad4 = half2 - quad3
 
-        fillEdges = list(targetLoop[0:quad1])
-        fillEdges.extend( list( targetLoop[quad1+quad2:quad1+quad2+quad3] ) )
-        newFaces = bmesh.ops.grid_fill( self.bmo.bm, edges = fillEdges, mat_nr = 0, use_smooth = False, use_interp_simple = False)
+        offset = int( slide ) % len(targetLoop)
+
+        fillEdges = list( targetLoop[ (i+offset) % len(targetLoop) ] for i in range( 0 , quad1 ) )
+        fillEdges.extend( list( targetLoop[ (i+offset) % len(targetLoop) ] for i in range( quad1+quad2 , quad1+quad2+quad3 ) ) )
+        newFaces = bmesh.ops.grid_fill( self.bmo.bm, edges = fillEdges, mat_nr = 0, use_smooth = True, use_interp_simple = False)
 
         if newFaces['faces'] :
-            if QSnap.is_active() :
-                vertsets = set()
-                facesets = []
-                for face in newFaces['faces'] :
-                    facesets.append(face)
-                    for vert in face.verts :
-                        vertsets.add(vert)
-#                bmesh.ops.join_triangles(self.bmo, faces = facesets)                        
-                for vert in vertsets :
-                    vert.normal_update()
-                for vert in vertsets :
-                    vert.co = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
-#                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
+            vertsets = set()
+            facesets = []
+            for face in newFaces['faces'] :
+                facesets.append(face)
+                for vert in face.verts :
+                    vertsets.add(vert)
 
+            newVerts = [ v for v in vertsets if v not in targetVerts ]
+            for i in range(0,10) :
+                if QSnap.is_active() :
+    #                bmesh.ops.join_triangles(self.bmo, faces = facesets)                        
+                    for vert in newVerts :
+                        vert.normal_update()
+                    for vert in newVerts :
+                        vert.co = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
+    #                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
+
+                bmesh.ops.smooth_vert(  self.bmo.bm, verts =newVerts , factor = 1.0 ,
+                    mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
+                    use_axis_x = True, use_axis_y = True, use_axis_z = True)                
 
         self.bmo.select_flush()
         self.bmo.UpdateMesh()
+
+        return quad1
 
     def select_circle( self, context  ) :
         depsgraph = context.evaluated_depsgraph_get()
