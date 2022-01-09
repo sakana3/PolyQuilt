@@ -36,9 +36,13 @@ class SubToolSelectBoundaryEdge(SubTool) :
         self.shortest_path_Verts = []
         self.loops = []
 
-        start = self.startTarget.element            
-        self.isUnlink = SubToolSelectBoundaryEdge.check_end_of_loop( start )
-        self.isLink = SubToolSelectBoundaryEdge.check_connect_of_loop( start )
+        if self.startTarget.isEdge :
+            start = self.startTarget.element            
+            self.isUnlink = SubToolSelectBoundaryEdge.check_end_of_loop( start )
+            self.isLink = SubToolSelectBoundaryEdge.check_connect_of_loop( start )
+        else :
+            self.isUnlink = False
+            self.isLink = False
 
     @staticmethod
     def Check( root , target ) :

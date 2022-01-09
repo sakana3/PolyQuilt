@@ -114,13 +114,13 @@ class SubToolDrawPatch(SubTool) :
 
     def OnDraw( self , context  ) :
         if self.stroke2D :
-            draw_util.draw_dot_lines2D( self.stroke2D , self.color_create() , 4 , pattern=(2,1) )       
+            draw_util.draw_dot_lines2D( self.stroke2D , self.color_create() , 4 , pattern=(3,2) )       
 
         if self.connected_loop_1st : 
-            draw_util.draw_dot_lines2D( [ self.bmo.local_to_2d( v.co ) for v in  self.connected_loop_1st ] , self.color_highlight() , 4 , pattern=(2,1) )       
+            draw_util.draw_dot_lines2D( [ self.bmo.local_to_2d( v.co ) for v in  self.connected_loop_1st ] , self.color_create(0.5) , 4 , pattern=(3,2) )       
 
         if self.connected_loop_2nd : 
-            draw_util.draw_dot_lines2D( [ self.bmo.local_to_2d( v.co ) for v in  self.connected_loop_2nd ] , self.color_highlight() , 4 , pattern=(2,1) )       
+            draw_util.draw_dot_lines2D( [ self.bmo.local_to_2d( v.co ) for v in  self.connected_loop_2nd ] , self.color_create(0.5) , 4 , pattern=(3,2) )       
 
         if self.is_loop_stroke :
             draw_util.draw_circle2D( self.stroke2D[0] , self.preferences.distance_to_highlight / 2 )
