@@ -502,3 +502,4 @@ def grouping_loop_edge( edges ) :
         group_loops[idx].append(edge)
 
     return list( group_loops.values() )
+

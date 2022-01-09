@@ -241,7 +241,7 @@ class PolyQuiltPreferences(AddonPreferences):
         description="Line segment length",
         default=0.1,
         min=0.01,
-        max=10.0)    
+        max=5.0)    
 
     fix_to_x_zero : bpy.props.BoolProperty(
               name = "fix_to_x_zero" ,

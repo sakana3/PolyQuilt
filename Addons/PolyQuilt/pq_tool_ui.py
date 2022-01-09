@@ -79,7 +79,11 @@ def draw_settings_ui( opetator , context, layout, tool  , ui ):
     if "RETOPO" in ui or "BRUSH" in ui :
         row = layout.row(align=True)
         row.prop( preferences, "line_segment_length" , text = "Line Length" , expand = True, slider = True  )
-        
+
+    if "RETOPO" in ui :
+        popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
+        op = layout.popover_group(context=".poly_quilt_option_gpencil", **popover_kw)
+
 #        shading = get_shading()
 #        if shading.type == 'SOLID':        
 #            layout.prop( shading , "show_backface_culling", icon_value = custom_icon("icon_opt_backcull"))
@@ -108,6 +112,10 @@ def draw_settings_toolheader( operator , context, layout, tool , ui = ['GEOM','B
         row = layout.row( align=True)
         row.label( text = "Line Length" )
         row.prop( preferences, "line_segment_length" , text = "Line Length" , expand = True, slider = True  )
+
+    if "RETOPO" in ui :
+        popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
+        op = layout.popover_group(context=".poly_quilt_option_gpencil", **popover_kw)
 
     # Expand panels from the side-bar as popovers.
     popover_kw = {"space_type": 'VIEW_3D', "region_type": 'UI', "category": "Tool"}
@@ -168,3 +176,40 @@ class VIEW3D_PT_tools_polyquilt_options( Panel):
         col.label( text = "Brush" )        
         col.prop( preferences, "brush_size" , text = "Brush Size" , expand = True, slider = True , icon_only = False )
         col.prop( preferences, "brush_strength" , text = "Brush Strength" , expand = True, slider = True , icon_only = False )
+
+
+class VIEW3D_PT_tools_polyquilt_gpencil( Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+
+    bl_category = "Tool"
+    bl_context = ".poly_quilt_option_gpencil"  # dot on purpose (access from topbar)
+    bl_label = "GPencil"
+    bl_options = {'DEFAULT_CLOSED'}    
+
+    def draw(self, context):
+
+        hasGPen = False
+        gp = context.scene.grease_pencil
+        layout = self.layout
+        if gp:
+            for layer in gp.layers :
+                if "PolyQuilt" in layer.info :
+                    hasGPen = True
+
+        col = layout.column(align=True)
+        if not hasGPen :
+            col.operator( "mesh.x_tomography" , text='Add', text_ctxt='', translate=True, icon='ADD', emboss=True, depress=False, icon_value=0).type = 'NEW'
+        else :
+            col.operator( "mesh.x_tomography" , text='Remove', text_ctxt='', translate=True, icon='REMOVE', emboss=True, depress=False, icon_value=0).type = 'REMOVE'
+            col.operator( "mesh.x_tomography" , text='Add X tomography', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_TOMOGRAPHY'
+            col.operator( "mesh.x_tomography" , text='Add Boundary', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_BOUNDARY'
+#            col.operator( "mesh.x_tomography" , text='Add Pits&Peaks', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_PITS_AND_PEAKS'
+            col.operator( "mesh.gpencil_to_edge" , text='GPencil to edge', text_ctxt='', translate=True, icon='OUTLINER_DATA_GREASEPENCIL', emboss=True, depress=False, icon_value=0)
+            for layer in gp.layers :
+                if "PolyQuilt" in layer.info :
+                    box = layout.box()
+                    box.prop(layer, "color" , text = "" )
+                    box.prop(layer, "annotation_opacity" , text = "Opacity" , expand = True , translate = True )
+                    box.prop(layer, "thickness" , text = "Thickness" , expand = True, translate = True )
+

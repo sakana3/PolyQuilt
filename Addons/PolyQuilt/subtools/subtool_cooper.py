@@ -31,7 +31,8 @@ class SubToolCooper(SubTool) :
 
         self.startPos = self.operator.start_mouse_pos
         self.currentPos = self.operator.start_mouse_pos
-
+        self.view_vector = -bpy.context.region_data.view_matrix.inverted().col[2].xyz
+        self.view_vector.normalize()
 
     def LMBEventCallback(self , event ):
         if event.type == MBEventType.Drag or event.type == MBEventType.LongPressDrag :
@@ -51,16 +52,16 @@ class SubToolCooper(SubTool) :
             else :
                 self.pivot = None
                 if QSnap.is_active() :
-                    self.pivot = QSnap.screen_adjust(self.startPos)                
-                divide = self.FillHoleQuad(bpy.context)
-                self.operator.edge_divide = divide
-                def execute( context ) :
-                    self.bmo.CheckValid( context )
-                    self.FillHoleQuad( context , self.operator.edge_slide , self.operator.edge_divide )
-                    return 'FINISHED'
-                self.operator.redo_info = [ execute , ['edge_divide','edge_slide'] ]
+                    self.pivot = QSnap.screen_adjust(self.startPos)         
+                if self.pivot :       
+                    divide = self.FillHoleQuad(bpy.context)
+                    self.operator.edge_divide = divide
+                    def execute( context ) :
+                        self.bmo.CheckValid( context )
+                        self.FillHoleQuad( context , self.operator.edge_slide , self.operator.edge_divide )
+                        return 'FINISHED'
+                    self.operator.redo_info = [ execute , ['edge_divide','edge_slide'] ]
             self.isExit = True
-
 
     @staticmethod
     def pick_element( qmesh , location , preferences ) :
@@ -97,7 +98,7 @@ class SubToolCooper(SubTool) :
             if divide != None :
                 div = divide
             else :
-                ttl = sum( (e1-e2).length for e1,e2 in zip( loops[ 0 : len(loops) - 1 ] , loops[ 1 : len(loops) ] ) )
+                ttl = sum( (e1-e2).length for e1,e2 in zip( loops[ 0 : - 1 ] , loops[ 1 : ] ) )
                 div = int( ttl / segment + 0.5 )
             div = max( 8 , div )
             pts = SubToolDrawPatch.make_loop_by_stroke( loops , [1] * div , offset )
@@ -170,26 +171,41 @@ class SubToolCooper(SubTool) :
         newFaces = bmesh.ops.grid_fill( self.bmo.bm, edges = fillEdges, mat_nr = 0, use_smooth = True, use_interp_simple = False)
 
         if newFaces['faces'] :
-            vertsets = set()
+            vertsets = []
             facesets = []
+            cnt = 0
             for face in newFaces['faces'] :
+                face.normal_update()                
+#               center = self.bmo.local_to_world_pos( face.calc_center_median() )
+                normal = self.bmo.local_to_world_nrm( face.normal )
+                if self.view_vector.dot(normal) > 0 :
+                    cnt += 1
+                else :
+                    cnt -= 1
                 facesets.append(face)
                 for vert in face.verts :
-                    vertsets.add(vert)
+                    if vert not in vertsets :
+                        vertsets.append(vert)
 
+            if cnt < 0 :
+                for face in newFaces['faces'] :
+                    face.normal_flip()
+            
             newVerts = [ v for v in vertsets if v not in targetVerts ]
             for i in range(0,10) :
+                bmesh.ops.smooth_vert(  self.bmo.bm, verts =newVerts , factor = 1 ,
+                    mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
+                    use_axis_x = True, use_axis_y = True, use_axis_z = True)                
                 if QSnap.is_active() :
     #                bmesh.ops.join_triangles(self.bmo, faces = facesets)                        
                     for vert in newVerts :
                         vert.normal_update()
                     for vert in newVerts :
-                        vert.co , _ = QSnap.adjust_by_normal( self.bmo.world_to_local_pos(vert.co) , self.bmo.world_to_local_nrm(vert.normal) )
+                        pass
+                        vert.co , _ = QSnap.adjust_by_normal( self.bmo.local_to_world_pos(vert.co) , self.bmo.local_to_world_nrm(vert.normal) )
     #                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
 
-                bmesh.ops.smooth_vert(  self.bmo.bm, verts =newVerts , factor = 1.0 ,
-                    mirror_clip_x = False, mirror_clip_y = False, mirror_clip_z = False, clip_dist = 0.0001 ,
-                    use_axis_x = True, use_axis_y = True, use_axis_z = True)                
+            SubToolDrawPatch.adjust_faces_normal( self.bmo , newFaces['faces'] , self.view_vector )
 
         self.bmo.select_flush()
         self.bmo.UpdateMesh()

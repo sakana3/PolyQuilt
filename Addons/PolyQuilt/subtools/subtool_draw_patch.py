@@ -152,7 +152,7 @@ class SubToolDrawPatch(SubTool) :
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop( self.bmo.bm )
         if num > 1 :
             self.report_message = ("ERROR" , "Choose one boundary edge loop first." )
-            return
+            return None , None
 
         if num == 0 :
             isLoop = self.is_loop_stroke
@@ -170,7 +170,7 @@ class SubToolDrawPatch(SubTool) :
 
         if isLoop :
             if len(pts) < 4 :
-                return
+                return None , None
             pts = pts[0:-1]
 
         newVerts = []
@@ -311,11 +311,10 @@ class SubToolDrawPatch(SubTool) :
             normal = face.normal
             if QSnap.is_active() :
                 center = face.calc_center_median()
-                snappos , snapnrm = QSnap.adjust_by_normal( bmo.world_to_local_pos(center) , bmo.world_to_local_nrm(normal) )
+                snappos , snapnrm = QSnap.adjust_by_normal( bmo.local_to_world_pos(center) , bmo.local_to_world_nrm(normal) )
                 cnt = cnt + (1 if snapnrm.dot(normal) > 0 else -1)
             elif view_vector != None :
                 cnt = cnt - (1 if view_vector.dot(normal) > 0 else -1)
-                print(cnt)
         if cnt < 0 :
             for face in faces :
                 face.normal_flip()
@@ -345,8 +344,8 @@ class SubToolDrawPatch(SubTool) :
         newFaces = newGeoms['faces']
 
         if not newFaces and connect1 and connect2 :
-            connect1 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect1[0 : -1] , connect1[1 : len(connect1)] ) ]
-            connect2 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect2[0 : -1] , connect2[1 : len(connect2)] ) ]
+            connect1 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect1[0 : -1] , connect1[1 : ] ) ]
+            connect2 = [ bmo.bm.edges.get( (v1 , v2)) for v1 , v2 in zip( connect2[0 : -1] , connect2[1 : ] ) ]
             loopPair1 = copy.copy(connect1)
             loopPair1.extend( connect2 )
             newGeoms = bmesh.ops.grid_fill( bmo.bm, edges = loopPair1, mat_nr = 0, use_smooth = False, use_interp_simple = True)
@@ -367,7 +366,7 @@ class SubToolDrawPatch(SubTool) :
                 for vert in vertsets :
                     vert.normal_update()
                 for vert in vertsets :
-                    vert.co , _ = QSnap.adjust_by_normal( bmo.world_to_local_pos(vert.co) , bmo.world_to_local_nrm(vert.normal) )
+                    vert.co , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(vert.co) , bmo.local_to_world_nrm(vert.normal) )
                 if is_wire :
                     SubToolDrawPatch.adjust_faces_normal( bmo , newFaces , view_vector )
         else :
@@ -389,7 +388,7 @@ class SubToolDrawPatch(SubTool) :
                     for v in vs  :
                         v.normal_update()
                     for v in vs  :
-                        v.co , _ = QSnap.adjust_by_normal( bmo.world_to_local_pos(v.co) , bmo.world_to_local_nrm(v.normal) )
+                        v.co , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(v.co) , bmo.local_to_world_nrm(v.normal) )
 
         return divide
 
@@ -443,15 +442,15 @@ class SubToolDrawPatch(SubTool) :
     def make_loop_by_stroke( stroke , targets , offset = 0 ) :
         isLoop = (stroke[0] - stroke[-1]).length <= sys.float_info.epsilon
 
-        stroke_length = [ ( s - e ).length for s,e in zip( stroke[0: len(stroke)-1] , stroke[1: len(stroke)] ) ]
+        stroke_length = [ ( s - e ).length for s,e in zip( stroke[0: -1] , stroke[1: ] ) ]
 
         stroke_total  = sum( stroke_length )
         targets_total = sum( targets )
         segments = [ t / targets_total * stroke_total for t in targets ]
 
         if isLoop :
-            stroke = stroke[0:len(stroke)] + stroke[1 : len(stroke)]
-            stroke_length = stroke_length + stroke_length[1 : len(stroke_length)]
+            stroke = stroke[0:] + stroke[1 : ]
+            stroke_length = stroke_length + stroke_length[1 : ]
 
         offset =  ((offset % 1.0) + 1.0) % 1.0
         offset = offset * stroke_total
@@ -459,7 +458,7 @@ class SubToolDrawPatch(SubTool) :
         cur = 0
         segment = - offset
         segmentLen = 0
-        for pre ,pos , length in zip( stroke[0:len(stroke)-1] , stroke[1:len(stroke)] , stroke_length ) :
+        for pre ,pos , length in zip( stroke[0:-1] , stroke[1:] , stroke_length ) :
             tmp = segment
             segment = segment + length
             while segment >= segmentLen :

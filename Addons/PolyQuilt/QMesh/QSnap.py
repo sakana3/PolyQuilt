@@ -227,25 +227,18 @@ class QSnap :
 
         return location , normal , index
 
-    def __smart_find( self , ray : pqutil.Ray ) :
-        location_i , normal_i , obj_i = self.__raycast_double( ray )
-        if location_i == None :
-            a,b,c = self.__find_nearest( ray.origin )
-            return a,b,c
-        location_r , normal_r , obj_r = self.__find_nearest( ray.origin )
-        if location_r == None :
-            return location_i , normal_i , obj_i
-        if (location_r - ray.origin).length <= (location_i - ray.origin).length :
-            return location_r , normal_r , obj_r
-        else :
-            return location_i , normal_i , obj_i        
-
     def __raycast_double( self , ray : pqutil.Ray ) :
         # ターゲットからビュー方向にレイを飛ばす
-        location_r , normal_r , face_r = self.__raycast( ray )
-        location_i , normal_i , face_i = self.__raycast( ray.invert )
+        location_r , normal_r , face_r = self.__raycast( ray.invert )
 
-        if None in [face_i,face_r] :
+#        if face_r != None :
+#            print(ray.vector.dot( normal_r ))
+#            if ray.vector.dot( normal_r ) < -0.5 :
+#                return location_r , normal_r , face_r
+
+        location_i , normal_i , face_i = self.__raycast( ray )
+
+        if face_i == None or face_r == None :
             if face_i != None :
                 return location_i , normal_i , face_i
             elif face_r != None :
