@@ -55,12 +55,13 @@ class SubToolCooper(SubTool) :
                     self.pivot = QSnap.screen_adjust(self.startPos)         
                 if self.pivot :       
                     divide = self.FillHoleQuad(bpy.context)
-                    self.operator.edge_divide = divide
                     def execute( context ) :
                         self.bmo.CheckValid( context )
                         self.FillHoleQuad( context , self.operator.edge_slide , self.operator.edge_divide )
                         return 'FINISHED'
-                    self.operator.redo_info = [ execute , ['edge_divide','edge_slide'] ]
+                    if divide != None :
+                        self.operator.edge_divide = divide
+                        self.operator.redo_info = [ execute , ['edge_divide','edge_slide'] ]
             self.isExit = True
 
     @staticmethod

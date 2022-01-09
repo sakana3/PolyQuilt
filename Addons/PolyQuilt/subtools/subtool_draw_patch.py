@@ -40,6 +40,9 @@ class SubToolDrawPatch(SubTool) :
 
         if QSnap.is_active() :
             coord = QSnap.screen_adjust(self.operator.start_mouse_pos)
+            if not coord :
+                ray = pqutil.Ray.from_screen( bpy.context , self.operator.start_mouse_pos )
+                coord = self.plane.intersect_ray( ray )
         else :
             ray = pqutil.Ray.from_screen( bpy.context , self.operator.start_mouse_pos )
             coord = self.plane.intersect_ray( ray )
@@ -71,7 +74,10 @@ class SubToolDrawPatch(SubTool) :
                 coord = self.plane.intersect_ray( ray )
                 if coord :
                     if QSnap.is_active() :
-                        coord = QSnap.view_adjust(coord)
+                        hit = QSnap.view_adjust(coord)
+                        if hit :
+                            coord = hit
+                            self.plane = pqutil.Plane.from_screen( bpy.context , coord )
                     self.stroke3D.append( coord )
                 if self.is_loop_stroke == None :
                     if (self.stroke2D[0] - self.stroke2D[-1] ).length > self.preferences.distance_to_highlight * 4 :
@@ -151,7 +157,7 @@ class SubToolDrawPatch(SubTool) :
 
         targetLoop, targetVerts , num = SubToolDrawPatch.find_target_loop( self.bmo.bm )
         if num > 1 :
-            self.report_message = ("ERROR" , "Choose one boundary edge loop first." )
+            self.operator.report_message = ("WARNING" , "Choose one boundary edge path first." )
             return None , None
 
         if num == 0 :

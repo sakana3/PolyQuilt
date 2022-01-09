@@ -154,8 +154,6 @@ def draw_poly2D( verts , color = (1,1,1,1) ):
     bgl.glDisable(bgl.GL_LINE_SMOOTH)    
     bgl.glDisable(bgl.GL_BLEND)
 
-def begin2d() :
-    bgl.glDisable(bgl.GL_DEPTH_TEST)
 
 def draw_lines3D( context , verts , color = (1,1,1,1) , width : float = 1.0 , hide_alpha : float = 1.0 , primitiveType = 'LINE_STRIP' ):
     bgl.glEnable(bgl.GL_LINE_SMOOTH)

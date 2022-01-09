@@ -46,7 +46,7 @@ classes = (
     VIEW3D_PT_tools_polyquilt_options ,
     VIEW3D_PT_tools_polyquilt_gpencil ,
     PQ_OT_DirtyKeymap ,
-    pq_operator_add_empty_object.MESH_OT_X_Tomography ,
+    pq_operator_add_empty_object.MESH_OT_PolyQuilt_Gpenci_Tools ,
     pq_operator_add_empty_object.MESH_OT_GPencil_2_Edge ,
     pq_operator_add_empty_object.OBJECT_OT_add_object
 ) + gizmo_preselect.all_gizmos

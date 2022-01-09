@@ -230,9 +230,8 @@ class MESH_OT_poly_quilt_base(bpy.types.Operator):
         if self.currentSubTool is not None :
             ret = self.currentSubTool.Update(context, event)
             context.window.cursor_set( self.currentSubTool.CurrentCursor() )
-            if hasattr( self.currentSubTool , "report_message" ) :
-                self.report({self.currentSubTool.report_message[0]}, self.currentSubTool.report_message[1] )
-                hasattr( self.currentSubTool , "report_message" )
+            if hasattr( self , "report_message" ) :
+                self.report({self.report_message[0]}, self.report_message[1] )
 
         if self.preferences.is_debug :
             self.count = self.count + 1

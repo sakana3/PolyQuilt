@@ -31,6 +31,7 @@ pq_translation_dict = {
             ("*", "Edge Extrude") : "エッジ押し出し" ,
             ("*", "Mark Seam") : "シームをマーク" ,
             ("*", "Mark Seam Loop") : "シームループをマーク" ,
+            ("*", "Choose one boundary edge path first."      ) : "境界エッジのパスを1つ選んでください。" ,
         }
 }
 

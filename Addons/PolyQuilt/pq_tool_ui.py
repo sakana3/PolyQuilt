@@ -199,12 +199,12 @@ class VIEW3D_PT_tools_polyquilt_gpencil( Panel):
 
         col = layout.column(align=True)
         if not hasGPen :
-            col.operator( "mesh.x_tomography" , text='Add', text_ctxt='', translate=True, icon='ADD', emboss=True, depress=False, icon_value=0).type = 'NEW'
+            col.operator( "mesh.polyquilt_gpencil_tool" , text='Add', text_ctxt='', translate=True, icon='ADD', emboss=True, depress=False, icon_value=0).type = 'NEW'
         else :
-            col.operator( "mesh.x_tomography" , text='Remove', text_ctxt='', translate=True, icon='REMOVE', emboss=True, depress=False, icon_value=0).type = 'REMOVE'
-            col.operator( "mesh.x_tomography" , text='Add X tomography', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_TOMOGRAPHY'
-            col.operator( "mesh.x_tomography" , text='Add Boundary', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_BOUNDARY'
-#            col.operator( "mesh.x_tomography" , text='Add Pits&Peaks', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_PITS_AND_PEAKS'
+            col.operator( "mesh.polyquilt_gpencil_tool" , text='Remove', text_ctxt='', translate=True, icon='REMOVE', emboss=True, depress=False, icon_value=0).type = 'REMOVE'
+            col.operator( "mesh.polyquilt_gpencil_tool" , text='Draw X tomography', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_TOMOGRAPHY'
+            col.operator( "mesh.polyquilt_gpencil_tool" , text='Draw Boundary', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_BOUNDARY'
+#            col.operator( "mesh.polyquilt_gpencil_tool" , text='Add Pits&Peaks', text_ctxt='', translate=True, icon='GREASEPENCIL', emboss=True, depress=False, icon_value=0).type = 'ADD_PITS_AND_PEAKS'
             col.operator( "mesh.gpencil_to_edge" , text='GPencil to edge', text_ctxt='', translate=True, icon='OUTLINER_DATA_GREASEPENCIL', emboss=True, depress=False, icon_value=0)
             for layer in gp.layers :
                 if "PolyQuilt" in layer.info :

@@ -37,9 +37,9 @@ def add_object_button(self, context):
         text="Empty Mesh Object",
         icon='EMPTY_DATA')
 
-class MESH_OT_X_Tomography(Operator) :
-    """Create X tomography scan """
-    bl_idname = "mesh.x_tomography"
+class MESH_OT_PolyQuilt_Gpenci_Tools(Operator) :
+    """PolyQuilt Gpencil Tool """
+    bl_idname = "mesh.polyquilt_gpencil_tool"
     bl_label = "Add X Tomography"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -59,10 +59,10 @@ class MESH_OT_X_Tomography(Operator) :
         if self.type == 'REMOVE' :
             gp = context.scene.grease_pencil            
             if gp:
-                layer = self.get_gp_layer( context , "PolyQuilt_X_Tomography" )
+                layer = self.get_gp_layer( context , "PolyQuilt_GPencil" )
                 gp.layers.remove( layer )
         else :
-            layer = self.get_gp_layer( context , "PolyQuilt_X_Tomography" )
+            layer = self.get_gp_layer( context , "PolyQuilt_GPencil" )
             frame = self.get_gp_frame( layer )
 
             layer.color = (0.2,0.2,0.5)
@@ -111,7 +111,7 @@ class MESH_OT_X_Tomography(Operator) :
                 sp.co = lp
             stroke.points.update()
 
-    def get_gp_layer( self , context , layer_name = "PolyQuilt_X_Tomography" ) :
+    def get_gp_layer( self , context , layer_name = "PolyQuilt_GPencil" ) :
         gp = context.scene.grease_pencil
         if not gp:
             gp = bpy.data.grease_pencils.new("GP")

@@ -36,6 +36,10 @@ class SubToolSelectBoundaryEdge(SubTool) :
         self.shortest_path_Verts = []
         self.loops = []
 
+        start = self.startTarget.element            
+        self.isUnlink = SubToolSelectBoundaryEdge.check_end_of_loop( start )
+        self.isLink = SubToolSelectBoundaryEdge.check_connect_of_loop( start )
+
     @staticmethod
     def Check( root , target ) :
         return True
@@ -77,23 +81,18 @@ class SubToolSelectBoundaryEdge(SubTool) :
         elif event.type == MBEventType.Click :                
             if self.currentTarget.isEdge :
                 edge = self.currentTarget.element
-                if not edge.select :
-                    if not SubToolSelectBoundaryEdge.check_connect_of_loop(edge) :
-                        self.bmo.select_flush()
+                if self.isLink :
                     self.bmo.select_component( edge , True )
-#                       self.bmo.bm.select_flush(True)
+                elif self.isUnlink :
+                    self.bmo.select_component( edge , False )
                 else :
-                    if SubToolSelectBoundaryEdge.check_end_of_loop( edge ) :
-                        self.bmo.select_component( edge , False )
-                    elif not SubToolSelectBoundaryEdge.check_connect_of_loop(edge) :
-                        self.bmo.select_flush()
-                        self.bmo.select_component( edge , True )
-
+                    self.bmo.select_flush()
+                    self.bmo.select_component( edge , True )
+                self.bmo.bm.select_flush(True)
                 self.bmo.UpdateMesh()
             else :
                 self.bmo.select_flush()
                 self.bmo.UpdateMesh()                    
-
             self.isExit = True
             return MBEventResult.Quit
 
@@ -101,14 +100,14 @@ class SubToolSelectBoundaryEdge(SubTool) :
             if self.shortest_path and self.currentTarget.isEdge :
                 start = self.startTarget.element                
                 end = self.currentTarget.element                
-                if SubToolSelectBoundaryEdge.check_connect_of_loop(start) :
+                if self.isLink :
                     self.bmo.select_components( self.shortest_path , True )
-                elif SubToolSelectBoundaryEdge.check_end_of_loop( start ) and end.select :
+                elif self.isUnlink :
                     self.bmo.select_components( self.shortest_path , False )
-                    self.bmo.bm.select_flush(True)
                 else :                    
                     self.bmo.select_flush()
                     self.bmo.select_components( self.shortest_path , True )
+                self.bmo.bm.select_flush(True)
                 self.bmo.UpdateMesh()                    
 
             self.isExit = True
@@ -126,33 +125,46 @@ class SubToolSelectBoundaryEdge(SubTool) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        funcs = []
-        color = gizmo.preferences.highlight_color
 
-#        def func() :
-#            for edge in gizmo.bmo.bm.select_history :
- #               if  type( edge ) == bmesh.types.BMEdge :
- #                   verts = [ v.co for v in edge.verts ]
- #                   draw_util.draw_lines3D( bpy.context , verts , color = gizmo.preferences.highlight_color , width = display.dot( gizmo.preferences.highlight_line_width ) )                    
-  #      funcs.append( func )
+        if element.isEdge :
+            funcs = []
+            color = gizmo.preferences.highlight_color
+            width = display.dot( gizmo.preferences.highlight_line_width )
+            edge = element.element
+            vs =  [ gizmo.bmo.local_to_2d(v.co) for v in edge.verts]
 
-        if element.isEdge and element.element.select :
-            if SubToolSelectBoundaryEdge.check_end_of_loop( element.element ):
+            if edge.select and cls.check_end_of_loop( edge ):
                 color = ( 0 , 0 , 0.3 , 1 )
+                def func() :
+                    with draw_util.push_pop_projection2D() :                
+                        draw_util.draw_lines2D( vs , color , width )
+                funcs.append( func )
+            elif cls.check_connect_of_loop(edge) :
+                def func() :
+                    with draw_util.push_pop_projection2D() :                
+                        draw_util.draw_dot_lines2D( vs , color , width , (3,2) )
+                funcs.append( func )
+            else :
+                def func() :
+                    with draw_util.push_pop_projection2D() :                
+                        draw_util.draw_lines2D( vs , color , width )
+                funcs.append( func )
+            return funcs
 
-        funcs.append( element.DrawFunc( gizmo.bmo.obj , color , gizmo.preferences , marker = False, edge_pivot = False ) )
-
-        return funcs
+        return None
 
     def OnDraw( self , context  ) :
+        width = display.dot( self.preferences.highlight_line_width )
         if self.shortest_path :
             vertex_size = self.preferences.highlight_vertex_size        
-            width = display.dot( self.preferences.highlight_line_width + 1)
             color = self.preferences.highlight_color
-            if ( self.check_end_of_loop(self.startTarget.element) and self.currentTarget.element.select ) or ( self.check_end_of_loop(self.currentTarget.element) and not self.startTarget.element.select )  :
+            if self.isUnlink  :
                 color = ( 0.25 , 0.1 , 0.1 , 1 )
             verts = [ self.bmo.local_to_2d( v.co ) for v in self.shortest_path_Verts  ]
-            draw_util.draw_dot_lines2D( verts , color , width , pattern= (2,1) )
+            if self.isLink :
+                draw_util.draw_dot_lines2D( verts , color , width , pattern= (3,2) )
+            else :
+                draw_util.draw_lines2D( verts , color , width )
         else :
             if self.LMBEvent.isPresure :
                 if self.currentTarget.isNotEmpty :
@@ -164,7 +176,10 @@ class SubToolSelectBoundaryEdge(SubTool) :
                 loop = self.loops
                 le , vt =  pqutil.sort_edgeloop( loop )
                 verts = [ self.bmo.local_to_2d( v.co ) for v in vt ]
-                draw_util.draw_dot_lines2D( verts , self.color_highlight(0.5) , display.dot( self.preferences.highlight_line_width + 1 ) , pattern= (2,1)  )
+                if self.isLink :
+                    draw_util.draw_dot_lines2D( verts , self.color_highlight() , width , pattern= (3,2)  )
+                else :
+                    draw_util.draw_lines2D( verts , self.color_highlight() , width )                    
 
     def OnDraw3D( self , context  ) :
         if not self.shortest_path :

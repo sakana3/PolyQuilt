@@ -76,7 +76,14 @@ class MainToolQuadPatch(MainTool) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
-        return SubToolSelectBoundaryEdge.DrawHighlight( gizmo , element ) 
+        funcs = SubToolSelectBoundaryEdge.DrawHighlight( gizmo , element ) 
+
+        if not funcs :
+            color = gizmo.preferences.makepoly_color
+            funcs = []
+            funcs.append( element.DrawFunc( gizmo.bmo.obj , color , gizmo.preferences , marker = False, edge_pivot = False ) ) 
+
+        return funcs
 
     def OnDraw( self , context  ) :
         if self.LMBEvent.isPresure :
