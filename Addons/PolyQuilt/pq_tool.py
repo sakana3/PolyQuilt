@@ -51,7 +51,7 @@ class ToolPolyQuiltBase(WorkSpaceTool):
             keyitem( "oc" , ['NONE'] ) ,  
             keyitem( "oa" , ['NONE'] ) ,  
 
-            ("mesh.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
+            ("none.poly_quilt_daemon", {"type": 'MOUSEMOVE', "value": 'ANY' }, {"properties": []}),        
         )
         return ret
 

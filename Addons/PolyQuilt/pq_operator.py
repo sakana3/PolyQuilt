@@ -417,7 +417,7 @@ class MESH_OT_poly_quilt_retopo(MESH_OT_poly_quilt_base):
 
 class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
     """Check Modifire"""
-    bl_idname = "mesh.poly_quilt_daemon"
+    bl_idname = "none.poly_quilt_daemon"
     bl_label = "PolyQuiltDaemon"
 
     is_running = False

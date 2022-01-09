@@ -19,8 +19,6 @@ from .utils import draw_util
 from .subtools import *
 from .pq_tool import *
 
-
-
 class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     bl_idname = "MESH_GT_PQ_Preselect"
 
@@ -53,6 +51,10 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
     def exit( self , context, cancel) :
         print("hoge")
         pass
+
+    @property
+    def operator( self ) :
+        return self.tool.pq_operator
 
     def test_select(self, context, location):
         if self.invalid :
@@ -130,15 +132,14 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
 
     def get_keyitem( self , shift , ctrl , alt,  oskey ) :
         keymap = bpy.context.window_manager.keyconfigs.user.keymaps["3D View Tool: Edit Mesh, " + self.tool.bl_label]
-        keyitems = [ item for item in keymap.keymap_items if 'mesh.poly_quilt' in item.idname ]
         for item in keymap.keymap_items :
-            if 'mesh.poly_quilt' in item.idname and item.active :
+            if self.operator == item.idname and item.active :
                 if [ item.shift , item.ctrl , item.alt,  item.oskey ] == [ shift , ctrl , alt,  oskey ] :
                     return item
         return None
 
     def invoke( self , context, event) :
-        print("--")
+        pass
 
     def get_attr( self , attr ) :
         if self.keyitem :
@@ -146,8 +147,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
                 return getattr( self.keyitem.properties , attr )
 
         for tool in bpy.context.workspace.tools :
-            if tool.idname in "mesh_tool.poly_quilt" :
-                props = tool.operator_properties("mesh.poly_quilt")
+            if tool.idname is self.operator :
+                props = tool.operator_properties(self.operator)
                 return getattr( props , attr )
 
         return None
@@ -276,5 +277,4 @@ class PQ_GizmoGroup_QuadPatch(PQ_GizmoGroup_Base):
 all_gizmos = ( PQ_Gizmo_Preselect , PQ_GizmoGroup_Preselect , PQ_GizmoGroup_Lowpoly , PQ_GizmoGroup_Knife , PQ_GizmoGroup_Delete, PQ_GizmoGroup_Extrude, PQ_GizmoGroup_EdgeLoop, PQ_GizmoGroup_LoopCut, PQ_GizmoGroup_Brush, PQ_GizmoGroup_Seam, PQ_GizmoGroup_QuadPatch )
 
 
-# ursor (enum in ['DEFAULT', 'NONE', 'WAIT', 'CROSSHAIR', 'MOVE_X', 'MOVE_Y', 'KNIFE', 'TEXT', 'PAINT_BRUSH', 'PAINT_CROSS', 'DOT', 'ERASER', 'HAND', 'SCROLL_X', 'SCROLL_Y', 'SCROLL_XY', 'EYEDROPPER'], (optional)) – cursor
 
