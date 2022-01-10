@@ -32,6 +32,9 @@ pq_translation_dict = {
             ("*", "Mark Seam") : "シームをマーク" ,
             ("*", "Mark Seam Loop") : "シームループをマーク" ,
             ("*", "Choose one boundary edge path first."      ) : "境界エッジのパスを1つ選んでください。" ,
+            ("*", "Edge Divide") : "辺の分割数" ,
+            ("*", "Edge Slide") : "辺のスライド" ,
+            ("*", "Edge Offset") : "辺のオフセット" ,
         }
 }
 

@@ -127,7 +127,7 @@ class QSnap :
                 norm.x = 0
                 norm.normalize()
             return location , norm
-        return world_pos , mathutils.Vector(0,0,1)
+        return world_pos , mathutils.Vector( (0,0,1) )
 
     @classmethod
     def adjust_by_normal( cls , world_pos : mathutils.Vector , world_normal : mathutils.Vector  , is_fix_to_x_zero = False ) :
