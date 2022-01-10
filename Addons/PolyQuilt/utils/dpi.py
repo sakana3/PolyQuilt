@@ -28,10 +28,22 @@ class display :
         return bpy.context.preferences.system.dpi / 25.4
 
     @staticmethod
+    def scale() :
+        return bpy.context.preferences.system.ui_scale
+
+    @staticmethod
+    def pixel_size() :
+        return bpy.context.preferences.system.pixel_size
+
+    @staticmethod
     def scale( val ) :
         return bpy.context.preferences.system.dpi / 25.4 / bpy.context.preferences.system.ui_scale * bpy.context.preferences.system.pixel_size * val
 
     @staticmethod
     def dot( val ) :
         return bpy.context.preferences.system.dpi / 25.4 * bpy.context.preferences.system.pixel_size * val
+
+    def dot_to_mm( val ) :
+        return val / (bpy.context.preferences.system.dpi / 25.4 * bpy.context.preferences.system.pixel_size)
+
         

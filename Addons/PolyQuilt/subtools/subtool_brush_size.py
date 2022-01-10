@@ -46,7 +46,7 @@ class SubToolBrushSize(SubToolEx) :
             if nrm.x > ang or nrm.x < -ang :
                 self.radius = self.radius + vec.x
                 self.radius = min( max( 50 , self.radius ) , 500 )
-                self.preferences.brush_size = self.radius / display.mm()
+                self.preferences.brush_size = display.dot_to_mm( self.radius )
 
             if nrm.y > ang or nrm.y < -ang :
                 self.strength = self.strength + vec.y / self.radius

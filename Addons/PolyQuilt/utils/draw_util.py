@@ -77,7 +77,7 @@ def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 
     vertices = [( pos[0] + r * math.cos(i*dr), pos[1] + r * math.sin(i*dr)) for i in range(subdivide+1)]
 
     bgl.glEnable(bgl.GL_LINE_SMOOTH)
-    bgl.glLineWidth(width )   
+    bgl.glLineWidth( display.dot(width) )   
     bgl.glEnable(bgl.GL_BLEND)    
     bgl.glDisable(bgl.GL_DEPTH_TEST)    
     shader2D.bind()
@@ -352,7 +352,7 @@ def drawElementHilight3DFunc( obj  , bm : bmesh.types.BMesh , element, radius ,w
 def DrawFont( text , size , positon , offset = (0,0) ) :
     font_id = 0
 
-    blf.size(font_id, 10 , display.inch() )
+    blf.size(font_id, int( size * display.pixel_size() ) , display.inch() )
     w,h = blf.dimensions(font_id, text )
     blf.position(font_id, positon[0] - w / 2 + display.dot( offset[0] ) , positon[1] + h + display.dot( offset[1] ) , 0)
     blf.draw(font_id, text )
