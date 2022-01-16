@@ -20,6 +20,8 @@ import bmesh
 import bpy_extras
 import numpy as np
 import collections
+
+from ..utils.dpi import display
 from ..utils import pqutil
 from ..utils import draw_util
 from ..utils import np_math
@@ -65,7 +67,7 @@ class SubToolKnife(SubTool) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        draw_util.draw_dot_lines2D( (self.startPos,self.endPos) , self.color_delete() , self.preferences.highlight_line_width )
+        draw_util.draw_dot_lines2D( (self.startPos,self.endPos) , self.color_delete() , display.dot(self.preferences.highlight_line_width) )
 
     def OnDraw3D( self , context  ) :
         if self.goalElement.isNotEmpty :

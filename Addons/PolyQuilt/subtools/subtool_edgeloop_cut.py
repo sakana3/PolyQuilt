@@ -79,7 +79,7 @@ class SubToolEdgeLoopCut(MainTool) :
                 col = preferences.split_color            
                 return (col[0],col[1],col[2],col[3] * alpha )
             def calc_slice_rate( edge , refarence , rate ) :
-                return SubToolEdgeLoopCut.calc_slice_rate( currentEdge.element , reference_point , edge , refarence , rate , mode )
+                return cls.calc_slice_rate( currentEdge.element , reference_point , edge , refarence , rate , mode )
 
             size = preferences.highlight_vertex_size          
             width = preferences.highlight_line_width
@@ -104,7 +104,7 @@ class SubToolEdgeLoopCut(MainTool) :
             def Draw() :
                 draw_util.draw_pivots3D( (pos,) , preferences.highlight_vertex_size , color_split(0.5) )
                 if lines :
-                    draw_util.draw_lines3D( bpy.context , lines , color_split() , preferences.highlight_line_width , 1.0 , primitiveType = 'LINES'  )
+                    draw_util.draw_lines3D( bpy.context , lines , color_split() , display.dot( preferences.highlight_line_width ) , 1.0 , primitiveType = 'LINES'  )
                 if snaps :
                     draw_util.draw_pivots3D( snaps , 0.75 , color_split(0.25) )
 

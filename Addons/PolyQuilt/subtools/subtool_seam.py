@@ -74,11 +74,12 @@ class SubToolSeam(MainTool) :
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
         if element != None and gizmo.bmo != None :
+            width = gizmo.preferences.highlight_line_width
             if element.isEdge and element.element.seam :
                 color = (0,0,0,1)
             else :
                 color = bpy.context.preferences.themes["Default"].view_3d.edge_seam
-            return element.DrawFunc( gizmo.bmo.obj , (color[0],color[1],color[2],1) , gizmo.preferences , marker = False , edge_pivot = False , width = 5 )
+            return element.DrawFunc( gizmo.bmo.obj , (color[0],color[1],color[2],1) , gizmo.preferences , marker = False , edge_pivot = False , width = width )
         return None
 
     def OnDraw( self , context  ) :

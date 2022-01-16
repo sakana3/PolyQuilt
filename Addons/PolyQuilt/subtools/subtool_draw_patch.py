@@ -63,7 +63,11 @@ class SubToolDrawPatch(SubTool) :
     def LMBEventCallback(self , event ):
         if event.type == MBEventType.Drag :
             if not self.is_loop_stroke :
-                self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = ['VERT'] )
+                def check( target ) :
+                    if target.isVert :
+                        return target.element.select == False
+                    return True
+                self.currentTarget = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight , elements = ['VERT'] , check_func=check )
                 if self.currentTarget.isVert :
                     self.connected_loop_2nd = self.fine_connected_loop( self.currentTarget.element )
                 else :
