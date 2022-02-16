@@ -155,7 +155,7 @@ class PolyQuiltPreferences(AddonPreferences):
     distance_to_highlight : FloatProperty(
         name="distance_to_highlight",
         description="distance_to_highlight",
-        default=4.0,
+        default=2.5,
         min=1.0,
         max=10.0)
 
