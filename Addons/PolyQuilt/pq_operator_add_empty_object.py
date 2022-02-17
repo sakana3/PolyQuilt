@@ -61,6 +61,8 @@ class MESH_OT_PolyQuilt_Gpenci_Tools(Operator) :
             if gp:
                 layer = self.get_gp_layer( context , "PolyQuilt_GPencil" )
                 gp.layers.remove( layer )
+                layer = self.get_gp_layer( context , None )
+
         else :
             layer = self.get_gp_layer( context , "PolyQuilt_GPencil" )
             frame = self.get_gp_frame( layer )
@@ -111,20 +113,29 @@ class MESH_OT_PolyQuilt_Gpenci_Tools(Operator) :
                 sp.co = lp
             stroke.points.update()
 
-    def get_gp_layer( self , context , layer_name = "PolyQuilt_GPencil" ) :
+    @staticmethod
+    def get_gp_layer( context , layer_name = "PolyQuilt_GPencil" ) :
         gp = context.scene.grease_pencil
         if not gp:
             gp = bpy.data.grease_pencils.new("GP")
             context.scene.grease_pencil = gp
 
-        if any( layer_name in l.info for l in  gp.layers ) :
-            for l in gp.layers :
-                if layer_name in l.info : 
-                    layer = l
-                    break
+        layer = None
+        if not layer_name :
+            if gp.layers.active :
+                layer = gp.layers.active
+            elif len(gp.layers) > 0 :
+                layer = gp.layers[0]
+                gp.layers.active = layer
         else :
-             
-            layer = gp.layers.new(layer_name , set_active = gp.layers.active == None )
+            if any( layer_name in l.info for l in  gp.layers ) :
+                for l in gp.layers :
+                    if layer_name in l.info : 
+                        layer = l
+                        break
+            else :
+                layer = gp.layers.new(layer_name , set_active = gp.layers.active == None )
+                gp.layers.active = layer
 
         return layer
 
@@ -226,6 +237,7 @@ class MESH_OT_GPencil_2_Edge(Operator) :
         min=0,
         max=5)
 
+
     def invoke(self, context , event ):
         self.strokes = None
         return self.execute(context )
@@ -307,6 +319,7 @@ class MESH_OT_GPencil_2_Edge(Operator) :
             edges = [ bm.edges.new( (p1,p2) ) for p1,p2 in zip( verts[0:-1] , verts[1:] ) if p1 != p2 ]
             for edge in edges :
                 edge.select_set( True )
+  
 
         bm.select_flush(True)
         bm.verts.index_update()

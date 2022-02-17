@@ -108,9 +108,9 @@ class MainToolDefault(MainTool) :
             funcs = []
             funcs.append( element.DrawFunc( gizmo.bmo.obj , gizmo.preferences.highlight_color , gizmo.preferences , True ) )
 
-            if not QSnap.is_active() :
-                if element.isFace :
-                    funcs.append( element.draw_face_center_marker_func( gizmo.preferences.highlight_color , element.is_hit_center() , element.is_hit_center() ) )
+#            if not QSnap.is_active() :
+#                if element.isFace :
+#                    funcs.append( element.draw_face_center_marker_func( gizmo.preferences.highlight_color , element.is_hit_center() , element.is_hit_center() ) )
 
             return funcs
         return None

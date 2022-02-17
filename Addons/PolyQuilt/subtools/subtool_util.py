@@ -310,8 +310,9 @@ class move_component_module :
     def check_move_type( target : ElementItem , move_type0  : str, move_type1 : str) -> str :
         move_type = move_type0
         if move_type1 == None :
-            if target.is_hit_center() :
-                move_type = 'NORMAL'
+            pass
+#            if target.is_hit_center() :
+#                move_type = 'NORMAL'
         else :
             move_type = move_type1
 
