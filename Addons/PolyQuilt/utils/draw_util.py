@@ -63,7 +63,11 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
     batch.draw(shader)
     return batch
 
-shaderEx = gpu.types.GPUShader(dot_line_vertex_shader, dot_line_fragment_shader)
+try :
+    shaderEx = gpu.types.GPUShader(dot_line_vertex_shader, dot_line_fragment_shader)
+except Exception as e:
+    shaderEx = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+
 shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
