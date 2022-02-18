@@ -380,7 +380,7 @@ class SubToolDrawPatch(SubTool) :
                 if is_wire :
                     SubToolDrawPatch.adjust_faces_normal( bmo , newFaces , view_vector )
         else :
-            Geom = bmesh.ops.bridge_loops(bmo.bm, edges = loopPair, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0.0 )
+            Geom = bmesh.ops.bridge_loops(bmo.bm, edges = loopPair, use_pairs = False, use_cyclic = False, use_merge = False, merge_factor = 0.0 , twist_offset = 0 )
             newFaces = Geom['faces']
             if segment != None and divide == None :
                 lengths = [ ( bmo.local_to_world_pos( e.verts[0].co ) - bmo.local_to_world_pos( e.verts[1].co )).length for e in Geom['edges'] ]
