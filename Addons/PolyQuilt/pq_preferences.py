@@ -336,7 +336,7 @@ class PolyQuiltPreferences(AddonPreferences):
             col.row().prop(self, "keymap_category", expand=True)
 
             keyconfing = context.window_manager.keyconfigs.user            
-            draw_tool_keymap( col.box() ,keyconfing , "3D View Tool: Edit Mesh, " + self.keymap_category )
+            draw_tool_keymap( 'mesh.poly_quilt' , col.box() ,keyconfing , "3D View Tool: Edit Mesh, " + self.keymap_category )
 
         layout.prop( self, "extra_setting_expanded", text="Extra Settings",
             icon='TRIA_DOWN' if self.extra_setting_expanded
