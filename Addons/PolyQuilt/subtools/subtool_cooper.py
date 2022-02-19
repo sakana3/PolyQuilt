@@ -202,8 +202,8 @@ class SubToolCooper(SubTool) :
                     for vert in newVerts :
                         vert.normal_update()
                     for vert in newVerts :
-                        pass
-                        vert.co , _ = QSnap.adjust_by_normal( self.bmo.local_to_world_pos(vert.co) , self.bmo.local_to_world_nrm(vert.normal) )
+                        wp , _ =  QSnap.adjust_by_normal( self.bmo.local_to_world_pos(vert.co) , self.bmo.local_to_world_nrm(vert.normal) )
+                        vert.co = self.bmo.world_to_local_pos( wp ) 
     #                    QSnap.adjust_point( self.bmo.world_to_local_pos(vert.co) )
 
             SubToolDrawPatch.adjust_faces_normal( self.bmo , newFaces['faces'] , self.view_vector )

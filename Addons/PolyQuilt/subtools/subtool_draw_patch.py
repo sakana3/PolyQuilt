@@ -376,7 +376,8 @@ class SubToolDrawPatch(SubTool) :
                 for vert in vertsets :
                     vert.normal_update()
                 for vert in vertsets :
-                    vert.co , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(vert.co) , bmo.local_to_world_nrm(vert.normal) )
+                    wp , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(vert.co) , bmo.local_to_world_nrm(vert.normal) )
+                    vert.co = bmo.world_to_local_pos(wp)
                 if is_wire :
                     SubToolDrawPatch.adjust_faces_normal( bmo , newFaces , view_vector )
         else :
@@ -398,7 +399,8 @@ class SubToolDrawPatch(SubTool) :
                     for v in vs  :
                         v.normal_update()
                     for v in vs  :
-                        v.co , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(v.co) , bmo.local_to_world_nrm(v.normal) )
+                        wp , _ = QSnap.adjust_by_normal( bmo.local_to_world_pos(v.co) , bmo.local_to_world_nrm(v.normal) )
+                        v.co = bmo.world_to_local_pos(wp)
 
         return divide
 

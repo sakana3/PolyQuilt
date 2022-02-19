@@ -70,11 +70,12 @@ class SubToolBrushMove(SubToolEx) :
         return Draw
 
     def OnDraw( self , context  ) :
+        color = self.preferences.split_color
         radius = self.preferences.brush_size
         strength = self.preferences.brush_strength  
 
-        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
-        draw_util.draw_circle2D( self.startMousePos , self.radius , color = (0.75,0.75,1,1), fill = False , subdivide = 64 , dpi= False , width = 1.0 )
+        draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
+        draw_util.draw_circle2D( self.startMousePos , self.radius , color = color, fill = False , subdivide = 64 , dpi= False , width = 1.0 )
 
     def OnDraw3D( self , context  ) :
         pass
