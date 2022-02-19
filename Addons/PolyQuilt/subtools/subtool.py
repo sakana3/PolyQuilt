@@ -40,6 +40,7 @@ class SubToolRoot :
         self.activeSubTool = None
         self.buttonType = button
         self.singleton = True 
+        self.startMousePos = op.mouse_pos
 
     @staticmethod
     def Check( root  ,target ) :
