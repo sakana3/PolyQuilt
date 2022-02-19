@@ -441,7 +441,9 @@ class MESH_OT_poly_quilt_daemon(bpy.types.Operator):
 #           gc.collect()
             return {'CANCELLED'}
 
-        PQ_GizmoGroup_Base.recive_event( context, event )
+        if PQ_GizmoGroup_Base.recive_event( context, event ) :
+            context.area.tag_redraw()
+            return {'RUNNING_MODAL'}
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):

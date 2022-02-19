@@ -24,6 +24,7 @@ from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubToolEx
 from ..utils.dpi import *
+from .subtool_brush_relax import *
 
 class SubToolBrushMove(SubToolEx) :
     name = "MoveBrushTool"
@@ -61,17 +62,19 @@ class SubToolBrushMove(SubToolEx) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
+        pos = gizmo.mouse_pos
+        preferences = gizmo.preferences
         def Draw() :
-            radius = display.dot( gizmo.preferences.brush_size )
-            strength = gizmo.preferences.brush_strength  
-            with draw_util.push_pop_projection2D() :
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
+            cls.Draw( preferences , pos )
         return Draw
+
+    @classmethod
+    def Draw( cls ,preferences , pos ) :
+        SubToolBrushRelax.DrawCircle( preferences , pos , preferences.split_color, preferences.split_color )        
 
     def OnDraw( self , context  ) :
         color = self.preferences.split_color
-        radius = self.preferences.brush_size
+        radius = display.dot( self.preferences.brush_size )
         strength = self.preferences.brush_strength  
 
         draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )

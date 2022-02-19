@@ -24,6 +24,7 @@ from ..utils import draw_util
 from ..QMesh import *
 from .subtool import SubToolEx
 from ..utils.dpi import *
+from .subtool_brush_relax import *
 
 class SubToolBrushDelete(SubToolEx) :
     name = "DeleteBrushTool"
@@ -46,14 +47,15 @@ class SubToolBrushDelete(SubToolEx) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
+        pos = gizmo.mouse_pos
+        preferences = gizmo.preferences
         def Draw() :
-            radius = display.dot( gizmo.preferences.brush_size )
-            strength = gizmo.preferences.brush_strength  
-            color = gizmo.preferences.delete_color
-            with draw_util.push_pop_projection2D() :
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = color, fill = False , subdivide = 64 , dpi= False )
+            cls.Draw( preferences , pos )
         return Draw
+
+    @classmethod
+    def Draw( cls ,preferences , pos ) :
+        SubToolBrushRelax.DrawCircle( preferences , pos , preferences.delete_color, preferences.delete_color )        
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':

@@ -207,7 +207,7 @@ class SubToolRoot :
 
     @classmethod
     def recive_event( cls , gizmo , context , event ) :
-        pass
+        return False
 
     @property
     def default_pivot(self):

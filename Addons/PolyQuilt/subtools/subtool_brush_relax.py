@@ -45,13 +45,24 @@ class SubToolBrushRelax(SubToolEx) :
 
     @classmethod
     def DrawHighlight( cls , gizmo , element ) :
+        pos = gizmo.mouse_pos
+        preferences = gizmo.preferences
         def Draw() :
-            radius = display.dot( gizmo.preferences.brush_size )
-            strength = gizmo.preferences.brush_strength  
-            with draw_util.push_pop_projection2D() :
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
-                draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
+            cls.Draw( preferences , pos )
         return Draw
+
+    @classmethod
+    def Draw( cls ,preferences , pos ) :
+        SubToolBrushRelax.DrawCircle( preferences , pos , (1,1,1,0.5), (1,0.25,0.25,0.25) )
+
+    @staticmethod
+    def DrawCircle( preferences , pos , color1 , color2 ) :
+        radius = display.dot( preferences.brush_size )
+        strength = preferences.brush_strength  
+        with draw_util.push_pop_projection2D() :
+            if color2[3] > 0.0 :
+                draw_util.draw_circle2D( pos , radius * strength , color = color2, fill = False , subdivide = 64 , dpi= False )
+            draw_util.draw_circle2D( pos , radius , color = color1, fill = False , subdivide = 64 , dpi= False )
 
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':

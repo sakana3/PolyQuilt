@@ -128,7 +128,8 @@ class PQ_Gizmo_Preselect( bpy.types.Gizmo):
             PQ_GizmoGroup_Base.set_cursor( )
 
         if context.region_data == self.region and self.subtool:
-            self.subtool.recive_event( self , context , event )
+            return self.subtool.recive_event( self , context , event )
+        return False
 
     def get_keyitem( self , shift , ctrl , alt,  oskey ) :
         keymap = bpy.context.window_manager.keyconfigs.user.keymaps["3D View Tool: Edit Mesh, " + self.tool.bl_label]
@@ -215,8 +216,10 @@ class PQ_GizmoGroup_Base(bpy.types.GizmoGroup):
 
     @classmethod
     def recive_event( cls , context , event ) :
+        ret = False
         for gizmo in cls.child_gizmos :
-            gizmo.recive_event( context , event)
+            ret = ret | gizmo.recive_event( context , event)
+        return ret
 
     @classmethod
     def depsgraph_update_post( cls , scene ) :
