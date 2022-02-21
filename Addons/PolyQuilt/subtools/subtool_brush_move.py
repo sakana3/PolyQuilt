@@ -99,7 +99,7 @@ class SubToolBrushMove(SubToolEx) :
 
         select_stack.push()
         select_stack.select_mode(True,False,False)
-        bpy.ops.view3d.select_circle( x = int(coord.x) , y = int(coord.y) , radius = radius , wait_for_input=False, mode='SET' )
+        bpy.ops.view3d.select_circle( x = int(coord.x) , y = int(coord.y) , radius = int(radius) , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
         is_target = QSnap.is_target
