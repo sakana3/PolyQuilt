@@ -90,7 +90,7 @@ class SubToolBrushRelax(SubToolEx) :
 
         select_stack.push()
         select_stack.select_mode(True,False,False)
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
+        bpy.ops.view3d.select_circle( x = int(coord.x), y = int(coord.y) , radius = int(radius) , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
         occlusion_tbl_get = self.occlusion_tbl.get
