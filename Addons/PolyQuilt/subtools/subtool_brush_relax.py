@@ -47,7 +47,7 @@ class SubToolBrushRelax(SubToolEx) :
     def DrawHighlight( cls , gizmo , element ) :
         def Draw() :
             radius = gizmo.preferences.brush_size * dpm()
-            strength = gizmo.preferences.brush_strength  
+            strength = gizmo.preferences.brush_strength
             with draw_util.push_pop_projection2D() :
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
@@ -56,7 +56,7 @@ class SubToolBrushRelax(SubToolEx) :
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             self.DoRelax( context ,self.mouse_pos )
-        elif event.type == self.rootTool.buttonType : 
+        elif event.type == self.rootTool.buttonType :
             if event.value == 'RELEASE' :
                 if self.dirty  :
                     self.bmo.UpdateMesh()
@@ -90,7 +90,10 @@ class SubToolBrushRelax(SubToolEx) :
 
         select_stack.push()
         select_stack.select_mode(True,False,False)
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
+        if bpy.app.version >= (3,0,0):
+            bpy.ops.view3d.select_circle( x = int(coord.x) , y = int(coord.y) , radius = int(radius) , wait_for_input=False, mode='SET' )
+        else:
+            bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
         occlusion_tbl_get = self.occlusion_tbl.get
@@ -122,7 +125,7 @@ class SubToolBrushRelax(SubToolEx) :
 
         select_stack.pop()
 
-        return { c[0]: [c[1],c[2]] for c in coords if c != None } 
+        return { c[0]: [c[1],c[2]] for c in coords if c != None }
 
     def MirrorVert( self , context , coords ) :
         # ミラー頂点を検出

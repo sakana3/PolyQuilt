@@ -408,19 +408,11 @@ class PQ_OT_SetupUnityLikeKeymap(bpy.types.Operator) :
 
     def execute(self, context):
         for keymap in context.window_manager.keyconfigs.user.keymaps:
-#            print( keymap.name + "----" + keymap.space_type )
-            if keymap.space_type == 'EMPTY' or keymap.space_type == 'NODE_EDITOR'  or keymap.space_type == 'IMAGE_EDITOR' :
-                # Add View2D RMB pan
-                if keymap.name == 'Image' :
-                    PQ_OT_SetupUnityLikeKeymap.AddKeyToKeyMap( keymap , 'image.view_pan', 'MOUSE' , 'RIGHTMOUSE' , 'CLICK_DRAG' )
-                if keymap.name == "View2D" :
-                    PQ_OT_SetupUnityLikeKeymap.AddKeyToKeyMap( keymap , 'view2d.pan', 'MOUSE' , 'RIGHTMOUSE' , 'CLICK_DRAG' )
-
+            if keymap.space_type == 'EMPTY':
                 for key in keymap.keymap_items:
                     if True not in [ key.any , key.alt , key.ctrl ,key.shift ]:
-                        if key.map_type == 'MOUSE' and key.type == 'RIGHTMOUSE' and key.value != 'CLICK_DRAG' :
+                        if key.map_type == 'MOUSE' and key.type == 'RIGHTMOUSE' :
                             key.value = 'CLICK'
-
         for keymap in context.window_manager.keyconfigs.user.keymaps:
             if keymap.space_type == 'VIEW_3D':
                 for key in keymap.keymap_items:
@@ -440,12 +432,3 @@ class PQ_OT_SetupUnityLikeKeymap(bpy.types.Operator) :
                         key.shift = False
 
         return {'FINISHED'}
-
-    def AddKeyToKeyMap( keymap , idname ,map_type, type , value , any=False, shift=0, ctrl=0, alt=0, oskey=0, key_modifier='NONE', repeat=False, head=False) :
-        for key in keymap.keymap_items:
-            if key.idname == idname and key.map_type == map_type and key.type ==type and key.value == value and key.any == any and key.alt == alt and key.ctrl == ctrl and key.shift == shift :
-                key.active = True
-                break
-        else :
-            keymap.keymap_items.new(idname = idname, type = type , value = value , any=any, shift=shift, ctrl=ctrl, alt=alt, oskey=oskey, key_modifier=key_modifier, repeat=repeat, head=head)
-

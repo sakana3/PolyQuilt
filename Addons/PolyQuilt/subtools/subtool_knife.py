@@ -40,24 +40,24 @@ class SubToolKnife(SubTool) :
         self.goalElement = ElementItem.Empty()
 
     def OnUpdate( self , context , event ) :
-        self.goalElement = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight, elements = ['EDGE','VERT'] )   
+        self.goalElement = self.bmo.PickElement( self.mouse_pos , self.preferences.distance_to_highlight, elements = ['EDGE','VERT'] )
         if self.goalElement.isNotEmpty and not self.goalElement.isFace :
             self.goalElement.set_snap_div( self.preferences.loopcut_division )
             self.endPos = self.goalElement.coord
         else :
             self.endPos = self.mouse_pos
-        
+
         if event.type == 'MOUSEMOVE':
             if( self.startPos - self.endPos ).length > 2 :
                 self.CalcKnife( context,self.startPos,self.endPos )
         elif event.type == 'RIGHTMOUSE' :
             if event.value == 'RELEASE' :
                 return 'FINISHED'
-        elif event.type == 'LEFTMOUSE' : 
+        elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 if self.cut_edges or self.cut_edges_mirror  :
                     self.DoKnife(context,self.startPos,self.endPos)
-                    self.bmo.UpdateMesh()                
+                    self.bmo.UpdateMesh()
                     return 'FINISHED'
                 return 'CANCELLED'
         return 'RUNNING_MODAL'
@@ -104,8 +104,8 @@ class SubToolKnife(SubTool) :
         plane0_distance_point = plane0.distance_point
         plane1_distance_point = plane1.distance_point
         epsilon = sys.float_info.epsilon
-        
-        def chk( edge ) :        
+
+        def chk( edge ) :
             p0 = edge.verts[0].co
             p1 = edge.verts[1].co
             p = slice_plane_intersect_line( p0 , p1 )
@@ -151,7 +151,7 @@ class SubToolKnife(SubTool) :
             self.bmo.UpdateMesh()
             cut_edges_mirror = self.calc_slice( slice_plane , plane0 , plane1 )
             if cut_edges_mirror :
-                faces = [ face for face in self.bmo.faces if face.hide is False ]          
+                faces = [ face for face in self.bmo.faces if face.hide is False ]
                 elements = list(cut_edges_mirror.keys()) + faces[:]
                 ret = bmesh.ops.bisect_plane(bm,geom=elements,dist=threshold,plane_co= slice_plane.origin ,plane_no= slice_plane.vector ,use_snap_center=False,clear_outer=False,clear_inner=False)
                 for e in ret['geom_cut'] :

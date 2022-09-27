@@ -34,7 +34,7 @@ class QSnap :
         cls.ref = cls.ref + 1
 
     @classmethod
-    def remove_ref( cls ) :            
+    def remove_ref( cls ) :
         cls.ref = cls.ref - 1
         if cls.ref == 0 :
             if cls.instance :
@@ -69,7 +69,7 @@ class QSnap :
 
     @staticmethod
     def snap_objects( context ) :
-        active_obj = context.active_object        
+        active_obj = context.active_object
         objects = context.visible_objects
 #           objects = context.selected_objects
         objects_array = [obj for obj in objects if obj != active_obj and obj.type == 'MESH']
@@ -133,7 +133,7 @@ class QSnap :
     @classmethod
     def adjust_verts( cls , obj , verts , is_fix_to_x_zero ) :
         if cls.instance != None and cls.instance.bvh_list :
-            dist = bpy.context.scene.tool_settings.double_threshold                        
+            dist = bpy.context.scene.tool_settings.double_threshold
             find_nearest =  cls.instance.__find_nearest
             matrix = obj.matrix_world
             for vert in verts :
@@ -202,7 +202,7 @@ class QSnap :
         if (location_r - ray.origin).length <= (location_i - ray.origin).length :
             return location_r , normal_r , obj_r
         else :
-            return location_i , normal_i , obj_i        
+            return location_i , normal_i , obj_i
 
     def __raycast_double( self , ray : pqutil.Ray ) :
         # ターゲットからビュー方向にレイを飛ばす
@@ -218,7 +218,7 @@ class QSnap :
             if (location_r - ray.origin).length <= (location_i - ray.origin).length :
                 return location_r , normal_r , face_r
             else :
-                return location_i , normal_i , face_i        
+                return location_i , normal_i , face_i
         return None , None , None
 
     def __find_nearest( self, pos : mathutils.Vector ) :

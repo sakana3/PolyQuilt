@@ -14,8 +14,8 @@
 bl_info = {
     "name" : "PolyQuilt",
     "author" : "Sakana3",
-    "version": (1, 3, 1),
-    "blender" : (2, 83, 0),
+    "version": (1, 3, 11),
+    "blender" : (3, 3, 0),
     "location": "View3D > Mesh > PolyQuilt",
     "description": "Lowpoly Tool",
     "warning" : "",
@@ -31,7 +31,7 @@ from .pq_icon import *
 from .pq_tool import PolyQuiltTools
 from .pq_tool_ui import VIEW3D_PT_tools_polyquilt_options
 from .pq_keymap_editor import PQ_OT_DirtyKeymap
-from .gizmo_preselect import * 
+from .gizmo_preselect import *
 from .pq_preferences import *
 from .translation import pq_translation_dict
 
@@ -49,7 +49,7 @@ classes = (
 
 
 def register():
-    bpy.app.translations.register(__name__, pq_translation_dict)    
+    bpy.app.translations.register(__name__, pq_translation_dict)
     register_icons()
     register_updater(bl_info)
 
@@ -69,7 +69,7 @@ def unregister():
         bpy.utils.unregister_tool(tool['tool'])
 
     for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)        
+        bpy.utils.unregister_class(cls)
 
     bpy.utils.unregister_class(pq_operator_add_empty_object.OBJECT_OT_add_object)
     bpy.utils.unregister_manual_map(pq_operator_add_empty_object.add_object_manual_map)

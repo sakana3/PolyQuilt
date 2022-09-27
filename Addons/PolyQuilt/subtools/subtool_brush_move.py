@@ -33,7 +33,7 @@ class SubToolBrushMove(SubToolEx) :
         self.radius = self.preferences.brush_size * dpm()
         self.strength = self.preferences.brush_strength
         self.mirror_tbl = {}
-        matrix = self.bmo.obj.matrix_world        
+        matrix = self.bmo.obj.matrix_world
         self.verts = self.CollectVerts( bpy.context , self.startMousePos )
 
         if self.bmo.is_mirror_mode :
@@ -48,7 +48,7 @@ class SubToolBrushMove(SubToolEx) :
     def OnUpdate( self , context , event ) :
         if event.type == 'MOUSEMOVE':
             self.UpdateVerts(context)
-        elif event.type == self.rootTool.buttonType : 
+        elif event.type == self.rootTool.buttonType :
             if event.value == 'RELEASE' :
                 if self.verts :
                     self.bmo.UpdateMesh()
@@ -63,7 +63,7 @@ class SubToolBrushMove(SubToolEx) :
     def DrawHighlight( cls , gizmo , element ) :
         def Draw() :
             radius = gizmo.preferences.brush_size * dpm()
-            strength = gizmo.preferences.brush_strength  
+            strength = gizmo.preferences.brush_strength
             with draw_util.push_pop_projection2D() :
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
@@ -71,7 +71,7 @@ class SubToolBrushMove(SubToolEx) :
 
     def OnDraw( self , context  ) :
         radius = self.preferences.brush_size * dpm()
-        strength = self.preferences.brush_strength  
+        strength = self.preferences.brush_strength
 
         draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
         draw_util.draw_circle2D( self.startMousePos , self.radius , color = (0.75,0.75,1,1), fill = False , subdivide = 64 , dpi= False , width = 1.0 )
@@ -94,7 +94,10 @@ class SubToolBrushMove(SubToolEx) :
 
         select_stack.push()
         select_stack.select_mode(True,False,False)
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
+        if bpy.app.version >= (3,0,0):
+            bpy.ops.view3d.select_circle( x = int(coord.x) , y = int(coord.y) , radius = int(radius) , wait_for_input=False, mode='SET' )
+        else:
+            bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
 #        bm.select_flush(False)
 
         is_target = QSnap.is_target
@@ -126,12 +129,12 @@ class SubToolBrushMove(SubToolEx) :
         return { v : x for v,x in coords.items() if x }
 
     def UpdateVerts( self , context ) :
-        is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode        
+        is_fix_zero = self.preferences.fix_to_x_zero or self.bmo.is_mirror_mode
         region = context.region
         rv3d = context.region_data
         move = self.mouse_pos - self.startMousePos
-        matrix = self.bmo.obj.matrix_world         
-        matrix_inv = self.bmo.obj.matrix_world.inverted()         
+        matrix = self.bmo.obj.matrix_world
+        matrix_inv = self.bmo.obj.matrix_world.inverted()
         region_2d_to_location_3d = pqutil.region_2d_to_location_3d
         is_x_zero_pos = self.bmo.is_x_zero_pos
         zero_pos = self.bmo.zero_pos
@@ -144,7 +147,7 @@ class SubToolBrushMove(SubToolEx) :
             x = QSnap.adjust_point( x )
             x = matrix_inv @ x
             if is_fix_zero and is_x_zero_pos(orig) :
-                x.x = 0 
+                x.x = 0
             v.co = x
 
         if self.bmo.is_mirror_mode :
@@ -160,7 +163,7 @@ class SubToolBrushMove(SubToolEx) :
                     else :
                         mirror.co = mirror_pos(vert.co)
 
-        self.bmo.UpdateMesh()        
+        self.bmo.UpdateMesh()
 
     @classmethod
     def GetCursor(cls) :

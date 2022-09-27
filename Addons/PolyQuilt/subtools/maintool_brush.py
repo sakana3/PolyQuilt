@@ -45,7 +45,7 @@ class MainToolBrush(MainTool) :
     name = "Brush"
 
     def __init__(self,op,currentTarget, button) :
-        super().__init__(op,currentTarget, button)        
+        super().__init__(op,currentTarget, button)
         brush_tbl = {
             'SMOOTH' : SubToolBrushRelax ,
             'MOVE' : SubToolBrushMove ,
@@ -55,7 +55,7 @@ class MainToolBrush(MainTool) :
         brush = op.brush_type
         brush_type = brush_tbl[ brush ]
 
-        self.callback = { 
+        self.callback = {
             MBEventType.Release         : [] ,
             MBEventType.Click           : [SubToolAutoQuad] ,
             MBEventType.LongClick       : [] ,
@@ -81,7 +81,7 @@ class MainToolBrush(MainTool) :
 
         def Draw() :
             radius = gizmo.preferences.brush_size * dpm()
-            strength = gizmo.preferences.brush_strength  
+            strength = gizmo.preferences.brush_strength
             if drawAutoQuad :
                 drawAutoQuad()
             with draw_util.push_pop_projection2D() :
@@ -95,9 +95,9 @@ class MainToolBrush(MainTool) :
 
     def OnDraw( self , context  ) :
         radius = self.preferences.brush_size * dpm()
-        strength = self.preferences.brush_strength          
+        strength = self.preferences.brush_strength
         draw_util.draw_circle2D( self.mouse_pos , radius * strength , color = (1,0.25,0.25,0.25), fill = False , subdivide = 64 , dpi= False )
-        draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )        
+        draw_util.draw_circle2D( self.mouse_pos , radius , color = (1,1,1,0.5), fill = False , subdivide = 64 , dpi= False )
 
         self.LMBEvent.Draw( self.mouse_pos )
 
@@ -106,7 +106,7 @@ class MainToolBrush(MainTool) :
             draw_util.DrawFont( "Radius = " + '{:.0f}'.format(self.preferences.brush_size * dpm() ) , 10 , self.mouse_pos , (0,-8) )
 
     def OnDraw3D( self , context  ) :
-        if not self.LMBEvent.presureComplite :        
+        if not self.LMBEvent.presureComplite :
             if SubToolAutoQuad.Check( self , self.currentTarget ) :
                 draw = SubToolAutoQuad.DrawHighlight(self,self.currentTarget)
                 if draw :
@@ -131,7 +131,7 @@ class MainToolBrush(MainTool) :
     def change_brush_size( cls , preferences , context , brush_size_value , brush_strong_value ):
         if context.area.type == 'VIEW_3D' :
             a = (preferences.brush_size * preferences.brush_size) / 40000.0 + 0.1
-            preferences.brush_size = preferences.brush_size + brush_size_value * a       
+            preferences.brush_size = preferences.brush_size + brush_size_value * a
             strength = min( max( 0 , preferences.brush_strength + brush_strong_value ) , 1 )
             preferences.brush_strength = strength
             context.area.tag_redraw()
@@ -140,8 +140,8 @@ class MainToolBrushDelete(MainToolBrush) :
     name = "BrushDeleteSubTool"
 
     def __init__(self,op,currentTarget, button) :
-        super().__init__(op,currentTarget, button)        
-        self.callback = { 
+        super().__init__(op,currentTarget, button)
+        self.callback = {
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
@@ -160,8 +160,8 @@ class MainToolBrushRelax(MainToolBrush) :
     name = "BrushRelaxSubTool"
 
     def __init__(self,op,currentTarget, button) :
-        super().__init__(op,currentTarget, button)        
-        self.callback = { 
+        super().__init__(op,currentTarget, button)
+        self.callback = {
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
@@ -180,8 +180,8 @@ class MainToolBrushMove(MainToolBrush) :
     name = "BrushMoveSubTool"
 
     def __init__(self,op,currentTarget, button) :
-        super().__init__(op,currentTarget, button)        
-        self.callback = { 
+        super().__init__(op,currentTarget, button)
+        self.callback = {
             MBEventType.Release         : [] ,
             MBEventType.Click           : [] ,
             MBEventType.LongClick       : [] ,
