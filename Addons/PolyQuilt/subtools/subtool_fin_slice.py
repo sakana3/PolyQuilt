@@ -37,12 +37,12 @@ class SubToolFinSlice(SubTool) :
     def OnForcus( self , context , event  ) :
         if event.type == 'MOUSEMOVE':
             self.slice_rate , self.slice_dist = self.CalcRate(context,self.mouse_pos)
-        return self.slice_rate > 0 
+        return self.slice_rate > 0
 
     def OnUpdate( self , context , event ) :
         if event.type == 'RIGHTMOUSE' :
             return 'FINISHED'
-        elif event.type == 'LEFTMOUSE' : 
+        elif event.type == 'LEFTMOUSE' :
             if event.value == 'RELEASE' :
                 if self.slice_rate == 1 :
                     self.DoSplit()
@@ -125,7 +125,7 @@ class SubToolFinSlice(SubTool) :
         _edges = []
 
         def append( vert , other_vert ) :
-            for edge in vert.link_edges :        
+            for edge in vert.link_edges :
                 if other_vert is not None :
                     if edge not in other_vert.link_edges :
                         _edges.append( edge )
@@ -154,7 +154,7 @@ class SubToolFinSlice(SubTool) :
              use_grid_fill=False,
              use_only_quads = False ,
              seed = 0 ,
-             use_sphere = False 
+             use_sphere = False
         )
 
         for e in ret['geom_inner'] :
@@ -163,4 +163,3 @@ class SubToolFinSlice(SubTool) :
             QSnap.adjust_verts( self.bmo.obj , [ v for v in ret['geom_inner'] if isinstance( v , bmesh.types.BMVert ) ] , self.preferences.fix_to_x_zero )
 
         self.bmo.UpdateMesh()
-

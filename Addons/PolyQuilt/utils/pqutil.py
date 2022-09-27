@@ -41,7 +41,7 @@ class Plane :
         return Plane( origin , vector )
 
     def from_screen_slice( context , startPos , endPos ) :
-        rv3d = context.region_data   
+        rv3d = context.region_data
         region = context.region
 #       pc = region_2d_to_origin_3d(region, rv3d, startPos)
         no = region_2d_to_vector_3d(region, rv3d, startPos)
@@ -112,7 +112,7 @@ class Ray :
 
     @staticmethod
     def from_screen( context , coord : mathutils.Vector) :
-        rv3d = context.region_data   
+        rv3d = context.region_data
         region = context.region
         origin = region_2d_to_origin_3d(region, rv3d, coord)
         vector = region_2d_to_vector_3d(region, rv3d, coord)
@@ -171,7 +171,7 @@ class Ray :
         elif d1 >= dt :
             return 0.0
 
-        return max( 0 , min( 1 , d0 / dt ))        
+        return max( 0 , min( 1 , d0 / dt ))
 
     def hit_to_line_pos( self , v0 , v1 ) :
         h0 , h1 , d = self.distance( Ray( v0 , (v1-v0) ) )
@@ -186,7 +186,7 @@ class Ray :
             val =  0.0
         else :
             val = d0 / dt
-        
+
         return v0 + (v1-v0) * val
 
 
@@ -353,7 +353,7 @@ def location_3d_to_region_2d( coord ) :
     prj = perspective_matrix @ Vector((coord[0], coord[1], coord[2], 1.0))
     if prj.w > 0.0:
         width_half = region.width / 2.0
-        height_half = region.height / 2.0 
+        height_half = region.height / 2.0
 
         return Vector((width_half + width_half * (prj.x / prj.w),
                        height_half + height_half * (prj.y / prj.w),
@@ -361,10 +361,10 @@ def location_3d_to_region_2d( coord ) :
     else:
         return None
 
-def TransformBMVerts( obj , verts ) : 
+def TransformBMVerts( obj , verts ) :
     Item = collections.namedtuple('Item', ('vert', 'region' , 'world' ))
     region = bpy.context.region
-    rv3d = bpy.context.region_data    
+    rv3d = bpy.context.region_data
 
     halfW = region.width / 2.0
     halfH = region.height / 2.0
@@ -372,7 +372,7 @@ def TransformBMVerts( obj , verts ) :
     perspective_matrix = rv3d.perspective_matrix
 
     def Proj2( vt ) :
-        w = matrix_world @ vt.co 
+        w = matrix_world @ vt.co
         v = perspective_matrix @ Vector((w[0], w[1], w[2], 1.0))
         t = None if v.w < 0 else Vector( (halfW+halfW*(v.x/v.w) , halfH+halfH*(v.y/v.w) , ))
         return Item( vert = vt , region = t , world = w )
@@ -411,7 +411,7 @@ def MovePointFromRegion( obj , element , orig , pos ):
             vert.co = obj.matrix_world.inverted() @ v
 
     return orig + p
-    
+
 def MakePointFromRegion( obj , bm , pos , pivot : Vector ):
     p = CalcPositionFromRegion( pos , pivot )
     p = obj.matrix_world.inverted() @ p
@@ -422,7 +422,7 @@ def MakePointFromRegion( obj , bm , pos , pivot : Vector ):
 
 
 def CalcRateEdgeRay( obj , context , edge , vert , coord , ray , dist ) :
-    matrix = obj.matrix_world        
+    matrix = obj.matrix_world
     v0 = vert.co
     v1 = edge.other_vert(vert).co
     p0 = location_3d_to_region_2d( matrix @ v0)
@@ -442,4 +442,4 @@ def CalcRateEdgeRay( obj , context , edge , vert , coord , ray , dist ) :
     elif d1 > dt :
         return 0.0
     else :
-        return max( 0 , min( 1 , d0 / dt ))        
+        return max( 0 , min( 1 , d0 / dt ))

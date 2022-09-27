@@ -50,7 +50,7 @@ class QMeshOperators :
         # ensure系は一応ダーティフラグチェックしてるので無暗に呼んでいいっぽい？
         self.bm.faces.ensure_lookup_table()
         self.bm.verts.ensure_lookup_table()
-        self.bm.edges.ensure_lookup_table()      
+        self.bm.edges.ensure_lookup_table()
 
     def reload_obj( self , context ) :
         self.obj = context.active_object
@@ -62,7 +62,7 @@ class QMeshOperators :
             self.mesh = None
             self.bm = None
         self.current_matrix = None
-        self.reload_tree()            
+        self.reload_tree()
 
     def reload_tree( self ) :
         if self.__btree :
@@ -84,7 +84,7 @@ class QMeshOperators :
 #       self.obj.update_from_editmode()
         self.__btree = None
         self.__kdtree = None
-        self.current_matrix = None    
+        self.current_matrix = None
 
     @property
     def btree(self):
@@ -103,7 +103,7 @@ class QMeshOperators :
         return self.__kdtree
 
     @property
-    def verts(self): 
+    def verts(self):
         return self.bm.verts
 
     @property
@@ -159,7 +159,7 @@ class QMeshOperators :
         return abs(pos[0]) < dist
 
     def is_x_zero_pos_w2l( self , pos : Vector ) :
-        wp = self.world_to_local_pos(pos)        
+        wp = self.world_to_local_pos(pos)
         dist = bpy.context.scene.tool_settings.double_threshold
         return abs(wp[0]) < dist
 
@@ -177,7 +177,7 @@ class QMeshOperators :
         p1 = pqutil.location_3d_to_region_2d( self.mirror_pos_w2l(p) )
         if p0 == None or p1 == None :
             return False
-        dist = self.preferences.distance_to_highlight * dpm()  
+        dist = self.preferences.distance_to_highlight * dpm()
         return ( p0 - p1 ).length <= dist
 
     def mirror_world_pos( self , world_pos ) :
@@ -193,11 +193,11 @@ class QMeshOperators :
         if v0 == None or v1 == None :
             return False
         c0 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v0 )
-        c1 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v1 )        
+        c1 = pqutil.location_3d_to_region_2d( self.obj.matrix_world @ v1 )
         if c0 == None or c1 == None :
             return False
         radius = self.preferences.distance_to_highlight * dpm()
-        return (c0-c1).length <= radius 
+        return (c0-c1).length <= radius
 
 
     def AddVertex( self , local_pos : Vector , is_mirror = None ) :
@@ -227,7 +227,7 @@ class QMeshOperators :
 
         if linkCount > 0 :
             face.normal_flip()
-            face.normal_update()           
+            face.normal_update()
             isLink = True
 
         if linkCount == 0 and normal != None :
@@ -235,8 +235,8 @@ class QMeshOperators :
             dp = face.normal.dot( self.obj.matrix_world.inverted().to_3x3() @ normal )
             if dp > 0.0 :
                 face.normal_flip()
-                face.normal_update()           
-                verts = verts[::-1] 
+                face.normal_update()
+                verts = verts[::-1]
 
         if self.check_mirror(is_mirror) :
             mirror = [ self.find_mirror(v,False) for v in verts[::-1] ]
@@ -250,7 +250,7 @@ class QMeshOperators :
         return face
 
     def add_edge( self , v0 , v1 , is_mirror = None ) :
-        edge = self.bm.edges.get( (v0,v1) )        
+        edge = self.bm.edges.get( (v0,v1) )
         if edge is None :
             edge = self.bm.edges.new( (v0,v1) )
 
@@ -306,8 +306,8 @@ class QMeshOperators :
                     verts = [vert,mirror]
 
             other_verts = set()
-            for vt in verts : 
-                for e in vt.link_edges : 
+            for vt in verts :
+                for e in vt.link_edges :
                     ov = e.other_vert(vt)
                     if ov not in verts and len(ov.link_edges) > 2 :
                         other_verts.add( ov )
@@ -355,13 +355,13 @@ class QMeshOperators :
                 if self.check_mirror(is_mirror) :
                     mirror = self.find_mirror( vert )
                     if mirror != None :
-                        removes.add(mirror)                
+                        removes.add(mirror)
         return list(removes)
 
 
     def dissolve_limit_verts( self , verts , dissolve_vert_angle  = 180 , is_mirror = None ) :
         removes = self.calc_limit_verts(verts , dissolve_vert_angle  , is_mirror = None)
-        if removes :          
+        if removes :
             bmesh.ops.dissolve_verts( self.bm , verts  = removes , use_face_split = False , use_boundary_tear = False )
 
     def dissolve_faces( self , fades , use_verts = False ) :
@@ -377,13 +377,19 @@ class QMeshOperators :
                 if (mirror_v0 == v0 and mirror_v1 == v1) or (mirror_v0 == v1 and mirror_v1 == v0) :
                     pass
                 else :
-                    new_face , new_edge = bmesh.utils.face_split( mirror_face , mirror_v0  , mirror_v1 , coords = coords , use_exist = use_exist )
+                    if bpy.app.version >= (3,0,0):
+                        new_face , new_edge = bmesh.utils.face_split( mirror_face , mirror_v0  , mirror_v1)
+                    else:
+                        new_face , new_edge = bmesh.utils.face_split( mirror_face , mirror_v0  , mirror_v1 , coords , use_exist )
                     if (v0 not in face.verts or v1 not in face.verts ) and (v0 not in new_face.verts or v1 not in new_face.verts ):
                         return
                     if v0 in new_face.verts and v1 in new_face.verts :
                         return bmesh.utils.face_split( new_face , v0  , v1 )
-            
-        return bmesh.utils.face_split( face , v0  , v1 , coords = coords , use_exist = use_exist )
+
+        if bpy.app.version >= (3,0,0):
+            return bmesh.utils.face_split( face , v0  , v1)
+        else:
+            return bmesh.utils.face_split( face , v0  , v1 , coords , use_exist )
 
     def __calc_split_fac( self , edge , refPos ) :
         fac = 0.5
@@ -413,9 +419,9 @@ class QMeshOperators :
     def weld( self , targetmap ) :
         bmesh.ops.weld_verts(self.bm,targetmap)
 
-    def set_positon( self , geom , pos , is_world = True ) :            
+    def set_positon( self , geom , pos , is_world = True ) :
         if is_world :
-            pos = self.obj.matrix_world.inverted() @ pos   
+            pos = self.obj.matrix_world.inverted() @ pos
         geom.co = pos
 
     def test_mirror( self , v0 , v1 ) :
@@ -449,10 +455,10 @@ class QMeshOperators :
 
             if hits != None :
                 if len(hits) == 1 :
-                    result = self.bm.verts[hits[0][1]] 
+                    result = self.bm.verts[hits[0][1]]
                 elif len(hits) > 0 :
                     hits = sorted( hits , key=lambda x:x[2])
-                    result = self.bm.verts[ hits[0][1] ] 
+                    result = self.bm.verts[ hits[0][1] ]
                     for h in hits :
                         hitV = self.bm.verts[h[1]]
                         for edge in geom.link_edges :
@@ -467,7 +473,7 @@ class QMeshOperators :
             hits = self.kdtree.find_range(mirror_cos[0], dist )
             if hits != None :
                 for hit in hits :
-                    hitvert = self.bm.verts[hit[1]]                    
+                    hitvert = self.bm.verts[hit[1]]
                     links = hitvert.link_edges if isinstance( geom , bmesh.types.BMEdge ) else hitvert.link_faces
                     for link in links :
                         if self.test_mirror_geom( link , geom ) :
@@ -486,7 +492,7 @@ class QMeshOperators :
         threshold = bpy.context.scene.tool_settings.double_threshold
         hits = set()
 
-        ipos = self.obj.matrix_world.inverted() @ pos   
+        ipos = self.obj.matrix_world.inverted() @ pos
         pts = self.kdtree.find_range( ipos , threshold )
         if pts :
             hits = set([ self.bm.verts[i] for p , i ,d in pts ])
@@ -495,7 +501,7 @@ class QMeshOperators :
             mpos = self.obj.matrix_world.inverted() @ pos
             mpos.x = -mpos.x
             mpts = self.kdtree.find_range( mpos , threshold )
-            if mpts :            
+            if mpts :
                 mhits = set([ self.bm.verts[i] for p , i ,d in mpts ])
                 return mhits | hits
 
@@ -590,10 +596,10 @@ class QMeshOperators :
         return edges , verts
 
     def do_edge_loop_cut( self , edges , verts ) :
-        bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = False , use_face_split = False )  
+        bmesh.ops.dissolve_edges( self.bm , edges = edges , use_verts = False , use_face_split = False )
         vs = [ v for v in verts if v.is_valid ]
-        bmesh.ops.dissolve_verts( self.bm , verts = vs , use_face_split = True , use_boundary_tear = False )        
-  
+        bmesh.ops.dissolve_verts( self.bm , verts = vs , use_face_split = True , use_boundary_tear = False )
+
 
     @staticmethod
     def calc_loop_face( edge ) :
@@ -626,7 +632,7 @@ class QMeshOperators :
 
 
     def calc_shortest_pass( self , bm , start , end ) :
-        from .QMesh import SelectStack        
+        from .QMesh import SelectStack
 
         if isinstance( start , bmesh.types.BMFace ) :
             for edge in start.edges :

@@ -33,7 +33,7 @@ class SubToolBrushDelete(SubToolEx) :
         self.radius = self.preferences.brush_size * dpm()
         self.strength = self.preferences.brush_strength
         self.mirror_tbl = {}
-        matrix = self.bmo.obj.matrix_world        
+        matrix = self.bmo.obj.matrix_world
         self.remove_faces = self.collect_faces( bpy.context , self.startMousePos )
         if self.bmo.is_mirror_mode :
             mirror = { self.bmo.find_mirror( f ) for f in self.remove_faces }
@@ -48,7 +48,7 @@ class SubToolBrushDelete(SubToolEx) :
     def DrawHighlight( cls , gizmo , element ) :
         def Draw() :
             radius = gizmo.preferences.brush_size * dpm()
-            strength = gizmo.preferences.brush_strength  
+            strength = gizmo.preferences.brush_strength
             color = gizmo.preferences.delete_color
             with draw_util.push_pop_projection2D() :
                 draw_util.draw_circle2D( gizmo.mouse_pos , radius * strength , color = color, fill = False , subdivide = 64 , dpi= False )
@@ -77,14 +77,14 @@ class SubToolBrushDelete(SubToolEx) :
         return 'RUNNING_MODAL'
 
     def OnDraw( self , context  ) :
-        color = self.preferences.delete_color 
+        color = self.preferences.delete_color
         draw_util.draw_circle2D( self.mouse_pos , self.radius , color , fill = False , subdivide = 64 , dpi= False , width = 1.0 )
 
     def OnDraw3D( self , context  ) :
         alpha = self.preferences.highlight_face_alpha
-        vertex_size = self.preferences.highlight_vertex_size        
-        width = self.preferences.highlight_line_width        
-        color = self.preferences.delete_color 
+        vertex_size = self.preferences.highlight_vertex_size
+        width = self.preferences.highlight_line_width
+        color = self.preferences.delete_color
         draw_util.drawElementsHilight3D( self.bmo.obj , self.remove_faces , vertex_size , width , alpha , color )
 
     def collect_faces( self , context , coord ) :
@@ -94,7 +94,10 @@ class SubToolBrushDelete(SubToolEx) :
         select_stack = SelectStack( context , bm )
         select_stack.push()
         select_stack.select_mode(False,False,True)
-        bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
+        if bpy.app.version >= (3,0,0):
+            bpy.ops.view3d.select_circle( x = int(coord.x) , y = int(coord.y) , radius = int(radius) , wait_for_input=False, mode='SET' )
+        else:
+            bpy.ops.view3d.select_circle( x = coord.x , y = coord.y , radius = radius , wait_for_input=False, mode='SET' )
         faces = { f for f in self.bmo.bm.faces if f.select }
         select_stack.pop()
         return faces
