@@ -5,7 +5,8 @@ import zipfile
 import shutil
 
 modulename = "PolyQuilt"
-package_folder = os.getcwd() + "/Addons/PolyQuilt"
+addons_folder = os.getcwd() + "/Addons"
+package_folder = addons_folder + "/" + modulename
 
 version = "0.0.0"
 with open( package_folder + "/__init__.py", encoding= "utf-8" ) as f:
@@ -17,7 +18,7 @@ with open( package_folder + "/__init__.py", encoding= "utf-8" ) as f:
             version =  '.'.join(vtext)
         line = f.readline()
 
-filename = modulename + "_v" + version 
+filename = os.path.join( os.getcwd() , modulename + "_v" + version )
 
-shutil.make_archive( filename , 'zip', root_dir= package_folder )
+shutil.make_archive( filename , 'zip', root_dir= addons_folder , base_dir= modulename )
 

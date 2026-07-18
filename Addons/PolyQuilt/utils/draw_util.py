@@ -65,8 +65,14 @@ def batch_draw( shader , primitiveType , content  , indices = None ) :
     return batch
 
 #shader2D = gpu.types.GPUShader(vertex_shader, fragment_shader)
-shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+try:
+    # Blender 4.x : '2D_UNIFORM_COLOR' / '3D_UNIFORM_COLOR' were merged into 'UNIFORM_COLOR'
+    shader2D = gpu.shader.from_builtin('UNIFORM_COLOR')
+    shader3D = shader2D
+except ValueError:
+    # Blender 2.8x - 3.x
+    shader2D = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+    shader3D = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
 def draw_circle2D( pos , radius , color = (1,1,1,1), fill = False , subdivide = 64 , dpi = True, width : float = 1.0  ):
     if dpi :
